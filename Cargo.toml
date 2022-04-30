@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "full",
+    "slim",
+    "shared",
+    ]
+resolver = "2"

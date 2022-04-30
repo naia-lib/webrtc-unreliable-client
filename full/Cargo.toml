@@ -1,0 +1,16 @@
+[package]
+name = "webrtc-unreliable-client-full"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = ".."
+license = "MIT OR Apache-2.0"
+edition = "2021"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[features]
+
+[dependencies]
+cfg-if = { version = "1.0" }
+log = { version = "0.4" }
