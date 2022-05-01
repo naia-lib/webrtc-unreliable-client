@@ -10,9 +10,6 @@ pub mod ice_transport {
 }
 pub mod peer_connection {
     pub mod sdp {
-        pub mod sdp_type {
-            pub use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
-        }
         pub mod session_description {
             pub use crate::webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
         }

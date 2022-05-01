@@ -8,7 +8,7 @@ use webrtc_unreliable_client::{Socket, ServerAddr, AddrCell};
 async fn main() -> Result<()> {
     // setup logging
     env_logger::Builder::new()
-        .filter(None, log::LevelFilter::Info)
+        .filter(None, log::LevelFilter::Trace)
         .init();
 
     log::info!("Client Demo started");

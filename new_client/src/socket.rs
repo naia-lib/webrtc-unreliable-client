@@ -10,8 +10,8 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use webrtc::{
     ice_transport::ice_candidate::RTCIceCandidateInit,
     peer_connection::{
-        sdp::{sdp_type::RTCSdpType, session_description::RTCSessionDescription}, RTCPeerConnection
-    },
+        sdp::session_description::RTCSessionDescription, RTCPeerConnection
+    }
 };
 
 use super::addr_cell::AddrCell;
@@ -105,9 +105,8 @@ impl Socket {
         let session_response: JsSessionResponse = get_session_response(response_string.as_str());
 
         // apply the server's response as the remote description
-        let mut session_description = RTCSessionDescription::default();
-        session_description.sdp_type = RTCSdpType::Answer;
-        session_description.sdp = session_response.answer.sdp;
+        let session_description = RTCSessionDescription::answer(session_response.answer.sdp).unwrap();
+
         peer_connection
             .set_remote_description(session_description)
             .await

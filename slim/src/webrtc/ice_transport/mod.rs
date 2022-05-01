@@ -195,26 +195,6 @@ impl RTCIceTransport {
         }
     }
 
-    /// restart is not exposed currently because ORTC has users create a whole new ICETransport
-    /// so for now lets keep it private so we don't cause ORTC users to depend on non-standard APIs
-    pub(crate) async fn restart(&self) -> Result<()> {
-        if let Some(agent) = self.gatherer.get_agent().await {
-            agent
-                .restart(
-                    self.gatherer
-                        .setting_engine
-                        .candidates
-                        .username_fragment
-                        .clone(),
-                    self.gatherer.setting_engine.candidates.password.clone(),
-                )
-                .await?;
-        } else {
-            return Err(Error::ErrICEAgentNotExist);
-        }
-        self.gatherer.gather().await
-    }
-
     /// Stop irreversibly stops the ICETransport.
     pub async fn stop(&self) -> Result<()> {
         self.set_state(RTCIceTransportState::Closed);
@@ -319,31 +299,6 @@ impl RTCIceTransport {
             self.gatherer.create_agent().await
         } else {
             Ok(())
-        }
-    }
-
-    pub(crate) async fn have_remote_credentials_change(
-        &self,
-        new_ufrag: &str,
-        new_pwd: &str,
-    ) -> bool {
-        if let Some(agent) = self.gatherer.get_agent().await {
-            let (ufrag, upwd) = agent.get_remote_user_credentials().await;
-            ufrag != new_ufrag || upwd != new_pwd
-        } else {
-            false
-        }
-    }
-
-    pub(crate) async fn set_remote_credentials(
-        &self,
-        new_ufrag: String,
-        new_pwd: String,
-    ) -> Result<()> {
-        if let Some(agent) = self.gatherer.get_agent().await {
-            Ok(agent.set_remote_credentials(new_ufrag, new_pwd).await?)
-        } else {
-            Err(Error::ErrICEAgentNotExist)
         }
     }
 }

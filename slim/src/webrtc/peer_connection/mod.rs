@@ -1252,11 +1252,6 @@ impl RTCPeerConnection {
             return Err(Error::ErrConnectionClosed);
         }
 
-        let is_renegotation = {
-            let current_remote_description = self.internal.current_remote_description.lock().await;
-            current_remote_description.is_some()
-        };
-
         desc.parsed = Some(desc.unmarshal()?);
         self.set_description(&desc, StateChangeOp::SetRemote)
             .await?;
@@ -1363,51 +1358,11 @@ impl RTCPeerConnection {
 
             let (remote_ufrag, remote_pwd, candidates) = extract_ice_details(parsed).await?;
 
-            if is_renegotation
-                && self
-                    .internal
-                    .ice_transport
-                    .have_remote_credentials_change(&remote_ufrag, &remote_pwd)
-                    .await
-            {
-                // An ICE Restart only happens implicitly for a set_remote_description of type offer
-                if !we_offer {
-                    self.internal.ice_transport.restart().await?;
-                }
-
-                self.internal
-                    .ice_transport
-                    .set_remote_credentials(remote_ufrag.clone(), remote_pwd.clone())
-                    .await?;
-            }
-
             for candidate in candidates {
                 self.internal
                     .ice_transport
                     .add_remote_candidate(Some(candidate))
                     .await?;
-            }
-
-            if is_renegotation {
-                if we_offer {
-                    self.start_rtp_senders().await?;
-
-                    let pci = Arc::clone(&self.internal);
-                    let sdp_semantics = self.configuration.sdp_semantics;
-                    let remote_desc = Arc::new(desc);
-                    self.internal
-                        .ops
-                        .enqueue(Operation(Box::new(move || {
-                            let pc = Arc::clone(&pci);
-                            let rd = Arc::clone(&remote_desc);
-                            Box::pin(async move {
-                                let _ = pc.start_rtp(true, rd, sdp_semantics).await;
-                                false
-                            })
-                        })))
-                        .await?;
-                }
-                return Ok(());
             }
 
             let mut remote_is_lite = false;
