@@ -1,17 +1,6 @@
-mod data;
-mod dtls;
-mod ice;
-mod interceptor;
-mod mdns;
-mod media;
-mod rtcp;
-mod rtp;
-mod sctp;
-mod sdp;
-mod srtp;
-mod stun;
-mod turn;
-mod util;
+#[macro_use]
+extern crate lazy_static;
+
 mod webrtc;
 
 pub mod api {
