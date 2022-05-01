@@ -7,7 +7,6 @@ use srtp::session::Session;
 use srtp::stream::Stream;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 use interceptor::{Attributes, RTCPReader, RTPWriter};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
@@ -136,32 +135,6 @@ impl SrtpWriterFuture {
             };
             if let Some(rtp_write_session) = session {
                 return Ok(rtp_write_session.write_rtp(pkt).await?);
-            }
-        }
-
-        Ok(0)
-    }
-
-    pub async fn write(&self, b: &Bytes) -> Result<usize> {
-        {
-            let session = {
-                let session = self.rtp_write_session.lock().await;
-                session.clone()
-            };
-            if let Some(rtp_write_session) = session {
-                return Ok(rtp_write_session.write(b, true).await?);
-            }
-        }
-
-        self.init(true).await?;
-
-        {
-            let session = {
-                let session = self.rtp_write_session.lock().await;
-                session.clone()
-            };
-            if let Some(rtp_write_session) = session {
-                return Ok(rtp_write_session.write(b, true).await?);
             }
         }
 

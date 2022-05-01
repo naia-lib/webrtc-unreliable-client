@@ -31,7 +31,6 @@ use crate::webrtc::mux::endpoint::Endpoint;
 use crate::webrtc::mux::mux_func::{match_dtls, match_srtcp, match_srtp};
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 use crate::webrtc::rtp_transceiver::SSRC;
-use crate::webrtc::stats::stats_collector::StatsCollector;
 
 #[cfg(test)]
 mod dtls_transport_test;
@@ -302,16 +301,6 @@ impl RTCDtlsTransport {
         }
 
         DEFAULT_DTLS_ROLE_ANSWER
-    }
-
-    pub(crate) async fn collect_stats(
-        &self,
-        collector: &Arc<Mutex<StatsCollector>>,
-        worker: Worker,
-    ) {
-        for cert in &self.certificates {
-            cert.collect_stats(&collector, worker.clone()).await;
-        }
     }
 
     async fn prepare_transport(

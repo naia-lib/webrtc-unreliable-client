@@ -458,9 +458,4 @@ impl RTCRtpSender {
         let send_called_tx = self.send_called_tx.lock().await;
         send_called_tx.is_none()
     }
-
-    /// has_stopped tells if stop has been called
-    pub(crate) async fn has_stopped(&self) -> bool {
-        self.stop_called_signal.load(Ordering::SeqCst)
-    }
 }

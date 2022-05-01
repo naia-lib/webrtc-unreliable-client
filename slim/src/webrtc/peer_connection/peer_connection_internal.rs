@@ -1,6 +1,5 @@
 use crate::webrtc::peer_connection::*;
 use crate::webrtc::rtp_transceiver::create_stream_info;
-use crate::webrtc::stats::stats_collector::StatsCollector;
 use crate::webrtc::track::TrackStream;
 use crate::webrtc::{SDES_REPAIR_RTP_STREAM_ID_URI, SDP_ATTRIBUTE_RID};
 use std::sync::atomic::AtomicIsize;
@@ -1317,23 +1316,6 @@ impl PeerConnectionInternal {
             }
         }
         false
-    }
-
-    pub(super) async fn get_stats(&self, stats_id: String) -> Arc<Mutex<StatsCollector>> {
-        let collector = Arc::new(Mutex::new(StatsCollector::new()));
-        let wg = WaitGroup::new();
-
-        tokio::join!(
-            self.ice_gatherer.collect_stats(&collector, wg.worker()),
-            self.ice_transport.collect_stats(&collector, wg.worker()),
-            self.sctp_transport
-                .collect_stats(&collector, wg.worker(), stats_id),
-            self.dtls_transport.collect_stats(&collector, wg.worker()),
-            self.media_engine.collect_stats(&collector, wg.worker()),
-        );
-
-        wg.wait().await;
-        collector
     }
 }
 

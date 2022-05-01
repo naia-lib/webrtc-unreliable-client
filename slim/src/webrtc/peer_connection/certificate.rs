@@ -1,8 +1,6 @@
 use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::peer_connection::math_rand_alpha;
-use crate::webrtc::stats::stats_collector::StatsCollector;
-use crate::webrtc::stats::{CertificateStats, StatsReportType};
 
 use dtls::crypto::{CryptoPrivateKey, CryptoPrivateKeyKind};
 use rcgen::{CertificateParams, KeyPair, RcgenError};
@@ -175,46 +173,6 @@ impl RTCCertificate {
         return Certificate{privateKey, certificate, fmt.Sprintf("certificate-%d", time.Now().UnixNano())}
     }
     */
-
-    pub(crate) async fn collect_stats(
-        &self,
-        collector: &Arc<Mutex<StatsCollector>>,
-        worker: Worker,
-    ) {
-        let fingerprints = self.get_fingerprints().unwrap();
-        if let Some(fingerprint) = fingerprints.into_iter().nth(0) {
-            let stats = CertificateStats::new(self, fingerprint);
-            let mut lock = collector.try_lock().unwrap();
-            lock.push(StatsReportType::CertificateStats(stats));
-
-            drop(worker);
-        }
-    }
-
-    /*
-    func (c Certificate) collectStats(report *statsReportCollector) error {
-        report.Collecting()
-
-        fingerPrintAlgo, err := c.get_fingerprints()
-        if err != nil {
-            return err
-        }
-
-        base64Certificate := base64.RawURLEncoding.EncodeToString(c.x509Cert.Raw)
-
-        stats := CertificateStats{
-            Timestamp:            statsTimestampFrom(time.Now()),
-            Type:                 StatsTypeCertificate,
-            ID:                   c.statsID,
-            Fingerprint:          fingerPrintAlgo[0].Value,
-            FingerprintAlgorithm: fingerPrintAlgo[0].Algorithm,
-            Base64Certificate:    base64Certificate,
-            IssuerCertificateID:  c.x509Cert.Issuer.String(),
-        }
-
-        report.Collect(stats.ID, stats)
-        return nil
-    }*/
 
     /// from_pem creates a fresh certificate based on a string containing
     /// pem blocks fort the private key and x509 certificate

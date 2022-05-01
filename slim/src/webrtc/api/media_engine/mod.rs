@@ -15,9 +15,6 @@ use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::{
     have_rtp_transceiver_direction_intersection, RTCRtpTransceiverDirection,
 };
 use crate::webrtc::rtp_transceiver::{PayloadType, RTCPFeedback};
-use crate::webrtc::stats::stats_collector::StatsCollector;
-use crate::webrtc::stats::CodecStats;
-use crate::webrtc::stats::StatsReportType::Codec;
 
 use sdp::description::session::SessionDescription;
 use std::collections::HashMap;
@@ -538,51 +535,6 @@ impl MediaEngine {
 
         Err(Error::ErrCodecNotFound)
     }
-
-    pub(crate) async fn collect_stats(
-        &self,
-        collector: &Arc<Mutex<StatsCollector>>,
-        worker: Worker,
-    ) {
-        let mut reports = vec![];
-
-        for codec in &self.video_codecs {
-            reports.push(Codec(CodecStats::from(codec)));
-        }
-
-        for codec in &self.audio_codecs {
-            reports.push(Codec(CodecStats::from(codec)));
-        }
-
-        let mut lock = collector.try_lock().unwrap();
-        lock.append(&mut reports);
-
-        drop(worker);
-    }
-    /*TODO: func (m *MediaEngine) collectStats(collector *statsReportCollector) {
-
-            statsLoop := func(codecs []RTPCodecParameters) {
-                for _, codec := range codecs {
-                    collector.Collecting()
-                    stats := CodecStats{
-                        Timestamp:   statsTimestampFrom(time.Now()),
-                        Type:        StatsTypeCodec,
-                        ID:          codec.statsID,
-                        PayloadType: codec.PayloadType,
-                        mime_type:    codec.mime_type,
-                        clock_rate:   codec.clock_rate,
-                        channels:    uint8(codec.channels),
-                        sdpfmtp_line: codec.sdpfmtp_line,
-                    }
-
-                    collector.Collect(stats.ID, stats)
-                }
-            }
-
-            statsLoop(m.videoCodecs)
-            statsLoop(m.audioCodecs)
-        }
-    */
 
     /// Look up a codec and enable if it exists
     pub(crate) fn match_remote_codec(

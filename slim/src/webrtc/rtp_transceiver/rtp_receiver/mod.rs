@@ -28,7 +28,7 @@ pub struct RTPReceiverInternal {
     received_rx: Mutex<mpsc::Receiver<()>>,
 
     transceiver_codecs: Mutex<Option<Arc<Mutex<Vec<RTCRtpCodecParameters>>>>>,
-
+    #[allow(dead_code)]
     transport: Arc<RTCDtlsTransport>,
     media_engine: Arc<MediaEngine>,
     interceptor: Arc<dyn Interceptor + Send + Sync>,
@@ -574,11 +574,6 @@ impl RTCRtpReceiver {
         }
 
         flatten_errs(errs)
-    }
-
-    /// read_rtp should only be called by a track, this only exists so we can keep state in one place
-    pub(crate) async fn read_rtp(&self, b: &mut [u8], tid: usize) -> Result<(usize, Attributes)> {
-        self.internal.read_rtp(b, tid).await
     }
 
     /// receive_for_rid is the sibling of Receive expect for RIDs instead of SSRCs

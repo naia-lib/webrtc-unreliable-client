@@ -15,9 +15,6 @@ use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 use crate::webrtc::dtls_transport::*;
 use crate::webrtc::error::*;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
-use crate::webrtc::stats::stats_collector::StatsCollector;
-use crate::webrtc::stats::StatsReportType::{PeerConnection, SCTPTransport};
-use crate::webrtc::stats::{ICETransportStats, PeerConnectionStats};
 
 use crate::webrtc::data::message::message_channel_open::ChannelType;
 use crate::webrtc::sctp::association::Association;
@@ -72,6 +69,7 @@ pub struct RTCSctpTransport {
 
     // max_message_size represents the maximum size of data that can be passed to
     // DataChannel's send() method.
+    #[allow(dead_code)]
     max_message_size: usize,
 
     // max_channels represents the maximum amount of DataChannel's that can
@@ -338,69 +336,6 @@ impl RTCSctpTransport {
         self.state.load(Ordering::SeqCst).into()
     }
 
-    pub(crate) async fn collect_stats(
-        &self,
-        collector: &Arc<Mutex<StatsCollector>>,
-        worker: Worker,
-        peer_connection_id: String,
-    ) {
-        let dtls_transport = self.transport();
-
-        // TODO: should this be collected?
-        dtls_transport
-            .collect_stats(collector, worker.clone())
-            .await;
-
-        // data channels
-        let mut data_channels_closed = 0;
-        let data_channels = self.data_channels.try_lock().unwrap();
-        for data_channel in &*data_channels {
-            match data_channel.ready_state() {
-                RTCDataChannelState::Connecting => (),
-                RTCDataChannelState::Open => (),
-                _ => data_channels_closed += 1,
-            }
-            data_channel.collect_stats(collector, worker.clone()).await;
-        }
-
-        let mut reports = vec![];
-        reports.push(PeerConnection(PeerConnectionStats::new(
-            self,
-            peer_connection_id,
-            data_channels_closed,
-        )));
-
-        // conn
-        if let Some(_net_conn) = dtls_transport.conn().await {
-            let stats = ICETransportStats::new("sctp_transport".to_owned());
-            // TODO: get bytes out of Conn.
-            // bytes_received: conn.bytes_received,
-            // bytes_sent: conn.bytes_sent,
-            reports.push(SCTPTransport(stats));
-        }
-
-        let collector = collector.clone();
-        let mut lock = collector.try_lock().unwrap();
-        lock.append(&mut reports);
-    }
-    /*TODO: func (r *SCTPTransport) collectStats(collector *statsReportCollector) {
-        collector.Collecting()
-
-        stats := TransportStats{
-            Timestamp: statsTimestampFrom(time.Now()),
-            Type:      StatsTypeTransport,
-            ID:        "sctpTransport",
-        }
-
-        association := r.association()
-        if association != nil {
-            stats.BytesSent = association.BytesSent()
-            stats.BytesReceived = association.BytesReceived()
-        }
-
-        collector.Collect(stats.ID, stats)
-    }*/
-
     pub(crate) async fn generate_and_set_data_channel_id(
         &self,
         dtls_role: DTLSRole,
@@ -434,17 +369,5 @@ impl RTCSctpTransport {
     pub(crate) async fn association(&self) -> Option<Arc<Association>> {
         let sctp_association = self.sctp_association.lock().await;
         sctp_association.clone()
-    }
-
-    pub(crate) fn data_channels_accepted(&self) -> u32 {
-        self.data_channels_accepted.load(Ordering::SeqCst)
-    }
-
-    pub(crate) fn data_channels_opened(&self) -> u32 {
-        self.data_channels_opened.load(Ordering::SeqCst)
-    }
-
-    pub(crate) fn data_channels_requested(&self) -> u32 {
-        self.data_channels_requested.load(Ordering::SeqCst)
     }
 }
