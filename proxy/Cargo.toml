@@ -1,0 +1,19 @@
+[package]
+name = "webrtc_proxy"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = ".."
+license = "MIT OR Apache-2.0"
+edition = "2021"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[features]
+use_webrtc = [ "webrtc" ]
+use_proxy = [ "webrtc-unreliable-client-slim" ]
+
+[dependencies]
+webrtc = { version = "0.4", path = "../../Forks/webrtc", optional = true }
+webrtc-unreliable-client-slim = { path = "../slim", optional = true }
+cfg-if = { version = "1.0" }

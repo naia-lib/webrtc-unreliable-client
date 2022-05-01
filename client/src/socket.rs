@@ -18,7 +18,7 @@ use webrtc::{
     },
 };
 
-use webrtc_unreliable_client_shared::AddrCell;
+use super::addr_cell::AddrCell;
 
 const MESSAGE_SIZE: usize = 1500;
 const CLIENT_CHANNEL_SIZE: usize = 8;

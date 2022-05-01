@@ -12,6 +12,5 @@ maintenance = { status = "actively-developed" }
 [features]
 
 [dependencies]
-cfg-if = { version = "1.0" }
-log = { version = "0.4" }
-webrtc-unreliable-client-shared = { path = "../shared" }
+
+

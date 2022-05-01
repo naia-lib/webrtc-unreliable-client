@@ -1,5 +1,5 @@
 [package]
-name = "webrtc-unreliable-client-full"
+name = "webrtc-unreliable-client"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = ".."
@@ -10,14 +10,16 @@ edition = "2021"
 maintenance = { status = "actively-developed" }
 
 [features]
+use_webrtc = [ "webrtc/use_webrtc" ]
+use_proxy = [ "webrtc/use_proxy" ]
 
 [dependencies]
-webrtc-unreliable-client-shared = { path = "../shared" }
-webrtc = { version = "0.4", path = "../../Forks/webrtc" }
+webrtc = { package = "webrtc_proxy", path = "../proxy" }
 tokio = { version = "1.15", features = ["full"] }
 anyhow = "1.0"
 bytes = "1.1"
 reqwest = { version = "0.11", features = ["rustls-tls"] }
 tinyjson = { version = "2.3" }
+regex = { version = "1.5" }
 env_logger = { version = "0.9" }
 log = { version = "0.4" }

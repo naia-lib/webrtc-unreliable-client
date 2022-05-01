@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "full",
+    "client",
+    "proxy",
     "slim",
-    "shared",
     ]
 resolver = "2"
