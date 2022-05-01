@@ -400,7 +400,6 @@ impl RTCRtpReceiver {
                     encoding.rid.clone(),
                     receiver.clone(),
                     Arc::clone(&media_engine),
-                    Arc::clone(&interceptor),
                 )),
                 stream: TrackStream {
                     stream_info,

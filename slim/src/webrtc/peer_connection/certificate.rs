@@ -7,16 +7,11 @@ use rcgen::{CertificateParams, KeyPair, RcgenError};
 use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};
 use sha2::{Digest, Sha256};
 use std::ops::Add;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::sync::Mutex;
-use waitgroup::Worker;
-
+use std::time::{Duration, SystemTime};
 
 /// Certificate represents a x509Cert used to authenticate WebRTC communications.
 pub struct RTCCertificate {
     pub(crate) certificate: dtls::crypto::Certificate,
-    pub(crate) stats_id: String,
     pub(crate) x509_cert: rcgen::Certificate,
     pub(crate) expires: SystemTime,
 }
@@ -92,13 +87,6 @@ impl RTCCertificate {
                 certificate: vec![rustls::Certificate(certificate)],
                 private_key,
             },
-            stats_id: format!(
-                "certificate-{}",
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos() as u64
-            ),
             x509_cert,
             expires,
         })

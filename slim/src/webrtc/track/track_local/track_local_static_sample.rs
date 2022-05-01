@@ -1,9 +1,7 @@
 use super::track_local_static_rtp::TrackLocalStaticRTP;
 use super::*;
-use crate::webrtc::error::flatten_errs;
 
 use crate::webrtc::track::RTP_OUTBOUND_MTU;
-use media::Sample;
 use tokio::sync::Mutex;
 
 #[derive(Debug, Clone)]
@@ -34,57 +32,6 @@ impl TrackLocalStaticSample {
                 clock_rate: 0.0f64,
             }),
         }
-    }
-
-    /// codec gets the Codec of the track
-    pub fn codec(&self) -> RTCRtpCodecCapability {
-        self.rtp_track.codec()
-    }
-
-    /// write_sample writes a Sample to the TrackLocalStaticSample
-    /// If one PeerConnection fails the packets will still be sent to
-    /// all PeerConnections. The error message will contain the ID of the failed
-    /// PeerConnections so you can remove them
-    pub async fn write_sample(&self, sample: &Sample) -> Result<()> {
-        let mut internal = self.internal.lock().await;
-
-        if internal.packetizer.is_none() || internal.sequencer.is_none() {
-            return Ok(());
-        }
-
-        // skip packets by the number of previously dropped packets
-        if let Some(sequencer) = &internal.sequencer {
-            for _ in 0..sample.prev_dropped_packets {
-                sequencer.next_sequence_number();
-            }
-        }
-
-        let clock_rate = internal.clock_rate;
-
-        let packets = if let Some(packetizer) = &mut internal.packetizer {
-            let samples = (sample.duration.as_secs_f64() * clock_rate) as u32;
-            if sample.prev_dropped_packets > 0 {
-                packetizer.skip_samples(samples * sample.prev_dropped_packets as u32);
-            }
-            /*println!(
-                "clock_rate={}, samples={}, {}",
-                clock_rate,
-                samples,
-                sample.duration.as_secs_f64()
-            );*/
-            packetizer.packetize(&sample.data, samples).await?
-        } else {
-            vec![]
-        };
-
-        let mut write_errs = vec![];
-        for p in packets {
-            if let Err(err) = self.rtp_track.write_rtp(&p).await {
-                write_errs.push(err);
-            }
-        }
-
-        flatten_errs(write_errs)
     }
 }
 

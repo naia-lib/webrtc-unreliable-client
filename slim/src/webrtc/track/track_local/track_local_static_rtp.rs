@@ -23,11 +23,6 @@ impl TrackLocalStaticRTP {
             stream_id,
         }
     }
-
-    /// codec gets the Codec of the track
-    pub fn codec(&self) -> RTCRtpCodecCapability {
-        self.codec.clone()
-    }
 }
 
 #[async_trait]

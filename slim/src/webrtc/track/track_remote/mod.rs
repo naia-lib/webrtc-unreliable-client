@@ -2,13 +2,12 @@ use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
 use crate::webrtc::rtp_transceiver::{PayloadType, SSRC};
-use crate::webrtc::RECEIVE_MTU;
 
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTPReceiverInternal;
 
 use crate::webrtc::track::RTP_PAYLOAD_TYPE_BITMASK;
 use bytes::{Bytes, BytesMut};
-use interceptor::{Attributes, Interceptor};
+use interceptor::Attributes;
 use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 use tokio::sync::Mutex;
@@ -40,7 +39,6 @@ pub struct TrackRemote {
     rid: String,
 
     media_engine: Arc<MediaEngine>,
-    interceptor: Arc<dyn Interceptor + Send + Sync>,
 
     receiver: Option<Weak<RTPReceiverInternal>>,
     internal: Mutex<TrackRemoteInternal>,
@@ -69,7 +67,6 @@ impl TrackRemote {
         rid: String,
         receiver: Weak<RTPReceiverInternal>,
         media_engine: Arc<MediaEngine>,
-        interceptor: Arc<dyn Interceptor + Send + Sync>,
     ) -> Self {
         TrackRemote {
             tid: TRACK_REMOTE_UNIQUE_ID.fetch_add(1, Ordering::SeqCst),
@@ -84,7 +81,6 @@ impl TrackRemote {
             rid,
             receiver: Some(receiver),
             media_engine,
-            interceptor,
 
             internal: Default::default(),
         }
@@ -254,20 +250,6 @@ impl TrackRemote {
         let mut buf = &b[..n];
         let r = rtp::packet::Packet::unmarshal(&mut buf)?;
         Ok((r, attributes))
-    }
-
-    /// determine_payload_type blocks and reads a single packet to determine the PayloadType for this Track
-    /// this is useful because we can't announce it to the user until we know the payload_type
-    pub(crate) async fn determine_payload_type(&self) -> Result<()> {
-        let mut b = vec![0u8; RECEIVE_MTU];
-        let (n, _) = self.peek(&mut b).await?;
-
-        let mut buf = &b[..n];
-        let r = rtp::packet::Packet::unmarshal(&mut buf)?;
-        self.payload_type
-            .store(r.header.payload_type, Ordering::SeqCst);
-
-        Ok(())
     }
 
     /// peek is like Read, but it doesn't discard the packet read

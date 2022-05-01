@@ -18,7 +18,6 @@ use tokio::sync::{mpsc, Mutex};
 use util::Conn;
 
 use dtls_role::*;
-use waitgroup::Worker;
 
 use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;

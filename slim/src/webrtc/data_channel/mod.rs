@@ -14,8 +14,6 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
-use std::time::SystemTime;
-use waitgroup::Worker;
 
 use crate::webrtc::data::message::message_channel_open::ChannelType;
 use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
@@ -47,7 +45,6 @@ pub type OnCloseHdlrFn =
 /// which can be used for bidirectional peer-to-peer transfers of arbitrary data
 #[derive(Default)]
 pub struct RTCDataChannel {
-    pub(crate) stats_id: String,
     pub(crate) label: String,
     pub(crate) ordered: bool,
     pub(crate) max_packet_lifetime: Option<u16>,
@@ -92,12 +89,6 @@ impl RTCDataChannel {
         };
 
         RTCDataChannel {
-            stats_id: format!(
-                "DataChannel-{}",
-                SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .map_or(0, |d| d.as_nanos())
-            ),
             label: params.label,
             protocol: params.protocol,
             negotiated: params.negotiated,

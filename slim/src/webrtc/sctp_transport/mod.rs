@@ -6,10 +6,8 @@ pub mod sctp_transport_state;
 
 use sctp_transport_state::RTCSctpTransportState;
 use std::collections::HashSet;
-use waitgroup::Worker;
 
 use crate::webrtc::api::setting_engine::SettingEngine;
-use crate::webrtc::data_channel::data_channel_state::RTCDataChannelState;
 use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 use crate::webrtc::dtls_transport::*;

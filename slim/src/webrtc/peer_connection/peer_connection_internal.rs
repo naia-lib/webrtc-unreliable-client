@@ -4,7 +4,6 @@ use crate::webrtc::track::TrackStream;
 use crate::webrtc::{SDES_REPAIR_RTP_STREAM_ID_URI, SDP_ATTRIBUTE_RID};
 use std::sync::atomic::AtomicIsize;
 use std::sync::Weak;
-use waitgroup::WaitGroup;
 
 pub(crate) struct PeerConnectionInternal {
     /// a value containing the last known greater mid value

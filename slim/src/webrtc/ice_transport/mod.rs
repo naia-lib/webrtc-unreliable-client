@@ -12,7 +12,6 @@ use ice_candidate::RTCIceCandidate;
 use ice_candidate_pair::RTCIceCandidatePair;
 use ice_gatherer::RTCIceGatherer;
 use ice_role::RTCIceRole;
-use waitgroup::Worker;
 
 use crate::webrtc::error::{flatten_errs, Error, Result};
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
