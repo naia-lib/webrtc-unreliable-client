@@ -10,7 +10,6 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use webrtc::{
     api::{setting_engine::SettingEngine, APIBuilder},
     data_channel::data_channel_init::RTCDataChannelInit,
-    dtls_transport::dtls_role::DTLSRole,
     ice_transport::ice_candidate::RTCIceCandidateInit,
     peer_connection::{
         configuration::RTCConfiguration,
@@ -34,11 +33,7 @@ impl Socket {
         let addr_cell = AddrCell::default();
 
         // create a SettingEngine and enable Detach
-        let mut setting_engine = SettingEngine::default();
-        setting_engine.detach_data_channels();
-        setting_engine
-            .set_answering_dtls_role(DTLSRole::Client)
-            .expect("error in set_answering_dtls_role!");
+        let setting_engine = SettingEngine::new();
 
         // create the API object
         let api = APIBuilder::new()

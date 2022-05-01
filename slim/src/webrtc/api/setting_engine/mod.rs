@@ -77,6 +77,13 @@ pub struct SettingEngine {
 }
 
 impl SettingEngine {
+    pub fn new() -> Self {
+        let mut setting_engine = Self::default();
+        setting_engine.detach.data_channels = true;
+        setting_engine.answering_dtls_role = DTLSRole::Client;
+        setting_engine
+    }
+
     /// get_receive_mtu returns the configured MTU. If SettingEngine's MTU is configured to 0 it returns the default
     pub(crate) fn get_receive_mtu(&self) -> usize {
         if self.receive_mtu != 0 {

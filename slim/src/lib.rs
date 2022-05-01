@@ -14,11 +14,6 @@ pub mod data_channel {
         pub use crate::webrtc::data_channel::data_channel_init::RTCDataChannelInit;
     }
 }
-pub mod dtls_transport {
-    pub mod dtls_role {
-        pub use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
-    }
-}
 pub mod ice_transport {
     pub mod ice_candidate {
         pub use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidateInit;
