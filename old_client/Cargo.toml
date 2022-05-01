@@ -1,5 +1,5 @@
 [package]
-name = "webrtc-unreliable-client"
+name = "webrtc-unreliable-client-old"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = ".."
@@ -11,9 +11,8 @@ maintenance = { status = "actively-developed" }
 
 [features]
 
-
 [dependencies]
-webrtc = { package = "webrtc-unreliable-client-slim", path = "../slim" }
+webrtc = { version = "0.4", path = "../../Forks/webrtc" }
 tokio = { version = "1.15", features = ["full"] }
 anyhow = "1.0"
 bytes = "1.1"

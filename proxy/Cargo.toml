@@ -10,10 +10,10 @@ edition = "2021"
 maintenance = { status = "actively-developed" }
 
 [features]
-use_webrtc = [ "webrtc" ]
-use_proxy = [ "webrtc-unreliable-client-slim" ]
+use_old = [ "webrtc-unreliable-client-old" ]
+use_new = [ "webrtc-unreliable-client" ]
 
 [dependencies]
-webrtc = { version = "0.4", path = "../../Forks/webrtc", optional = true }
-webrtc-unreliable-client-slim = { path = "../slim", optional = true }
+webrtc-unreliable-client = { path = "../client", optional = true }
+webrtc-unreliable-client-old = { path = "../old_client", optional = true }
 cfg-if = { version = "1.0" }

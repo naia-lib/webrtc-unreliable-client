@@ -8,11 +8,11 @@ edition = "2018"
 publish = false
 
 [features]
-use_webrtc = [ "webrtc-unreliable-client/use_webrtc" ]
-use_proxy = [ "webrtc-unreliable-client/use_proxy" ]
+use_old = [ "webrtc-unreliable-client/use_old" ]
+use_new = [ "webrtc-unreliable-client/use_new" ]
 
 [dependencies]
-webrtc-unreliable-client = { path = "../../client" }
+webrtc-unreliable-client = { package = "webrtc_proxy", path = "../../proxy" }
 tokio = { version = "1.15", features = ["full"] }
 anyhow = "1.0"
 env_logger = { version = "0.9" }
