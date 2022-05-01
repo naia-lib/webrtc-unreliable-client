@@ -13,8 +13,8 @@ use webrtc::{
     dtls_transport::dtls_role::DTLSRole,
     ice_transport::ice_candidate::RTCIceCandidateInit,
     peer_connection::{
-        configuration::RTCConfiguration, sdp::sdp_type::RTCSdpType,
-        sdp::session_description::RTCSessionDescription,
+        configuration::RTCConfiguration,
+        sdp::{sdp_type::RTCSdpType, session_description::RTCSessionDescription},
     },
 };
 
