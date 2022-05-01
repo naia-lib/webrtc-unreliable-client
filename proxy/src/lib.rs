@@ -21,6 +21,6 @@ cfg_if! {
 cfg_if! {
     if #[cfg(feature = "use_new")]
     {
-        pub use webrtc_unreliable_client::*;
+        pub use webrtc_unreliable_client_new::*;
     }
 }
