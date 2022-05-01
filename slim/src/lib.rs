@@ -4,10 +4,7 @@ extern crate lazy_static;
 mod webrtc;
 
 pub mod api {
-    pub mod setting_engine {
-        pub use crate::webrtc::api::setting_engine::SettingEngine;
-    }
-    pub use crate::webrtc::api::APIBuilder;
+    pub use crate::webrtc::api::API;
 }
 pub mod data_channel {
     pub mod data_channel_init {

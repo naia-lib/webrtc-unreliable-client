@@ -8,7 +8,7 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use webrtc::{
-    api::{setting_engine::SettingEngine, APIBuilder},
+    api::API,
     data_channel::data_channel_init::RTCDataChannelInit,
     ice_transport::ice_candidate::RTCIceCandidateInit,
     peer_connection::{
@@ -32,13 +32,8 @@ impl Socket {
 
         let addr_cell = AddrCell::default();
 
-        // create a SettingEngine and enable Detach
-        let setting_engine = SettingEngine::new();
-
         // create the API object
-        let api = APIBuilder::new()
-            .with_setting_engine(setting_engine)
-            .build();
+        let api = API::new();
 
         // create a new RTCPeerConnection
         let peer_connection = Arc::new(

@@ -40,6 +40,14 @@ pub struct API {
 }
 
 impl API {
+    pub fn new() -> Self {
+        Self {
+            setting_engine: Arc::new(SettingEngine::new()),
+            media_engine: Arc::new(MediaEngine::default()),
+            interceptor_registry: Registry::new(),
+        }
+    }
+
     /// new_peer_connection creates a new PeerConnection with the provided configuration against the received API object
     pub async fn new_peer_connection(
         &self,
@@ -165,61 +173,5 @@ impl API {
             interceptor,
         )
         .await
-    }
-}
-
-#[derive(Default)]
-pub struct APIBuilder {
-    setting_engine: Option<Arc<SettingEngine>>,
-    media_engine: Option<Arc<MediaEngine>>,
-    interceptor_registry: Option<Registry>,
-}
-
-impl APIBuilder {
-    pub fn new() -> Self {
-        APIBuilder::default()
-    }
-
-    pub fn build(mut self) -> API {
-        API {
-            setting_engine: if let Some(setting_engine) = self.setting_engine.take() {
-                setting_engine
-            } else {
-                Arc::new(SettingEngine::default())
-            },
-            media_engine: if let Some(media_engine) = self.media_engine.take() {
-                media_engine
-            } else {
-                Arc::new(MediaEngine::default())
-            },
-            interceptor_registry: if let Some(interceptor_registry) =
-                self.interceptor_registry.take()
-            {
-                interceptor_registry
-            } else {
-                Registry::new()
-            },
-        }
-    }
-
-    /// WithSettingEngine allows providing a SettingEngine to the API.
-    /// Settings should not be changed after passing the engine to an API.
-    pub fn with_setting_engine(mut self, setting_engine: SettingEngine) -> Self {
-        self.setting_engine = Some(Arc::new(setting_engine));
-        self
-    }
-
-    /// WithMediaEngine allows providing a MediaEngine to the API.
-    /// Settings can be changed after passing the engine to an API.
-    pub fn with_media_engine(mut self, media_engine: MediaEngine) -> Self {
-        self.media_engine = Some(Arc::new(media_engine));
-        self
-    }
-
-    /// with_interceptor_registry allows providing Interceptors to the API.
-    /// Settings should not be changed after passing the registry to an API.
-    pub fn with_interceptor_registry(mut self, interceptor_registry: Registry) -> Self {
-        self.interceptor_registry = Some(interceptor_registry);
-        self
     }
 }
