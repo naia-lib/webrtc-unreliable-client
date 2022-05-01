@@ -3,5 +3,7 @@ members = [
     "client",
     "proxy",
     "slim",
+    "demos/client",
+    "demos/server",
     ]
 resolver = "2"

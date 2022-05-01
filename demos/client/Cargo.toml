@@ -1,0 +1,19 @@
+[package]
+name = "demo-client"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../.."
+license = "MIT OR Apache-2.0"
+edition = "2018"
+publish = false
+
+[features]
+use_webrtc = [ "webrtc-unreliable-client/use_webrtc" ]
+use_proxy = [ "webrtc-unreliable-client/use_proxy" ]
+
+[dependencies]
+webrtc-unreliable-client = { path = "../../client" }
+tokio = { version = "1.15", features = ["full"] }
+anyhow = "1.0"
+env_logger = { version = "0.9" }
+log = { version = "0.4" }
