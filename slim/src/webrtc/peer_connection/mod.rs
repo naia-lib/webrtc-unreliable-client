@@ -40,7 +40,7 @@ use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 use crate::webrtc::peer_connection::configuration::RTCConfiguration;
-use crate::webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
+use crate::webrtc::peer_connection::offer_answer_options::RTCAnswerOptions;
 use crate::webrtc::peer_connection::operation::{Operation, Operations};
 use crate::webrtc::peer_connection::peer_connection_state::{
     NegotiationNeededState, RTCPeerConnectionState,
@@ -675,19 +675,12 @@ impl RTCPeerConnection {
     /// <https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-createoffer>
     pub async fn create_offer(
         &self,
-        options: Option<RTCOfferOptions>,
     ) -> Result<RTCSessionDescription> {
         let use_identity = self.idp_login_url.is_some();
         if use_identity {
             return Err(Error::ErrIdentityProviderNotImplemented);
         } else if self.internal.is_closed.load(Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);
-        }
-
-        if let Some(options) = options {
-            if options.ice_restart {
-                self.internal.ice_transport.restart().await?;
-            }
         }
 
         // This may be necessary to recompute if, for example, createOffer was called when only an
@@ -1729,7 +1722,6 @@ impl RTCPeerConnection {
     /// underlying channel such as data reliability.
     pub async fn create_data_channel(
         &self,
-        label: &str,
     ) -> Result<Arc<RTCDataChannel>> {
 
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #2)
@@ -1738,7 +1730,7 @@ impl RTCPeerConnection {
         }
 
         let mut params = DataChannelParameters {
-            label: label.to_owned(),
+            label: "data".to_string(),
             ordered: true,
             ..Default::default()
         };

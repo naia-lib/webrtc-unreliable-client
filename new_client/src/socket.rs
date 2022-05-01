@@ -38,7 +38,7 @@ impl Socket {
 
         // create a datachannel with label 'data'
         let data_channel = peer_connection
-            .create_data_channel("data")
+            .create_data_channel()
             .await
             .expect("cannot create data channel");
 
@@ -46,9 +46,7 @@ impl Socket {
         data_channel
             .on_error(Box::new(move |error| {
                 println!("data channel error: {:?}", error);
-                Box::pin(async {
-                    println!("data channel error!");
-                })
+                Box::pin(async {})
             }))
             .await;
 
@@ -83,7 +81,7 @@ impl Socket {
             .await;
 
         // create an offer to send to the server
-        let offer = peer_connection.create_offer(None).await.expect("cannot create offer");
+        let offer = peer_connection.create_offer().await.expect("cannot create offer");
 
         // sets the LocalDescription, and starts our UDP listeners
         peer_connection.set_local_description(offer).await.expect("cannot set local description");
