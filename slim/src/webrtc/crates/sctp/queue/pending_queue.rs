@@ -119,15 +119,7 @@ impl PendingQueue {
         popped
     }
 
-    pub(crate) fn get_num_bytes(&self) -> usize {
-        self.n_bytes.load(Ordering::SeqCst)
-    }
-
     pub(crate) fn len(&self) -> usize {
         self.queue_len.load(Ordering::SeqCst)
-    }
-
-    pub(crate) fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 }

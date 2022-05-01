@@ -64,10 +64,4 @@ impl<T: 'static + AckTimerObserver + Send> AckTimer<T> {
     pub(crate) fn stop(&mut self) {
         self.close_tx.take();
     }
-
-    /// isRunning tests if the timer is running.
-    /// Debug purpose only
-    pub(crate) fn is_running(&self) -> bool {
-        self.close_tx.is_some()
-    }
 }

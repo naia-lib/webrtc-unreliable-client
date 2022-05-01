@@ -53,8 +53,6 @@ pub(crate) enum ParamType {
     SetPriAddr = 49156,
     /// Set Primary IP (0xC004) [RFCRFC5061]
     SuccessInd = 49157,
-    /// Success Indication (0xC005) [RFCRFC5061]
-    AdaptLayerInd = 49158,
     /// Adaptation Layer Indication (0xC006) [RFCRFC5061]
     Unknown,
 }
@@ -93,7 +91,6 @@ impl fmt::Display for ParamType {
             ParamType::ErrClauseInd => "Error Cause Indication",
             ParamType::SetPriAddr => "Set Primary IP",
             ParamType::SuccessInd => "Success Indication",
-            ParamType::AdaptLayerInd => "Adaptation Layer Indication",
             _ => "Unknown ParamType",
         };
         write!(f, "{}", s)

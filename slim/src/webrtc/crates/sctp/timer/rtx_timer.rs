@@ -11,7 +11,6 @@ pub(crate) const RTO_ALPHA: u64 = 1;
 pub(crate) const RTO_BETA: u64 = 2;
 pub(crate) const RTO_BASE: u64 = 8;
 pub(crate) const MAX_INIT_RETRANS: usize = 8;
-pub(crate) const PATH_MAX_RETRANS: usize = 5;
 pub(crate) const NO_MAX_RETRANS: usize = 0;
 
 /// rtoManager manages Rtx timeout values.

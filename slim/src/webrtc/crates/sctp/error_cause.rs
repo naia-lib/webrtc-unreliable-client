@@ -53,9 +53,6 @@ pub(crate) struct ErrorCause {
     pub(crate) raw: Bytes,
 }
 
-/// ErrorCauseInvalidMandatoryParameter represents an SCTP error cause
-pub(crate) type ErrorCauseInvalidMandatoryParameter = ErrorCause;
-
 /// ErrorCauseUnrecognizedChunkType represents an SCTP error cause
 pub(crate) type ErrorCauseUnrecognizedChunkType = ErrorCause;
 
@@ -75,7 +72,6 @@ pub(crate) type ErrorCauseUnrecognizedChunkType = ErrorCause;
 ///     \                                                               \
 ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ///
-pub(crate) type ErrorCauseProtocolViolation = ErrorCause;
 
 pub(crate) const ERROR_CAUSE_HEADER_LENGTH: usize = 4;
 
@@ -123,9 +119,5 @@ impl ErrorCause {
 
     pub(crate) fn length(&self) -> usize {
         self.raw.len() + ERROR_CAUSE_HEADER_LENGTH
-    }
-
-    pub(crate) fn error_cause_code(&self) -> ErrorCauseCode {
-        self.code
     }
 }

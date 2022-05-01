@@ -43,11 +43,6 @@ pub(crate) fn sna32gte(i1: u32, i2: u32) -> bool {
 }
 
 #[inline]
-pub(crate) fn sna32eq(i1: u32, i2: u32) -> bool {
-    i1 == i2
-}
-
-#[inline]
 pub(crate) fn sna16lt(i1: u16, i2: u16) -> bool {
     (i1 < i2 && (i2 - i1) < 1 << 15) || (i1 > i2 && (i1 - i2) > 1 << 15)
 }

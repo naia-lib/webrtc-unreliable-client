@@ -80,9 +80,6 @@ pub struct AssociationInternal {
     accept_ch_tx: Option<mpsc::Sender<Arc<Stream>>>,
     handshake_completed_ch_tx: Option<mpsc::Sender<Option<Error>>>,
 
-    // local error
-    silent_error: Option<Error>,
-
     // per inbound packet context
     delayed_ack_triggered: bool,
     immediate_ack_triggered: bool,
@@ -146,7 +143,6 @@ impl AssociationInternal {
             handshake_completed_ch_tx: Some(handshake_completed_ch_tx),
             cumulative_tsn_ack_point: tsn - 1,
             advanced_peer_tsn_ack_point: tsn - 1,
-            silent_error: Some(Error::ErrSilentlyDiscard),
             stats: Arc::new(AssociationStats::default()),
             awake_write_loop_ch: Some(awake_write_loop_ch),
             ..Default::default()
@@ -1753,28 +1749,6 @@ impl AssociationInternal {
         self.handle_peer_last_tsn_and_acknowledgement(false)
     }
 
-    async fn send_reset_request(&mut self, stream_identifier: u16) -> Result<()> {
-        let state = self.get_state();
-        if state != AssociationState::Established {
-            return Err(Error::ErrResetPacketInStateNotExist);
-        }
-
-        // Create DATA chunk which only contains valid stream identifier with
-        // nil userData and use it as a EOS from the stream.
-        let c = ChunkPayloadData {
-            stream_identifier,
-            beginning_fragment: true,
-            ending_fragment: true,
-            user_data: Bytes::new(),
-            ..Default::default()
-        };
-
-        self.pending_queue.push(c).await;
-        self.awake_write_loop();
-
-        Ok(())
-    }
-
     #[allow(clippy::borrowed_box)]
     async fn handle_reconfig_param(
         &mut self,
@@ -1978,22 +1952,6 @@ impl AssociationInternal {
         packets
     }
 
-    /// send_payload_data sends the data chunks.
-    async fn send_payload_data(&mut self, chunks: Vec<ChunkPayloadData>) -> Result<()> {
-        let state = self.get_state();
-        if state != AssociationState::Established {
-            return Err(Error::ErrPayloadDataStateNotExist);
-        }
-
-        // Push the chunks into the pending queue first.
-        for c in chunks {
-            self.pending_queue.push(c).await;
-        }
-
-        self.awake_write_loop();
-        Ok(())
-    }
-
     fn check_partial_reliability_status(&self, c: &ChunkPayloadData) {
         if !self.use_forward_tsn {
             return;
@@ -2124,10 +2082,6 @@ impl AssociationInternal {
         }
     }
 
-    fn pack(p: Packet) -> Vec<Packet> {
-        vec![p]
-    }
-
     fn handle_chunk_start(&mut self) {
         self.delayed_ack_triggered = false;
         self.immediate_ack_triggered = false;
@@ -2198,12 +2152,6 @@ impl AssociationInternal {
         }
 
         Ok(())
-    }
-
-    /// buffered_amount returns total amount (in bytes) of currently buffered user data.
-    /// This is used only by testing.
-    pub(crate) fn buffered_amount(&self) -> usize {
-        self.pending_queue.get_num_bytes() + self.inflight_queue.get_num_bytes()
     }
 }
 

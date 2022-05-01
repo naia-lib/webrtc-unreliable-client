@@ -141,7 +141,6 @@ impl fmt::Display for RtxTimerId {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum AckMode {
     Normal,
-    NoDelay,
     AlwaysDelay,
 }
 impl Default for AckMode {
@@ -154,7 +153,6 @@ impl fmt::Display for AckMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {
             AckMode::Normal => "Normal",
-            AckMode::NoDelay => "NoDelay",
             AckMode::AlwaysDelay => "AlwaysDelay",
         };
         write!(f, "{}", s)

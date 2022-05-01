@@ -559,11 +559,6 @@ impl PollStream<'_> {
         }
     }
 
-    /// Get back the inner stream.
-    pub fn into_inner(self) -> Arc<Stream> {
-        self.stream
-    }
-
     /// Obtain a clone of the inner stream.
     pub fn clone_inner(&self) -> Arc<Stream> {
         self.stream.clone()
