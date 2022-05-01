@@ -151,16 +151,6 @@ pub type OnNegotiationNeededHdlrFn =
     Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
 #[derive(Clone)]
-struct StartTransportsParams {
-    ice_transport: Arc<RTCIceTransport>,
-    dtls_transport: Arc<RTCDtlsTransport>,
-    on_peer_connection_state_change_handler: Arc<Mutex<Option<OnPeerConnectionStateChangeHdlrFn>>>,
-    is_closed: Arc<AtomicBool>,
-    peer_connection_state: Arc<AtomicU8>,
-    ice_connection_state: Arc<AtomicU8>,
-}
-
-#[derive(Clone)]
 struct CheckNegotiationNeededParams {
     sctp_transport: Arc<RTCSctpTransport>,
     rtp_transceivers: Arc<Mutex<Vec<Arc<RTCRtpTransceiver>>>>,

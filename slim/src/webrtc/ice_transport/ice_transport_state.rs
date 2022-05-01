@@ -125,21 +125,6 @@ impl From<ConnectionState> for RTCIceTransportState {
     }
 }
 
-impl RTCIceTransportState {
-    pub(crate) fn to_ice(self) -> ConnectionState {
-        match self {
-            RTCIceTransportState::New => ConnectionState::New,
-            RTCIceTransportState::Checking => ConnectionState::Checking,
-            RTCIceTransportState::Connected => ConnectionState::Connected,
-            RTCIceTransportState::Completed => ConnectionState::Completed,
-            RTCIceTransportState::Failed => ConnectionState::Failed,
-            RTCIceTransportState::Disconnected => ConnectionState::Disconnected,
-            RTCIceTransportState::Closed => ConnectionState::Closed,
-            _ => ConnectionState::Unspecified,
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;

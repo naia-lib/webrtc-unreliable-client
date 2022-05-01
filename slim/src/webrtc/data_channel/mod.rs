@@ -256,13 +256,6 @@ impl RTCDataChannel {
         *handler = Some(f);
     }
 
-    async fn do_message(&self, msg: DataChannelMessage) {
-        let mut handler = self.on_message_handler.lock().await;
-        if let Some(f) = &mut *handler {
-            f(msg).await;
-        }
-    }
-
     pub(crate) async fn handle_open(&self, dc: Arc<crate::webrtc::data::data_channel::DataChannel>) {
         {
             let mut data_channel = self.data_channel.lock().await;
@@ -534,10 +527,6 @@ impl RTCDataChannel {
             let mut on_buffered_amount_low = self.on_buffered_amount_low.lock().await;
             *on_buffered_amount_low = Some(f);
         }
-    }
-
-    pub(crate) fn get_stats_id(&self) -> &str {
-        self.stats_id.as_str()
     }
 
     pub(crate) async fn collect_stats(

@@ -41,21 +41,6 @@ pub type SSRC = u32;
 /// <https://tools.ietf.org/html/rfc3550#section-3>
 pub type PayloadType = u8;
 
-/// TYPE_RTCP_FBT_RANSPORT_CC ..
-pub const TYPE_RTCP_FB_TRANSPORT_CC: &str = "transport-cc";
-
-/// TYPE_RTCP_FB_GOOG_REMB ..
-pub const TYPE_RTCP_FB_GOOG_REMB: &str = "goog-remb";
-
-/// TYPE_RTCP_FB_ACK ..
-pub const TYPE_RTCP_FB_ACK: &str = "ack";
-
-/// TYPE_RTCP_FB_CCM ..
-pub const TYPE_RTCP_FB_CCM: &str = "ccm";
-
-/// TYPE_RTCP_FB_NACK ..
-pub const TYPE_RTCP_FB_NACK: &str = "nack";
-
 /// rtcpfeedback signals the connection to use additional RTCP packet types.
 /// <https://draft.ortc.org/#dom-rtcrtcpfeedback>
 #[derive(Default, Debug, Clone, PartialEq)]

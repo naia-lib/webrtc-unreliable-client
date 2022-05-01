@@ -563,35 +563,6 @@ impl PollStream<'_> {
     pub fn clone_inner(&self) -> Arc<Stream> {
         self.stream.clone()
     }
-
-    /// stream_identifier returns the Stream identifier associated to the stream.
-    pub fn stream_identifier(&self) -> u16 {
-        self.stream.stream_identifier
-    }
-
-    /// buffered_amount returns the number of bytes of data currently queued to be sent over this stream.
-    pub fn buffered_amount(&self) -> usize {
-        self.stream.buffered_amount.load(Ordering::SeqCst)
-    }
-
-    /// buffered_amount_low_threshold returns the number of bytes of buffered outgoing data that is
-    /// considered "low." Defaults to 0.
-    pub fn buffered_amount_low_threshold(&self) -> usize {
-        self.stream.buffered_amount_low.load(Ordering::SeqCst)
-    }
-
-    /// get_num_bytes_in_reassembly_queue returns the number of bytes of data currently queued to
-    /// be read (once chunk is complete).
-    pub(crate) async fn get_num_bytes_in_reassembly_queue(&self) -> usize {
-        // No lock is required as it reads the size with atomic load function.
-        let reassembly_queue = self.stream.reassembly_queue.lock().await;
-        reassembly_queue.get_num_bytes()
-    }
-
-    /// Set the capacity of the temporary read buffer (default: 4096).
-    pub fn set_read_buf_capacity(&mut self, capacity: usize) {
-        self.read_buf_cap = capacity
-    }
 }
 
 impl AsyncRead for PollStream<'_> {

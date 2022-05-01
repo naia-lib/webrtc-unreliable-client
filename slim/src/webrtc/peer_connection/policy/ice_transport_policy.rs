@@ -23,9 +23,6 @@ impl Default for RTCIceTransportPolicy {
     }
 }
 
-/// ICEGatherPolicy is the ORTC equivalent of ICETransportPolicy
-pub type ICEGatherPolicy = RTCIceTransportPolicy;
-
 const ICE_TRANSPORT_POLICY_RELAY_STR: &str = "relay";
 const ICE_TRANSPORT_POLICY_ALL_STR: &str = "all";
 

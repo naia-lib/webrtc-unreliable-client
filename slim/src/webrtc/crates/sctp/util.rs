@@ -57,16 +57,6 @@ pub(crate) fn sna16gt(i1: u16, i2: u16) -> bool {
     (i1 < i2 && (i2 - i1) >= 1 << 15) || (i1 > i2 && (i1 - i2) <= 1 << 15)
 }
 
-#[inline]
-pub(crate) fn sna16gte(i1: u16, i2: u16) -> bool {
-    i1 == i2 || sna16gt(i1, i2)
-}
-
-#[inline]
-pub(crate) fn sna16eq(i1: u16, i2: u16) -> bool {
-    i1 == i2
-}
-
 #[cfg(test)]
 mod test {
     use crate::error::Result;

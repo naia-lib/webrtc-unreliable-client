@@ -70,18 +70,11 @@ impl Mux {
             buffer: Buffer::new(0, MAX_BUFFER_SIZE),
             match_fn: f,
             next_conn: Arc::clone(&self.next_conn),
-            endpoints: Arc::clone(&self.endpoints),
         });
 
         endpoints.insert(e.id, Arc::clone(&e));
 
         e
-    }
-
-    /// remove_endpoint removes an endpoint from the Mux
-    pub async fn remove_endpoint(&mut self, e: &Endpoint) {
-        let mut endpoints = self.endpoints.lock().await;
-        endpoints.remove(&e.id);
     }
 
     /// Close closes the Mux and all associated Endpoints.

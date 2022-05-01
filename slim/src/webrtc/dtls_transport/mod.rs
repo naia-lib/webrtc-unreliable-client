@@ -28,7 +28,7 @@ use crate::webrtc::ice_transport::ice_role::RTCIceRole;
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::mux::endpoint::Endpoint;
-use crate::webrtc::mux::mux_func::{match_dtls, match_srtcp, match_srtp, MatchFunc};
+use crate::webrtc::mux::mux_func::{match_dtls, match_srtcp, match_srtp};
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 use crate::webrtc::rtp_transceiver::SSRC;
 use crate::webrtc::stats::stats_collector::StatsCollector;
@@ -81,8 +81,6 @@ pub struct RTCDtlsTransport {
     pub(crate) srtp_ready_signal: Arc<AtomicBool>,
     pub(crate) srtp_ready_tx: Mutex<Option<mpsc::Sender<()>>>,
     pub(crate) srtp_ready_rx: Mutex<Option<mpsc::Receiver<()>>>,
-
-    pub(crate) dtls_matcher: Option<MatchFunc>,
 }
 
 impl RTCDtlsTransport {
@@ -100,7 +98,6 @@ impl RTCDtlsTransport {
             srtp_ready_tx: Mutex::new(Some(srtp_ready_tx)),
             srtp_ready_rx: Mutex::new(Some(srtp_ready_rx)),
             state: AtomicU8::new(RTCDtlsTransportState::New as u8),
-            dtls_matcher: Some(Box::new(match_dtls)),
             ..Default::default()
         }
     }

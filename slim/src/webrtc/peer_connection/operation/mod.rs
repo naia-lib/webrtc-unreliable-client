@@ -7,7 +7,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc;
-use waitgroup::WaitGroup;
 
 use crate::webrtc::error::Result;
 
@@ -73,20 +72,6 @@ impl Operations {
     /// is_empty checks if there are tasks in the queue
     pub(crate) async fn is_empty(&self) -> bool {
         self.length.load(Ordering::SeqCst) == 0
-    }
-
-    /// Done blocks until all currently enqueued operations are finished executing.
-    /// For more complex synchronization, use Enqueue directly.
-    pub(crate) async fn done(&self) {
-        let wg = WaitGroup::new();
-        let mut w = Some(wg.worker());
-        let _ = self
-            .enqueue(Operation(Box::new(move || {
-                let _d = w.take();
-                Box::pin(async { false })
-            })))
-            .await;
-        wg.wait().await;
     }
 
     pub(crate) async fn start(

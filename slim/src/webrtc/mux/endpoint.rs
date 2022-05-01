@@ -2,11 +2,9 @@ use crate::webrtc::mux::mux_func::MatchFunc;
 use util::{Buffer, Conn};
 
 use async_trait::async_trait;
-use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// Endpoint implements net.Conn. It is used to read muxed packets.
 pub struct Endpoint {
@@ -14,19 +12,6 @@ pub struct Endpoint {
     pub(crate) buffer: Buffer,
     pub(crate) match_fn: MatchFunc,
     pub(crate) next_conn: Arc<dyn Conn + Send + Sync>,
-    pub(crate) endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
-}
-
-impl Endpoint {
-    /// Close unregisters the endpoint from the Mux
-    pub async fn close(&self) -> Result<()> {
-        self.buffer.close().await;
-
-        let mut endpoints = self.endpoints.lock().await;
-        endpoints.remove(&self.id);
-
-        Ok(())
-    }
 }
 
 type Result<T> = std::result::Result<T, util::Error>;
