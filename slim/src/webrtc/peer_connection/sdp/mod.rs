@@ -1,25 +1,25 @@
 #[cfg(test)]
 mod sdp_test;
 
-use crate::api::media_engine::MediaEngine;
-use crate::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
-use crate::error::{Error, Result};
-use crate::ice_transport::ice_candidate::RTCIceCandidate;
-use crate::ice_transport::ice_gatherer::RTCIceGatherer;
-use crate::ice_transport::ice_gathering_state::RTCIceGatheringState;
-use crate::ice_transport::ice_parameters::RTCIceParameters;
-use crate::rtp_transceiver::rtp_codec::{
+use crate::webrtc::api::media_engine::MediaEngine;
+use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
+use crate::webrtc::error::{Error, Result};
+use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
+use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
+use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
+use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
+use crate::webrtc::rtp_transceiver::rtp_codec::{
     RTCRtpCodecCapability, RTCRtpCodecParameters, RTPCodecType,
 };
-use crate::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
-use crate::rtp_transceiver::RTCRtpTransceiver;
-use crate::rtp_transceiver::{PayloadType, RTCPFeedback, SSRC};
+use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
+use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
+use crate::webrtc::rtp_transceiver::{PayloadType, RTCPFeedback, SSRC};
 
 pub mod sdp_type;
 pub mod session_description;
 
-use crate::peer_connection::MEDIA_SECTION_APPLICATION;
-use crate::SDP_ATTRIBUTE_RID;
+use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
+use crate::webrtc::SDP_ATTRIBUTE_RID;
 use ice::candidate::candidate_base::unmarshal_candidate;
 use ice::candidate::Candidate;
 use sdp::description::common::{Address, ConnectionInformation};

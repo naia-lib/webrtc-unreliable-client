@@ -2,18 +2,12 @@ mod crates;
 
 // re-export sub-crates
 pub use crates::data;
-pub use crates::dtls;
-pub use crates::ice;
 pub use crates::interceptor;
 pub use crates::mdns;
 pub use crates::media;
-pub use crates::rtcp;
 pub use crates::rtp;
 pub use crates::sctp;
-pub use crates::sdp;
 pub use crates::srtp;
-pub use crates::stun;
-pub use crates::turn;
 pub use crates::util;
 
 pub mod api;

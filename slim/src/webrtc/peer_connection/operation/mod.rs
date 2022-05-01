@@ -9,7 +9,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use waitgroup::WaitGroup;
 
-use crate::error::Result;
+use crate::webrtc::error::Result;
 
 /// Operation is a function
 pub struct Operation(

@@ -1,8 +1,8 @@
 use super::*;
-use crate::rtp_transceiver::create_stream_info;
-use crate::stats::stats_collector::StatsCollector;
-use crate::track::TrackStream;
-use crate::{SDES_REPAIR_RTP_STREAM_ID_URI, SDP_ATTRIBUTE_RID};
+use crate::webrtc::rtp_transceiver::create_stream_info;
+use crate::webrtc::stats::stats_collector::StatsCollector;
+use crate::webrtc::track::TrackStream;
+use crate::webrtc::{SDES_REPAIR_RTP_STREAM_ID_URI, SDP_ATTRIBUTE_RID};
 use std::sync::atomic::AtomicIsize;
 use std::sync::Weak;
 use waitgroup::WaitGroup;

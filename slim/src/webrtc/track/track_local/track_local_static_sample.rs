@@ -1,8 +1,8 @@
 use super::track_local_static_rtp::TrackLocalStaticRTP;
 use super::*;
-use crate::error::flatten_errs;
+use crate::webrtc::error::flatten_errs;
 
-use crate::track::RTP_OUTBOUND_MTU;
+use crate::webrtc::track::RTP_OUTBOUND_MTU;
 use media::Sample;
 use tokio::sync::Mutex;
 

@@ -1,8 +1,8 @@
 pub(crate) mod generic;
 pub(crate) mod h264;
 
-use crate::rtp_transceiver::fmtp::generic::GenericFmtp;
-use crate::rtp_transceiver::fmtp::h264::H264Fmtp;
+use crate::webrtc::rtp_transceiver::fmtp::generic::GenericFmtp;
+use crate::webrtc::rtp_transceiver::fmtp::h264::H264Fmtp;
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt;

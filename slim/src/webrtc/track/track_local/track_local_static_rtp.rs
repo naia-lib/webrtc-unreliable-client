@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::error::flatten_errs;
+use crate::webrtc::error::flatten_errs;
 use tokio::sync::Mutex;
 
 /// TrackLocalStaticRTP  is a TrackLocal that has a pre-set codec and accepts RTP Packets.

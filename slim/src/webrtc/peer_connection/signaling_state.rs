@@ -1,5 +1,5 @@
-use crate::error::{Error, Result};
-use crate::peer_connection::sdp::sdp_type::RTCSdpType;
+use crate::webrtc::error::{Error, Result};
+use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 
 use std::fmt;
 

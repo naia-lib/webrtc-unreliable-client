@@ -4,9 +4,9 @@ mod track_local_static_test;
 pub mod track_local_static_rtp;
 pub mod track_local_static_sample;
 
-use crate::error::{Error, Result};
-use crate::rtp_transceiver::rtp_codec::*;
-use crate::rtp_transceiver::*;
+use crate::webrtc::error::{Error, Result};
+use crate::webrtc::rtp_transceiver::rtp_codec::*;
+use crate::webrtc::rtp_transceiver::*;
 
 use async_trait::async_trait;
 use interceptor::{Attributes, RTPWriter};

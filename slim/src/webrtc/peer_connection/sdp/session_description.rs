@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::webrtc::error::Result;
 
 use super::sdp_type::RTCSdpType;
 
