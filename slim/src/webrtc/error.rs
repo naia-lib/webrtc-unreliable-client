@@ -354,9 +354,9 @@ pub enum Error {
     #[error("{0}")]
     Dtls(#[from] dtls::Error),
     #[error("{0}")]
-    Data(#[from] data::Error),
+    Data(#[from] crate::webrtc::data::Error),
     #[error("{0}")]
-    Sctp(#[from] sctp::Error),
+    Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("{0}")]
     Sdp(#[from] sdp::Error),
     #[error("{0}")]

@@ -1,23 +1,23 @@
 #[cfg(test)]
 mod media_engine_test;
 
-use crate::webrtc::crates::interceptor::error::{Error, Result};
-use crate::webrtc::crates::interceptor::peer_connection::sdp::{
+use crate::webrtc::error::{Error, Result};
+use crate::webrtc::peer_connection::sdp::{
     codecs_from_media_description, rtp_extensions_from_media_description,
 };
-use crate::webrtc::crates::interceptor::rtp_transceiver::fmtp;
-use crate::webrtc::crates::interceptor::rtp_transceiver::rtp_codec::{
+use crate::webrtc::rtp_transceiver::fmtp;
+use crate::webrtc::rtp_transceiver::rtp_codec::{
     codec_parameters_fuzzy_search, CodecMatch, RTCRtpCodecCapability, RTCRtpCodecParameters,
     RTCRtpHeaderExtensionCapability, RTCRtpHeaderExtensionParameters, RTCRtpParameters,
     RTPCodecType,
 };
-use crate::webrtc::crates::interceptor::rtp_transceiver::rtp_transceiver_direction::{
+use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::{
     have_rtp_transceiver_direction_intersection, RTCRtpTransceiverDirection,
 };
-use crate::webrtc::crates::interceptor::rtp_transceiver::{PayloadType, RTCPFeedback};
-use crate::webrtc::crates::interceptor::stats::stats_collector::StatsCollector;
-use crate::webrtc::crates::interceptor::stats::CodecStats;
-use crate::webrtc::crates::interceptor::stats::StatsReportType::Codec;
+use crate::webrtc::rtp_transceiver::{PayloadType, RTCPFeedback};
+use crate::webrtc::stats::stats_collector::StatsCollector;
+use crate::webrtc::stats::CodecStats;
+use crate::webrtc::stats::StatsReportType::Codec;
 
 use sdp::description::session::SessionDescription;
 use std::collections::HashMap;

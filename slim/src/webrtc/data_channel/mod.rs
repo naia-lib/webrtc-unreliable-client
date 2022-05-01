@@ -17,8 +17,8 @@ use std::sync::{Arc, Weak};
 use std::time::SystemTime;
 use waitgroup::Worker;
 
-use data::message::message_channel_open::ChannelType;
-use sctp::stream::OnBufferedAmountLowFn;
+use crate::webrtc::data::message::message_channel_open::ChannelType;
+use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
 use tokio::sync::{Mutex, Notify};
 
 use data_channel_state::RTCDataChannelState;
@@ -77,7 +77,7 @@ pub struct RTCDataChannel {
     pub(crate) on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
 
     pub(crate) sctp_transport: Mutex<Option<Weak<RTCSctpTransport>>>,
-    pub(crate) data_channel: Mutex<Option<Arc<data::data_channel::DataChannel>>>,
+    pub(crate) data_channel: Mutex<Option<Arc<crate::webrtc::data::data_channel::DataChannel>>>,
 
     pub(crate) notify_tx: Arc<Notify>,
 
@@ -156,9 +156,9 @@ impl RTCDataChannel {
                 }
             }
 
-            let cfg = data::data_channel::Config {
+            let cfg = crate::webrtc::data::data_channel::Config {
                 channel_type,
-                priority: data::message::message_channel_open::CHANNEL_PRIORITY_NORMAL,
+                priority: crate::webrtc::data::message::message_channel_open::CHANNEL_PRIORITY_NORMAL,
                 reliability_parameter,
                 label: self.label.clone(),
                 protocol: self.protocol.clone(),
@@ -177,7 +177,7 @@ impl RTCDataChannel {
                 );
             }
 
-            let dc = data::data_channel::DataChannel::dial(&association, self.id(), cfg).await?;
+            let dc = crate::webrtc::data::data_channel::DataChannel::dial(&association, self.id(), cfg).await?;
 
             // buffered_amount_low_threshold and on_buffered_amount_low might be set earlier
             dc.set_buffered_amount_low_threshold(
@@ -263,7 +263,7 @@ impl RTCDataChannel {
         }
     }
 
-    pub(crate) async fn handle_open(&self, dc: Arc<data::data_channel::DataChannel>) {
+    pub(crate) async fn handle_open(&self, dc: Arc<crate::webrtc::data::data_channel::DataChannel>) {
         {
             let mut data_channel = self.data_channel.lock().await;
             *data_channel = Some(Arc::clone(&dc));
@@ -301,7 +301,7 @@ impl RTCDataChannel {
 
     async fn read_loop(
         notify_rx: Arc<Notify>,
-        data_channel: Arc<data::data_channel::DataChannel>,
+        data_channel: Arc<crate::webrtc::data::data_channel::DataChannel>,
         ready_state: Arc<AtomicU8>,
         on_message_handler: Arc<Mutex<Option<OnMessageHdlrFn>>>,
         on_close_handler: Arc<Mutex<Option<OnCloseHdlrFn>>>,
@@ -316,7 +316,7 @@ impl RTCDataChannel {
                         Ok((n, is_string)) => (n, is_string),
                         Err(err) => {
                             ready_state.store(RTCDataChannelState::Closed as u8, Ordering::SeqCst);
-                            if err != sctp::Error::ErrStreamClosed {
+                            if err != crate::webrtc::sctp::Error::ErrStreamClosed {
                                 let on_error_handler2 = Arc::clone(&on_error_handler);
                                 tokio::spawn(async move {
                                     let mut handler = on_error_handler2.lock().await;
@@ -393,7 +393,7 @@ impl RTCDataChannel {
     /// Please refer to the data-channels-detach example and the
     /// pion/datachannel documentation for the correct way to handle the
     /// resulting DataChannel object.
-    pub async fn detach(&self) -> Result<Arc<data::data_channel::DataChannel>> {
+    pub async fn detach(&self) -> Result<Arc<crate::webrtc::data::data_channel::DataChannel>> {
         if !self.setting_engine.detach.data_channels {
             return Err(Error::ErrDetachNotEnabled);
         }

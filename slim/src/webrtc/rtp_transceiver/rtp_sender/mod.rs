@@ -16,8 +16,8 @@ use crate::webrtc::track::track_local::{
 };
 
 use ice::rand::generate_crypto_random_string;
-use crate::webrtc::interceptor::stream_info::StreamInfo;
-use crate::webrtc::interceptor::{Attributes, Interceptor, RTCPReader, RTPWriter};
+use interceptor::stream_info::StreamInfo;
+use interceptor::{Attributes, Interceptor, RTCPReader, RTPWriter};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc, Mutex, Notify};

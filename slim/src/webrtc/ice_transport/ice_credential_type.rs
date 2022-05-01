@@ -40,7 +40,7 @@ impl fmt::Display for RTCIceCredentialType {
         match *self {
             RTCIceCredentialType::Password => write!(f, "{}", ICE_CREDENTIAL_TYPE_PASSWORD_STR),
             RTCIceCredentialType::Oauth => write!(f, "{}", ICE_CREDENTIAL_TYPE_OAUTH_STR),
-            _ => write!(f, "{}", crate::UNSPECIFIED_STR),
+            _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
         }
     }
 }

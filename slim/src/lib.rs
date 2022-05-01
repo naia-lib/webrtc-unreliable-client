@@ -37,3 +37,8 @@ pub mod peer_connection {
         }
     }
 }
+pub mod data {
+    pub mod data_channel {
+        pub use crate::webrtc::data::data_channel::DataChannel;
+    }
+}

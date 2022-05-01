@@ -6,10 +6,10 @@ use crate::webrtc::error::Result;
 use crate::webrtc::rtp_transceiver::rtp_codec::RTCRtpHeaderExtensionCapability;
 use crate::webrtc::rtp_transceiver::{rtp_codec::RTPCodecType, RTCPFeedback, TYPE_RTCP_FB_TRANSPORT_CC};
 
-use crate::webrtc::crates::interceptor::nack::{generator::Generator, responder::Responder};
-use crate::webrtc::crates::interceptor::registry::Registry;
-use crate::webrtc::crates::interceptor::report::{receiver::ReceiverReport, sender::SenderReport};
-use crate::webrtc::crates::interceptor::twcc::{receiver::Receiver, sender::Sender};
+use interceptor::nack::{generator::Generator, responder::Responder};
+use interceptor::registry::Registry;
+use interceptor::report::{receiver::ReceiverReport, sender::SenderReport};
+use interceptor::twcc::{receiver::Receiver, sender::Sender};
 
 /// register_default_interceptors will register some useful interceptors.
 /// If you want to customize which interceptors are loaded, you should copy the

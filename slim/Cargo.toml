@@ -12,12 +12,18 @@ maintenance = { status = "actively-developed" }
 [features]
 
 [dependencies]
-dtls = { package = "webrtc-dtls", version = "0.5.2", path = "../../Forks/dtls" }
-ice = { package = "webrtc-ice", version = "0.6.6", path = "../../Forks/ice" }
+util = { package = "webrtc-util", version = "0.5.3", path = "../../Forks/util" }
 sdp = { version = "0.5.1", path = "../../Forks/sdp" }
+mdns = { package = "webrtc-mdns", version = "0.4.2", path = "../../Forks/mdns" }
 stun = { version = "0.4.2", path = "../../Forks/stun" }
 turn = { version = "0.5.4", path = "../../Forks/turn" }
+ice = { package = "webrtc-ice", version = "0.6.6", path = "../../Forks/ice" }
+dtls = { package = "webrtc-dtls", version = "0.5.2", path = "../../Forks/dtls" }
+rtp = { version = "0.6.5", path = "../../Forks/rtp" }
 rtcp = { version = "0.6.5", path = "../../Forks/rtcp" }
+srtp = { package = "webrtc-srtp", version = "0.8.9", path = "../../Forks/srtp" }
+media = { package = "webrtc-media", version = "0.4.5", path = "../../Forks/media" }
+interceptor = { version = "0.7.6", path = "../../Forks/interceptor" }
 
 tokio = { version = "1.15.0", features = ["full"] }
 log = "0.4.14"
@@ -36,4 +42,5 @@ ring = "0.16.20"
 sha2 = "0.10.1"
 lazy_static = "1.4.0"
 hex = "0.4.3"
-
+crc = "2.1.0"
+derive_builder = "0.10.2"

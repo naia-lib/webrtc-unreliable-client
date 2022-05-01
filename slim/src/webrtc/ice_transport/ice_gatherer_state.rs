@@ -67,7 +67,7 @@ impl fmt::Display for RTCIceGathererState {
             RTCIceGathererState::Closed => {
                 write!(f, "{}", ICE_GATHERED_STATE_CLOSED_STR)
             }
-            _ => write!(f, "{}", crate::UNSPECIFIED_STR),
+            _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
         }
     }
 }

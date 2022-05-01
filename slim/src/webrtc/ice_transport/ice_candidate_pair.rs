@@ -1,12 +1,13 @@
-use crate::ice_transport::ice_candidate::*;
+use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 
 use std::fmt;
+
 
 /// ICECandidatePair represents an ICE Candidate pair
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct RTCIceCandidatePair {
     stats_id: String,
-    local: RTCIceCandidate,
+    local:  RTCIceCandidate,
     remote: RTCIceCandidate,
 }
 

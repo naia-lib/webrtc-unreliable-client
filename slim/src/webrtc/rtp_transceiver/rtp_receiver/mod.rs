@@ -16,8 +16,8 @@ use crate::webrtc::rtp_transceiver::{
 use crate::webrtc::track::track_remote::TrackRemote;
 use crate::webrtc::track::{TrackStream, TrackStreams};
 
-use crate::webrtc::interceptor::stream_info::RTPHeaderExtension;
-use crate::webrtc::interceptor::{Attributes, Interceptor};
+use interceptor::stream_info::RTPHeaderExtension;
+use interceptor::{Attributes, Interceptor};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex, Notify, RwLock};
 

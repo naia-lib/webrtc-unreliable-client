@@ -71,8 +71,8 @@ use crate::webrtc::track::track_remote::TrackRemote;
 
 use ice::candidate::candidate_base::unmarshal_candidate;
 use ice::candidate::Candidate;
-use sdp::description::session::*;
-use sdp::util::ConnectionRole;
+use ::sdp::description::session::*;
+use ::sdp::util::ConnectionRole;
 use async_trait::async_trait;
 use interceptor::{Attributes, Interceptor, RTCPWriter};
 use peer_connection_internal::*;
@@ -84,6 +84,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
+use ::sdp::description::session::{ATTR_KEY_ICELITE, ATTR_KEY_MSID};
 use tokio::sync::{mpsc, Mutex};
 
 /// SIMULCAST_PROBE_COUNT is the amount of RTP Packets

@@ -19,12 +19,12 @@ use crate::webrtc::stats::stats_collector::StatsCollector;
 use crate::webrtc::stats::StatsReportType::{PeerConnection, SCTPTransport};
 use crate::webrtc::stats::{ICETransportStats, PeerConnectionStats};
 
-use data::message::message_channel_open::ChannelType;
-use sctp::association::Association;
+use crate::webrtc::data::message::message_channel_open::ChannelType;
+use crate::webrtc::sctp::association::Association;
 
 use crate::webrtc::data_channel::data_channel_parameters::DataChannelParameters;
 
-use data::data_channel::DataChannel;
+use crate::webrtc::data::data_channel::DataChannel;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
@@ -146,7 +146,7 @@ impl RTCSctpTransport {
         let dtls_transport = self.transport();
         if let Some(net_conn) = &dtls_transport.conn().await {
             let sctp_association = Arc::new(
-                sctp::association::Association::client(sctp::association::Config {
+                crate::webrtc::sctp::association::Association::client(crate::webrtc::sctp::association::Config {
                     net_conn: Arc::clone(net_conn) as Arc<dyn Conn + Send + Sync>,
                     max_receive_buffer_size: 0,
                     max_message_size: 0,
@@ -206,12 +206,12 @@ impl RTCSctpTransport {
                 _ = param.notify_rx.notified() => break,
                 result = DataChannel::accept(
                     &param.sctp_association,
-                    data::data_channel::Config::default(),
+                    crate::webrtc::data::data_channel::Config::default(),
                 ) => {
                     match result {
                         Ok(dc) => dc,
                         Err(err) => {
-                            if data::Error::ErrStreamClosed == err {
+                            if crate::webrtc::data::Error::ErrStreamClosed == err {
                                 log::error!("Failed to accept data channel: {}", err);
                                 let mut handler = param.on_error_handler.lock().await;
                                 if let Some(f) = &mut *handler {

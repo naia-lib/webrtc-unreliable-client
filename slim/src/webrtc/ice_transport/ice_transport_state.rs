@@ -105,7 +105,7 @@ impl fmt::Display for RTCIceTransportState {
             RTCIceTransportState::Closed => {
                 write!(f, "{}", ICE_TRANSPORT_STATE_CLOSED_STR)
             }
-            _ => write!(f, "{}", crate::UNSPECIFIED_STR),
+            _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
         }
     }
 }
