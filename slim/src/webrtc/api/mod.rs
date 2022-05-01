@@ -40,20 +40,18 @@ pub struct API {
 }
 
 impl API {
-    pub fn new() -> Self {
-        Self {
+    pub async fn new_peer_connection() -> Arc<RTCPeerConnection> {
+        let me = Self {
             setting_engine: Arc::new(SettingEngine::new()),
             media_engine: Arc::new(MediaEngine::default()),
             interceptor_registry: Registry::new(),
-        }
-    }
+        };
 
-    /// new_peer_connection creates a new PeerConnection with the provided configuration against the received API object
-    pub async fn new_peer_connection(
-        &self,
-        configuration: RTCConfiguration,
-    ) -> Result<RTCPeerConnection> {
-        RTCPeerConnection::new(self, configuration).await
+        Arc::new(
+            RTCPeerConnection::new(&me, RTCConfiguration::default())
+                .await
+                .expect("can't create new peer connection!")
+        )
     }
 
     /// new_ice_gatherer creates a new ice gatherer.

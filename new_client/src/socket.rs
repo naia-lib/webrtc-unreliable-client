@@ -9,10 +9,8 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use webrtc::{
     api::API,
-    data_channel::data_channel_init::RTCDataChannelInit,
     ice_transport::ice_candidate::RTCIceCandidateInit,
     peer_connection::{
-        configuration::RTCConfiguration,
         sdp::{sdp_type::RTCSdpType, session_description::RTCSessionDescription},
     },
 };
@@ -32,26 +30,15 @@ impl Socket {
 
         let addr_cell = AddrCell::default();
 
-        // create the API object
-        let api = API::new();
-
         // create a new RTCPeerConnection
-        let peer_connection = Arc::new(
-            api
-                .new_peer_connection(RTCConfiguration::default())
-                .await
-                .expect("can't create new peer connection!")
-        );
+        let peer_connection = API::new_peer_connection().await;
 
         // create a config for our new datachannel
-        let mut data_channel_config = RTCDataChannelInit::default();
-        data_channel_config.ordered = Some(false);
-        data_channel_config.max_retransmits = Some(0);
-        data_channel_config.id = Some(0);
+
 
         // create a datachannel with label 'data'
         let data_channel = peer_connection
-            .create_data_channel("data", Some(data_channel_config))
+            .create_data_channel("data")
             .await
             .expect("cannot create data channel");
 

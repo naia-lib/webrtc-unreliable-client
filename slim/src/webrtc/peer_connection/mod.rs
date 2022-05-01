@@ -14,7 +14,6 @@ pub mod signaling_state;
 use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::api::API;
-use crate::webrtc::data_channel::data_channel_init::RTCDataChannelInit;
 use crate::webrtc::data_channel::data_channel_parameters::DataChannelParameters;
 use crate::webrtc::data_channel::data_channel_state::RTCDataChannelState;
 use crate::webrtc::data_channel::RTCDataChannel;
@@ -1731,8 +1730,8 @@ impl RTCPeerConnection {
     pub async fn create_data_channel(
         &self,
         label: &str,
-        options: Option<RTCDataChannelInit>,
     ) -> Result<Arc<RTCDataChannel>> {
+
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #2)
         if self.internal.is_closed.load(Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);
@@ -1745,37 +1744,30 @@ impl RTCPeerConnection {
         };
 
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #19)
-        if let Some(options) = options {
-            params.id = options.id;
 
-            // Ordered indicates if data is allowed to be delivered out of order. The
-            // default value of true, guarantees that data will be delivered in order.
-            // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #9)
-            if let Some(ordered) = options.ordered {
-                params.ordered = ordered;
-            }
+        params.id = Some(0);
 
-            // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #7)
-            params.max_packet_life_time = options.max_packet_life_time;
+        // Ordered indicates if data is allowed to be delivered out of order. The
+        // default value of true, guarantees that data will be delivered in order.
+        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #9)
+        params.ordered = false;
 
-            // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #8)
-            params.max_retransmits = options.max_retransmits;
+        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #7)
+        params.max_packet_life_time = None;
 
-            // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #10)
-            if let Some(protocol) = options.protocol {
-                params.protocol = protocol;
-            }
+        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #8)
+        params.max_retransmits = Some(0);
 
-            // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #11)
-            if params.protocol.len() > 65535 {
-                return Err(Error::ErrProtocolTooLarge);
-            }
+        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #10)
+        params.protocol = "".to_string();
 
-            // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #12)
-            if let Some(negotiated) = options.negotiated {
-                params.negotiated = negotiated;
-            }
+        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #11)
+        if params.protocol.len() > 65535 {
+            return Err(Error::ErrProtocolTooLarge);
         }
+
+        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #12)
+        params.negotiated = false;
 
         let d = Arc::new(RTCDataChannel::new(
             params,
