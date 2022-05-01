@@ -8,10 +8,9 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use webrtc::{
-    api::API,
     ice_transport::ice_candidate::RTCIceCandidateInit,
     peer_connection::{
-        sdp::{sdp_type::RTCSdpType, session_description::RTCSessionDescription},
+        sdp::{sdp_type::RTCSdpType, session_description::RTCSessionDescription}, RTCPeerConnection
     },
 };
 
@@ -31,10 +30,7 @@ impl Socket {
         let addr_cell = AddrCell::default();
 
         // create a new RTCPeerConnection
-        let peer_connection = API::new_peer_connection().await;
-
-        // create a config for our new datachannel
-
+        let peer_connection = RTCPeerConnection::new().await;
 
         // create a datachannel with label 'data'
         let data_channel = peer_connection

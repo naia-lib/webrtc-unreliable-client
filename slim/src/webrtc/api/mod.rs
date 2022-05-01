@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod api_test;
-
 pub mod media_engine;
 pub mod setting_engine;
 
@@ -13,17 +10,9 @@ use crate::webrtc::peer_connection::certificate::RTCCertificate;
 use media_engine::*;
 use setting_engine::*;
 
-use crate::webrtc::data_channel::data_channel_parameters::DataChannelParameters;
-use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::error::{Error, Result};
-use crate::webrtc::peer_connection::configuration::RTCConfiguration;
-use crate::webrtc::peer_connection::RTCPeerConnection;
-use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
-use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
-use crate::webrtc::rtp_transceiver::rtp_sender::RTCRtpSender;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-use crate::webrtc::track::track_local::TrackLocal;
-use interceptor::{registry::Registry, Interceptor};
+use interceptor::registry::Registry;
 
 use rcgen::KeyPair;
 use std::sync::Arc;
@@ -40,19 +29,6 @@ pub struct API {
 }
 
 impl API {
-    pub async fn new_peer_connection() -> Arc<RTCPeerConnection> {
-        let me = Self {
-            setting_engine: Arc::new(SettingEngine::new()),
-            media_engine: Arc::new(MediaEngine::default()),
-            interceptor_registry: Registry::new(),
-        };
-
-        Arc::new(
-            RTCPeerConnection::new(&me, RTCConfiguration::default())
-                .await
-                .expect("can't create new peer connection!")
-        )
-    }
 
     /// new_ice_gatherer creates a new ice gatherer.
     /// This constructor is part of the ORTC API. It is not
@@ -119,57 +95,5 @@ impl API {
             dtls_transport,
             Arc::clone(&self.setting_engine),
         ))
-    }
-
-    /// new_data_channel creates a new DataChannel.
-    /// This constructor is part of the ORTC API. It is not
-    /// meant to be used together with the basic WebRTC API.
-    pub async fn new_data_channel(
-        &self,
-        sctp_transport: Arc<RTCSctpTransport>,
-        params: DataChannelParameters,
-    ) -> Result<RTCDataChannel> {
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #5)
-        if params.label.len() > 65535 {
-            return Err(Error::ErrStringSizeLimit);
-        }
-
-        let d = RTCDataChannel::new(params, Arc::clone(&self.setting_engine));
-        d.open(sctp_transport).await?;
-
-        Ok(d)
-    }
-
-    /// new_rtp_receiver constructs a new RTPReceiver
-    pub fn new_rtp_receiver(
-        &self,
-        kind: RTPCodecType,
-        transport: Arc<RTCDtlsTransport>,
-        interceptor: Arc<dyn Interceptor + Send + Sync>,
-    ) -> RTCRtpReceiver {
-        RTCRtpReceiver::new(
-            self.setting_engine.get_receive_mtu(),
-            kind,
-            transport,
-            Arc::clone(&self.media_engine),
-            interceptor,
-        )
-    }
-
-    /// new_rtp_sender constructs a new RTPSender
-    pub async fn new_rtp_sender(
-        &self,
-        track: Arc<dyn TrackLocal + Send + Sync>,
-        transport: Arc<RTCDtlsTransport>,
-        interceptor: Arc<dyn Interceptor + Send + Sync>,
-    ) -> RTCRtpSender {
-        RTCRtpSender::new(
-            self.setting_engine.get_receive_mtu(),
-            track,
-            transport,
-            Arc::clone(&self.media_engine),
-            interceptor,
-        )
-        .await
     }
 }

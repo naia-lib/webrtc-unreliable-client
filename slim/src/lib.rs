@@ -3,9 +3,6 @@ extern crate lazy_static;
 
 mod webrtc;
 
-pub mod api {
-    pub use crate::webrtc::api::API;
-}
 pub mod ice_transport {
     pub mod ice_candidate {
         pub use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidateInit;
@@ -20,6 +17,7 @@ pub mod peer_connection {
             pub use crate::webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
         }
     }
+    pub use crate::webrtc::peer_connection::RTCPeerConnection;
 }
 pub mod data {
     pub mod data_channel {

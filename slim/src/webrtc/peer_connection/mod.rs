@@ -83,6 +83,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use ::sdp::description::session::{ATTR_KEY_ICELITE, ATTR_KEY_MSID};
+use interceptor::registry::Registry;
 use tokio::sync::{mpsc, Mutex};
 
 /// SIMULCAST_PROBE_COUNT is the amount of RTP Packets
@@ -207,19 +208,27 @@ impl RTCPeerConnection {
     /// If you wish to customize the set of available codecs or the set of
     /// active interceptors, create a MediaEngine and call api.new_peer_connection
     /// instead of this function.
-    pub(crate) async fn new(api: &API, mut configuration: RTCConfiguration) -> Result<Self> {
-        RTCPeerConnection::init_configuration(&mut configuration)?;
+    pub async fn new() -> Arc<RTCPeerConnection> {
+        let api = API {
+            setting_engine: Arc::new(SettingEngine::new()),
+            media_engine: Arc::new(MediaEngine::default()),
+            interceptor_registry: Registry::new(),
+        };
 
-        let interceptor = api.interceptor_registry.build("")?;
+        let mut configuration = RTCConfiguration::default();
+
+        RTCPeerConnection::init_configuration(&mut configuration).expect("can't create configuration");
+
+        let interceptor = api.interceptor_registry.build("").expect("can't create interceptor registry");
         let (internal, configuration) =
-            PeerConnectionInternal::new(api, Arc::downgrade(&interceptor), configuration).await?;
+            PeerConnectionInternal::new(&api, Arc::downgrade(&interceptor), configuration).await.expect("can't create peer connection");
         let internal_rtcp_writer = Arc::clone(&internal) as Arc<dyn RTCPWriter + Send + Sync>;
         let interceptor_rtcp_writer = interceptor.bind_rtcp_writer(internal_rtcp_writer).await;
 
         // <https://w3c.github.io/webrtc-pc/#constructor> (Step #2)
         // Some variables defined explicitly despite their implicit zero values to
         // allow better readability to understand what is happening.
-        Ok(RTCPeerConnection {
+        Arc::new(RTCPeerConnection {
             stats_id: format!(
                 "PeerConnection-{}",
                 SystemTime::now()
