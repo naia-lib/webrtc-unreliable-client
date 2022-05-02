@@ -1,5 +1,4 @@
 
-use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::RTCRtpCodecParameters;
 use crate::webrtc::rtp_transceiver::srtp_writer_future::SrtpWriterFuture;
@@ -8,21 +7,18 @@ use crate::webrtc::rtp_transceiver::{
     RTCRtpTransceiver, SSRC,
 };
 use crate::webrtc::track::track_local::{
-    InterceptorToTrackLocalWriter, TrackLocal, TrackLocalContext, TrackLocalWriter,
+    InterceptorToTrackLocalWriter, TrackLocal, TrackLocalContext,
 };
 
-use ice::rand::generate_crypto_random_string;
 use interceptor::stream_info::StreamInfo;
-use interceptor::{Attributes, Interceptor, RTCPReader, RTPWriter};
+use interceptor::{Interceptor, RTPWriter};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc, Mutex, Notify};
 
 pub(crate) struct RTPSenderInternal {
-    pub(crate) send_called_rx: Mutex<mpsc::Receiver<()>>,
     pub(crate) stop_called_rx: Arc<Notify>,
     pub(crate) stop_called_signal: Arc<AtomicBool>,
-    pub(crate) rtcp_interceptor: Mutex<Option<Arc<dyn RTCPReader + Send + Sync>>>,
 }
 
 /// RTPSender allows an application to control how a given Track is encoded and transmitted to a remote peer
@@ -34,11 +30,8 @@ pub struct RTCRtpSender {
 
     pub(crate) context: Mutex<TrackLocalContext>,
 
-    pub(crate) transport: Arc<RTCDtlsTransport>,
-
     pub(crate) payload_type: PayloadType,
     pub(crate) ssrc: SSRC,
-    receive_mtu: usize,
 
     /// a transceiver sender since we can just check the
     /// transceiver negotiation status
@@ -53,8 +46,6 @@ pub struct RTCRtpSender {
     send_called_tx: Mutex<Option<mpsc::Sender<()>>>,
     stop_called_tx: Arc<Notify>,
     stop_called_signal: Arc<AtomicBool>,
-
-    internal: Arc<RTPSenderInternal>,
 }
 
 impl std::fmt::Debug for RTCRtpSender {

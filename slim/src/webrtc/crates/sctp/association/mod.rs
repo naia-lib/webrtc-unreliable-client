@@ -46,7 +46,7 @@ use bytes::Bytes;
 use rand::random;
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::{broadcast, mpsc, Mutex};
@@ -251,7 +251,7 @@ impl Association {
         let (awake_write_loop_ch_tx, awake_write_loop_ch_rx) = mpsc::channel(1);
         let (accept_ch_tx, accept_ch_rx) = mpsc::channel(ACCEPT_CH_SIZE);
         let (handshake_completed_ch_tx, handshake_completed_ch_rx) = mpsc::channel(1);
-        let (close_loop_ch_tx, close_loop_ch_rx) = broadcast::channel(1);
+        let (close_loop_ch_tx, _) = broadcast::channel(1);
         let (close_loop_ch_rx1, close_loop_ch_rx2) =
             (close_loop_ch_tx.subscribe(), close_loop_ch_tx.subscribe());
         let awake_write_loop_ch = Arc::new(awake_write_loop_ch_tx);
@@ -267,10 +267,6 @@ impl Association {
         let bytes_received = Arc::new(AtomicUsize::new(0));
         let bytes_sent = Arc::new(AtomicUsize::new(0));
         let name = ai.name.clone();
-        let state = Arc::clone(&ai.state);
-        let max_message_size = Arc::clone(&ai.max_message_size);
-        let inflight_queue_length = Arc::clone(&ai.inflight_queue_length);
-        let will_send_shutdown = Arc::clone(&ai.will_send_shutdown);
 
         let mut init = ChunkInit {
             initial_tsn: ai.my_next_tsn,

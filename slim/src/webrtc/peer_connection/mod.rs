@@ -19,7 +19,7 @@ use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_role::{
-    DTLSRole, DEFAULT_DTLS_ROLE_ANSWER, DEFAULT_DTLS_ROLE_OFFER,
+    DTLSRole, DEFAULT_DTLS_ROLE_OFFER,
 };
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
@@ -27,10 +27,7 @@ use crate::webrtc::error::{flatten_errs, Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
-use crate::webrtc::ice_transport::ice_gatherer::{
-    OnGatheringCompleteHdlrFn, OnICEGathererStateChangeHdlrFn, OnLocalCandidateHdlrFn,
-    RTCIceGatherer,
-};
+use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
@@ -39,7 +36,6 @@ use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 use crate::webrtc::peer_connection::configuration::RTCConfiguration;
-use crate::webrtc::peer_connection::offer_answer_options::RTCAnswerOptions;
 use crate::webrtc::peer_connection::operation::{Operation, Operations};
 use crate::webrtc::peer_connection::peer_connection_state::{
     NegotiationNeededState, RTCPeerConnectionState,
@@ -53,7 +49,6 @@ use crate::webrtc::peer_connection::signaling_state::{
 };
 use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
-use crate::webrtc::rtp_transceiver::rtp_sender::RTCRtpSender;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::{
     find_by_mid, satisfy_type_and_direction, RTCRtpTransceiver,
@@ -62,7 +57,6 @@ use crate::webrtc::rtp_transceiver::{RTCRtpTransceiverInit, SSRC};
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-use crate::webrtc::track::track_local::TrackLocal;
 use crate::webrtc::track::track_remote::TrackRemote;
 
 use ice::candidate::candidate_base::unmarshal_candidate;
@@ -79,10 +73,10 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 use ::sdp::description::session::{ATTR_KEY_ICELITE, ATTR_KEY_MSID};
 use interceptor::registry::Registry;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::Mutex;
 
 /// SIMULCAST_MAX_PROBE_ROUTINES is how many active routines can be used to probe
 /// If the total amount of incoming SSRCes exceeds this new requests will be ignored
@@ -165,12 +159,10 @@ struct NegotiationNeededParams {
 /// peer-to-peer communications with another PeerConnection instance in a
 /// browser, or to another endpoint implementing the required protocols.
 pub struct RTCPeerConnection {
-    stats_id: String,
+
     idp_login_url: Option<String>,
 
     configuration: RTCConfiguration,
-
-    interceptor_rtcp_writer: Arc<dyn RTCPWriter + Send + Sync>,
 
     interceptor: Arc<dyn Interceptor + Send + Sync>,
 
@@ -197,22 +189,12 @@ impl RTCPeerConnection {
         let interceptor = api.interceptor_registry.build("").expect("can't create interceptor registry");
         let (internal, configuration) =
             PeerConnectionInternal::new(&api, Arc::downgrade(&interceptor), configuration).await.expect("can't create peer connection");
-        let internal_rtcp_writer = Arc::clone(&internal) as Arc<dyn RTCPWriter + Send + Sync>;
-        let interceptor_rtcp_writer = interceptor.bind_rtcp_writer(internal_rtcp_writer).await;
 
         // <https://w3c.github.io/webrtc-pc/#constructor> (Step #2)
         // Some variables defined explicitly despite their implicit zero values to
         // allow better readability to understand what is happening.
         Arc::new(RTCPeerConnection {
-            stats_id: format!(
-                "PeerConnection-{}",
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
-            ),
             interceptor,
-            interceptor_rtcp_writer,
             internal,
             configuration,
             idp_login_url: None,

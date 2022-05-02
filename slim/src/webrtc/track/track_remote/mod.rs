@@ -1,43 +1,28 @@
-use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
 use crate::webrtc::rtp_transceiver::SSRC;
 
-use crate::webrtc::rtp_transceiver::rtp_receiver::RTPReceiverInternal;
-
-use bytes::Bytes;
-use interceptor::Attributes;
 use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
-use std::sync::Weak;
 use tokio::sync::Mutex;
-use util::Unmarshal;
 
 lazy_static! {
     static ref TRACK_REMOTE_UNIQUE_ID: AtomicUsize = AtomicUsize::new(0);
 }
 
 #[derive(Default)]
-struct TrackRemoteInternal {
-    peeked: Option<Bytes>,
-    peeked_attributes: Option<Attributes>,
-}
+struct TrackRemoteInternal;
 
 /// TrackRemote represents a single inbound source of media
 pub struct TrackRemote {
-    tid: usize,
 
     id: Mutex<String>,
     stream_id: Mutex<String>,
 
-    receive_mtu: usize,
     payload_type: AtomicU8, //PayloadType,
     kind: AtomicU8,         //RTPCodecType,
     ssrc: AtomicU32,        //SSRC,
     codec: Mutex<RTCRtpCodecParameters>,
     pub(crate) params: Mutex<RTCRtpParameters>,
     rid: String,
-
-    receiver: Option<Weak<RTPReceiverInternal>>,
-    internal: Mutex<TrackRemoteInternal>,
 }
 
 impl std::fmt::Debug for TrackRemote {
@@ -57,26 +42,19 @@ impl std::fmt::Debug for TrackRemote {
 
 impl TrackRemote {
     pub(crate) fn new(
-        receive_mtu: usize,
         kind: RTPCodecType,
         ssrc: SSRC,
         rid: String,
-        receiver: Weak<RTPReceiverInternal>,
     ) -> Self {
         TrackRemote {
-            tid: TRACK_REMOTE_UNIQUE_ID.fetch_add(1, Ordering::SeqCst),
             id: Default::default(),
             stream_id: Default::default(),
-            receive_mtu,
             payload_type: Default::default(),
             kind: AtomicU8::new(kind as u8),
             ssrc: AtomicU32::new(ssrc),
             codec: Default::default(),
             params: Default::default(),
             rid,
-            receiver: Some(receiver),
-
-            internal: Default::default(),
         }
     }
 

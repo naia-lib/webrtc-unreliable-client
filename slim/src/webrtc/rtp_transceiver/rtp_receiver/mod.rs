@@ -115,15 +115,6 @@ impl RTCRtpReceiver {
 
     /// receive initialize the track and starts all the transports
     pub async fn receive(&self, parameters: &RTCRtpReceiveParameters) -> Result<()> {
-        let receiver = Arc::downgrade(&self.internal);
-
-        let _d = {
-            let mut received_tx = self.received_tx.lock().await;
-            if received_tx.is_none() {
-                return Err(Error::ErrRTPReceiverReceiveAlreadyCalled);
-            }
-            received_tx.take()
-        };
 
         let interceptor= Arc::clone(&self.internal.interceptor);
 
@@ -157,11 +148,9 @@ impl RTCRtpReceiver {
 
             let t = TrackStreams {
                 track: Arc::new(TrackRemote::new(
-                    self.receive_mtu,
                     self.kind,
                     encoding.ssrc,
                     encoding.rid.clone(),
-                    receiver.clone(),
                 )),
                 stream: TrackStream {
                     stream_info,

@@ -14,7 +14,6 @@ pub struct AssociationInternal {
     pub(crate) name: String,
     pub(crate) state: Arc<AtomicU8>,
     pub(crate) max_message_size: Arc<AtomicU32>,
-    pub(crate) inflight_queue_length: Arc<AtomicUsize>,
     pub(crate) will_send_shutdown: Arc<AtomicBool>,
     awake_write_loop_ch: Option<Arc<mpsc::Sender<()>>>,
 
@@ -124,7 +123,6 @@ impl AssociationInternal {
             my_max_num_inbound_streams: u16::MAX,
             payload_queue: PayloadQueue::new(Arc::new(AtomicUsize::new(0))),
             inflight_queue: PayloadQueue::new(Arc::clone(&inflight_queue_length)),
-            inflight_queue_length,
             pending_queue: Arc::new(PendingQueue::new()),
             control_queue: ControlQueue::new(),
             mtu: INITIAL_MTU,
