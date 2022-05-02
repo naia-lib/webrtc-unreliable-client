@@ -30,7 +30,6 @@ pub(crate) struct PeerConnectionInternal {
     pub(super) ice_connection_state: Arc<AtomicU8>,
 
     pub(super) sctp_transport: Arc<RTCSctpTransport>,
-    pub(super) rtp_transceivers: Arc<Mutex<Vec<Arc<RTCRtpTransceiver>>>>,
 
     pub(super) on_signaling_state_change_handler: Arc<Mutex<Option<OnSignalingStateChangeHdlrFn>>>,
     pub(super) on_ice_connection_state_change_handler:
@@ -69,7 +68,6 @@ impl PeerConnectionInternal {
             dtls_transport: Arc::new(Default::default()),
             ice_connection_state: Arc::new(AtomicU8::new(RTCIceConnectionState::New as u8)),
             sctp_transport: Arc::new(Default::default()),
-            rtp_transceivers: Arc::new(Default::default()),
             on_signaling_state_change_handler: Arc::new(Default::default()),
             on_ice_connection_state_change_handler: Arc::new(Default::default()),
             on_data_channel_handler: Arc::new(Default::default()),
@@ -288,7 +286,6 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            is_plan_b,
             media_description_fingerprint: self.setting_engine.sdp_media_level_fingerprints,
             is_icelite: self.setting_engine.candidates.ice_lite,
             connection_role: DEFAULT_DTLS_ROLE_OFFER.to_connection_role(),
@@ -363,7 +360,6 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            is_plan_b: detected_plan_b,
             media_description_fingerprint: self.setting_engine.sdp_media_level_fingerprints,
             is_icelite: self.setting_engine.candidates.ice_lite,
             connection_role,

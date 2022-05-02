@@ -47,7 +47,6 @@ use crate::webrtc::peer_connection::sdp::*;
 use crate::webrtc::peer_connection::signaling_state::{
     check_next_signaling_state, RTCSignalingState, StateChangeOp,
 };
-use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -393,7 +392,6 @@ impl RTCPeerConnection {
         // audio RTCRtpTransceiver was added to connection, but while performing the in-parallel
         // steps to create an offer, a video RTCRtpTransceiver was added, requiring additional
         // inspection of video system resources.
-        let count = 0;
         let offer;
 
         loop {

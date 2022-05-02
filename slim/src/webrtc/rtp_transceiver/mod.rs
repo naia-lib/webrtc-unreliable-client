@@ -2,12 +2,9 @@
 use crate::webrtc::rtp_transceiver::rtp_codec::*;
 
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::AtomicU8;
-use tokio::sync::Mutex;
 
 pub(crate) mod fmtp;
 pub mod rtp_codec;
-pub mod rtp_transceiver_direction;
 
 /// SSRC represents a synchronization source
 /// A synchronization source is a randomly chosen
@@ -83,19 +80,4 @@ pub struct RTCRtpReceiveParameters {
 #[derive(Debug)]
 pub struct RTCRtpSendParameters {
     pub encodings: Vec<RTCRtpEncodingParameters>,
-}
-
-/// RTPTransceiver represents a combination of an RTPSender and an RTPReceiver that share a common mid.
-pub struct RTCRtpTransceiver {
-    // Removing the below value crashes compilation..
-    #[allow(dead_code)]
-    codecs: bool,
-    #[allow(dead_code)]
-    receiver: bool,
-
-    mid: Mutex<String>,                           //atomic.Value
-    sender: bool,     //atomic.Value
-    direction: AtomicU8,                          //RTPTransceiverDirection, //atomic.Value
-    pub(crate) stopped: bool,
-    pub(crate) kind: bool,
 }

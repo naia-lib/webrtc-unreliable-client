@@ -5,8 +5,6 @@ use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
-use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
 
 pub mod sdp_type;
 pub mod session_description;
@@ -109,7 +107,7 @@ pub(crate) async fn add_data_media_section(
         params.dtls_role.to_string(),
     )
     .with_value_attribute(ATTR_KEY_MID.to_owned(), params.mid_value)
-    .with_property_attribute(RTCRtpTransceiverDirection::Sendrecv.to_string())
+    .with_property_attribute("sendrecv".to_owned())
     .with_property_attribute("sctp-port:5000".to_owned())
     .with_ice_credentials(
         params.ice_params.username_fragment,
@@ -172,12 +170,10 @@ pub(crate) async fn populate_local_candidates(
 #[derive(Default)]
 pub(crate) struct MediaSection {
     pub(crate) id: String,
-    pub(crate) transceivers: Vec<Arc<RTCRtpTransceiver>>,
     pub(crate) data: bool,
 }
 
 pub(crate) struct PopulateSdpParams {
-    pub(crate) is_plan_b: bool,
     pub(crate) media_description_fingerprint: bool,
     pub(crate) is_icelite: bool,
     pub(crate) connection_role: ConnectionRole,
@@ -207,11 +203,6 @@ pub(crate) async fn populate_sdp(
     };
 
     for (i, m) in media_sections.iter().enumerate() {
-        if m.data && !m.transceivers.is_empty() {
-            return Err(Error::ErrSDPMediaSectionMediaDataChanInvalid);
-        } else if !params.is_plan_b && m.transceivers.len() > 1 {
-            return Err(Error::ErrSDPMediaSectionMultipleTrackInvalid);
-        }
 
         let should_add_candidates = i == 0;
 

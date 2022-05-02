@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
 use bytes::Bytes;
@@ -12,7 +12,7 @@ use sha2::{Digest, Sha256};
 use srtp::protection_profile::ProtectionProfile;
 use srtp::session::Session;
 use srtp::stream::Stream;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::Mutex;
 use util::Conn;
 
 use dtls_role::*;
@@ -73,9 +73,6 @@ pub struct RTCDtlsTransport {
     pub(crate) srtcp_endpoint: Mutex<Option<Arc<Endpoint>>>,
 
     pub(crate) simulcast_streams: Mutex<HashMap<SSRC, Arc<Stream>>>,
-
-    pub(crate) srtp_ready_signal: Arc<AtomicBool>,
-    pub(crate) srtp_ready_tx: Mutex<Option<mpsc::Sender<()>>>,
 }
 
 impl RTCDtlsTransport {
@@ -84,13 +81,10 @@ impl RTCDtlsTransport {
         certificates: Vec<RTCCertificate>,
         setting_engine: Arc<SettingEngine>,
     ) -> Self {
-        let (srtp_ready_tx, _) = mpsc::channel(1);
         RTCDtlsTransport {
             ice_transport,
             certificates,
             setting_engine,
-            srtp_ready_signal: Arc::new(AtomicBool::new(false)),
-            srtp_ready_tx: Mutex::new(Some(srtp_ready_tx)),
             state: AtomicU8::new(RTCDtlsTransportState::New as u8),
             ..Default::default()
         }
