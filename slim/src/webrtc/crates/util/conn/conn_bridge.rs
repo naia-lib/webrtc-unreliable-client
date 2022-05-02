@@ -82,41 +82,6 @@ pub struct Bridge {
 }
 
 impl Bridge {
-    pub fn new(
-        loss_chance: u8,
-        filter_cb0: Option<Box<dyn Fn(&Bytes) -> bool + Send + Sync>>,
-        filter_cb1: Option<Box<dyn Fn(&Bytes) -> bool + Send + Sync>>,
-    ) -> (Arc<Bridge>, impl Conn, impl Conn) {
-        let (wr_tx0, rd_rx0) = mpsc::channel(1024);
-        let (wr_tx1, rd_rx1) = mpsc::channel(1024);
-
-        let br = Arc::new(Bridge {
-            wr_tx: [Some(wr_tx0), Some(wr_tx1)],
-            filter_cb: [filter_cb0, filter_cb1],
-            ..Default::default()
-        });
-        let conn0 = BridgeConn {
-            br: Arc::clone(&br),
-            id: 0,
-            rd_rx: Mutex::new(rd_rx0),
-            loss_chance,
-        };
-        let conn1 = BridgeConn {
-            br: Arc::clone(&br),
-            id: 1,
-            rd_rx: Mutex::new(rd_rx1),
-            loss_chance,
-        };
-
-        (br, conn0, conn1)
-    }
-
-    /// Len returns number of queued packets.
-    #[allow(clippy::len_without_is_empty)]
-    pub async fn len(&self, id: usize) -> usize {
-        let q = self.queue[id].lock().await;
-        q.len()
-    }
 
     pub async fn push(&self, b: &[u8], id: usize) -> Result<usize> {
         // Push rate should be limited as same as Tick rate.
@@ -149,68 +114,6 @@ impl Bridge {
         }
 
         Ok(b.len())
-    }
-
-    /// Reorder inverses the order of packets currently in the specified queue.
-    pub async fn reorder(&self, id: usize) -> bool {
-        let mut queue = self.queue[id].lock().await;
-        inverse(&mut queue)
-    }
-
-    /// Drop drops the specified number of packets from the given offset index
-    /// of the specified queue.
-    pub async fn drop_offset(&self, id: usize, offset: usize, n: usize) {
-        let mut queue = self.queue[id].lock().await;
-        queue.drain(offset..offset + n);
-    }
-
-    /// drop_next_nwrites drops the next n packets that will be written
-    /// to the specified queue.
-    pub async fn drop_next_nwrites(&self, id: usize, n: usize) {
-        self.drop_nwrites[id].store(n, Ordering::SeqCst);
-    }
-
-    /// reorder_next_nwrites drops the next n packets that will be written
-    /// to the specified queue.
-    pub async fn reorder_next_nwrites(&self, id: usize, n: usize) {
-        self.reorder_nwrites[id].store(n, Ordering::SeqCst);
-    }
-
-    pub async fn clear(&self) {
-        for id in 0..2 {
-            let mut queue = self.queue[id].lock().await;
-            queue.clear();
-        }
-    }
-
-    /// Tick attempts to hand a packet from the queue for each directions, to readers,
-    /// if there are waiting on the queue. If there's no reader, it will return
-    /// immediately.
-    pub async fn tick(&self) -> usize {
-        let mut n = 0;
-
-        for id in 0..2 {
-            let mut queue = self.queue[id].lock().await;
-            if let Some(d) = queue.pop_front() {
-                n += 1;
-                if let Some(wr_tx) = &self.wr_tx[1 - id] {
-                    let _ = wr_tx.send(d).await;
-                }
-            }
-        }
-
-        n
-    }
-
-    /// Process repeats tick() calls until no more outstanding packet in the queues.
-    pub async fn process(&self) {
-        loop {
-            tokio::time::sleep(TICK_WAIT).await;
-            self.tick().await;
-            if self.len(0).await == 0 && self.len(1).await == 0 {
-                break;
-            }
-        }
     }
 }
 

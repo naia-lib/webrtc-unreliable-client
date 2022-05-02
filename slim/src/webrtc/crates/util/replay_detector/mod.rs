@@ -86,22 +86,6 @@ pub struct WrappedSlidingWindowDetector {
     init: bool,
 }
 
-impl WrappedSlidingWindowDetector {
-    // WithWrap creates ReplayDetector allowing sequence wrapping.
-    // This is suitable for short bitwidth counter like SRTP and SRTCP.
-    pub fn new(window_size: usize, max_seq: u64) -> Self {
-        WrappedSlidingWindowDetector {
-            accepted: false,
-            seq: 0,
-            latest_seq: 0,
-            max_seq,
-            window_size,
-            mask: FixedBigInt::new(window_size),
-            init: false,
-        }
-    }
-}
-
 impl ReplayDetector for WrappedSlidingWindowDetector {
     fn check(&mut self, seq: u64) -> bool {
         self.accepted = false;

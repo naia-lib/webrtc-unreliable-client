@@ -276,46 +276,4 @@ impl Buffer {
         b.closed = true;
         self.notify.notify_waiters();
     }
-
-    pub async fn is_closed(&self) -> bool {
-        let b = self.buffer.lock().await;
-
-        b.closed
-    }
-
-    // Count returns the number of packets in the buffer.
-    pub async fn count(&self) -> usize {
-        let b = self.buffer.lock().await;
-
-        b.count
-    }
-
-    // set_limit_count controls the maximum number of packets that can be buffered.
-    // Causes Write to return ErrFull when this limit is reached.
-    // A zero value will disable this limit.
-    pub async fn set_limit_count(&self, limit: usize) {
-        let mut b = self.buffer.lock().await;
-
-        b.limit_count = limit
-    }
-
-    // Size returns the total byte size of packets in the buffer.
-    pub async fn size(&self) -> usize {
-        let b = self.buffer.lock().await;
-
-        b.size()
-    }
-
-    // set_limit_size controls the maximum number of bytes that can be buffered.
-    // Causes Write to return ErrFull when this limit is reached.
-    // A zero value means 4MB since v0.11.0.
-    //
-    // User can set packetioSizeHardlimit build tag to enable 4MB hardlimit.
-    // When packetioSizeHardlimit build tag is set, set_limit_size exceeding
-    // the hardlimit will be silently discarded.
-    pub async fn set_limit_size(&self, limit: usize) {
-        let mut b = self.buffer.lock().await;
-
-        b.limit_size = limit
-    }
 }
