@@ -27,6 +27,7 @@ pub struct RTPReceiverInternal {
     transceiver_codecs: Mutex<Option<Arc<Mutex<Vec<RTCRtpCodecParameters>>>>>,
     #[allow(dead_code)]
     transport: Arc<RTCDtlsTransport>,
+
     media_engine: Arc<MediaEngine>,
     interceptor: Arc<dyn Interceptor + Send + Sync>,
 }
@@ -327,7 +328,7 @@ impl RTCRtpReceiver {
             (
                 self.internal.get_parameters().await,
                 Arc::clone(&self.internal.interceptor),
-                Arc::clone(&self.internal.media_engine),
+                Arc::new(MediaEngine),
             )
         };
 

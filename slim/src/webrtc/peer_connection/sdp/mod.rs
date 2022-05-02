@@ -391,163 +391,45 @@ pub(crate) struct AddTransceiverSdpParams {
 
 pub(crate) async fn add_transceiver_sdp(
     mut d: SessionDescription,
-    dtls_fingerprints: &[RTCDtlsFingerprint],
-    ice_params: &RTCIceParameters,
-    candidates: &[RTCIceCandidate],
     media_section: &MediaSection,
-    params: AddTransceiverSdpParams,
 ) -> Result<(SessionDescription, bool)> {
     if media_section.transceivers.is_empty() {
         return Err(Error::ErrSDPZeroTransceivers);
     }
-    let (is_plan_b, should_add_candidates, mid_value, dtls_role, ice_gathering_state) = (
-        params.is_plan_b,
-        params.should_add_candidates,
-        params.mid_value,
-        params.dtls_role,
-        params.ice_gathering_state,
-    );
 
     let transceivers = &media_section.transceivers;
     // Use the first transceiver to generate the section attributes
     let t = &transceivers[0];
-    let mut media = MediaDescription::new_jsep_media_description(t.kind.to_string(), vec![])
-        .with_value_attribute(ATTR_KEY_CONNECTION_SETUP.to_owned(), dtls_role.to_string())
-        .with_value_attribute(ATTR_KEY_MID.to_owned(), mid_value.clone())
-        .with_ice_credentials(
-            ice_params.username_fragment.clone(),
-            ice_params.password.clone(),
-        )
-        .with_property_attribute(ATTR_KEY_RTCPMUX.to_owned())
-        .with_property_attribute(ATTR_KEY_RTCPRSIZE.to_owned());
 
-    let codecs = t.get_codecs().await;
-    for codec in &codecs {
-        let name = codec
-            .capability
-            .mime_type
-            .trim_start_matches("audio/")
-            .trim_start_matches("video/")
-            .to_owned();
-        media = media.with_codec(
-            codec.payload_type,
-            name,
-            codec.capability.clock_rate,
-            codec.capability.channels,
-            codec.capability.sdp_fmtp_line.clone(),
-        );
-
-        for feedback in &codec.capability.rtcp_feedback {
-            media = media.with_value_attribute(
-                "rtcp-fb".to_owned(),
-                format!(
-                    "{} {} {}",
-                    codec.payload_type, feedback.typ, feedback.parameter
-                ),
-            );
-        }
-    }
-    if codecs.is_empty() {
-        // If we are sender and we have no codecs throw an error early
-        if t.sender().await.is_some() {
-            return Err(Error::ErrSenderWithNoCodecs);
-        }
-
-        // Explicitly reject track if we don't have the codec
-        d = d.with_media(MediaDescription {
-            media_name: sdp::description::media::MediaName {
-                media: t.kind.to_string(),
-                port: RangedPort {
-                    value: 0,
-                    range: None,
-                },
-                protos: vec![
-                    "UDP".to_owned(),
-                    "TLS".to_owned(),
-                    "RTP".to_owned(),
-                    "SAVPF".to_owned(),
-                ],
-                formats: vec!["0".to_owned()],
-            },
-            media_title: None,
-            connection_information: None,
-            bandwidth: vec![],
-            encryption_key: None,
-            attributes: vec![],
-        });
-        return Ok((d, false));
-    }
-
-    let mut directions = vec![];
+    // If we are sender and we have no codecs throw an error early
     if t.sender().await.is_some() {
-        directions.push(RTCRtpTransceiverDirection::Sendonly);
-    }
-    if t.receiver().await.is_some() {
-        directions.push(RTCRtpTransceiverDirection::Recvonly);
+        return Err(Error::ErrSenderWithNoCodecs);
     }
 
-    let parameters = RTCRtpParameters {
-        header_extensions: vec![],
-        codecs: vec![],
-    };
-    for rtp_extension in &parameters.header_extensions {
-        let ext_url = Url::parse(rtp_extension.uri.as_str())?;
-        media = media.with_extmap(sdp::extmap::ExtMap {
-            value: rtp_extension.id,
-            uri: Some(ext_url),
-            ..Default::default()
-        });
-    }
+    // Explicitly reject track if we don't have the codec
+    d = d.with_media(MediaDescription {
+        media_name: sdp::description::media::MediaName {
+            media: t.kind.to_string(),
+            port: RangedPort {
+                value: 0,
+                range: None,
+            },
+            protos: vec![
+                "UDP".to_owned(),
+                "TLS".to_owned(),
+                "RTP".to_owned(),
+                "SAVPF".to_owned(),
+            ],
+            formats: vec!["0".to_owned()],
+        },
+        media_title: None,
+        connection_information: None,
+        bandwidth: vec![],
+        encryption_key: None,
+        attributes: vec![],
+    });
+    return Ok((d, false));
 
-    if !media_section.rid_map.is_empty() {
-        let mut recv_rids: Vec<String> = vec![];
-
-        for rid in media_section.rid_map.keys() {
-            media =
-                media.with_value_attribute(SDP_ATTRIBUTE_RID.to_owned(), rid.to_owned() + " recv");
-            recv_rids.push(rid.to_owned());
-        }
-        // Simulcast
-        media = media.with_value_attribute(
-            "simulcast".to_owned(),
-            "recv ".to_owned() + recv_rids.join(";").as_str(),
-        );
-    }
-
-    for mt in transceivers {
-        if let Some(sender) = mt.sender().await {
-            if let Some(track) = sender.track().await {
-                media = media.with_media_source(
-                    sender.ssrc,
-                    track.stream_id().to_owned(), /* cname */
-                    track.stream_id().to_owned(), /* streamLabel */
-                    track.id().to_owned(),
-                );
-                if !is_plan_b {
-                    media = media.with_property_attribute(
-                        "msid:".to_owned() + track.stream_id() + " " + track.id(),
-                    );
-                    break;
-                }
-            }
-        }
-    }
-
-    media = media.with_property_attribute(t.direction().to_string());
-
-    for fingerprint in dtls_fingerprints {
-        media = media.with_fingerprint(
-            fingerprint.algorithm.to_owned(),
-            fingerprint.value.to_uppercase(),
-        );
-    }
-
-    if should_add_candidates {
-        media =
-            add_candidates_to_media_descriptions(candidates, media, ice_gathering_state).await?;
-    }
-
-    Ok((d.with_media(media), true))
 }
 
 #[derive(Default)]
@@ -617,11 +499,7 @@ pub(crate) async fn populate_sdp(
             };
             let (d1, should_add_id) = add_transceiver_sdp(
                 d,
-                &media_dtls_fingerprints,
-                ice_params,
-                candidates,
                 m,
-                params,
             )
             .await?;
             d = d1;

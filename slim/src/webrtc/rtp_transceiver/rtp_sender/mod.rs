@@ -1,7 +1,7 @@
 
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
-use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
+use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters};
 use crate::webrtc::rtp_transceiver::srtp_writer_future::SrtpWriterFuture;
 use crate::webrtc::rtp_transceiver::{
     create_stream_info, PayloadType, RTCRtpEncodingParameters, RTCRtpSendParameters,
@@ -205,14 +205,6 @@ impl RTCRtpSender {
     /// get_parameters describes the current configuration for the encoding and
     /// transmission of media on the sender's track.
     pub async fn get_parameters(&self) -> RTCRtpSendParameters {
-        let kind = {
-            let track = self.track.lock().await;
-            if let Some(t) = &*track {
-                t.kind()
-            } else {
-                RTPCodecType::default()
-            }
-        };
 
         let mut send_parameters = {
             RTCRtpSendParameters {

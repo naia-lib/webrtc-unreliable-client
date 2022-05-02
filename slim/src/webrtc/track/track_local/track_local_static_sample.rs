@@ -1,8 +1,6 @@
 use super::track_local_static_rtp::TrackLocalStaticRTP;
 use super::*;
 
-use tokio::sync::Mutex;
-
 #[derive(Debug, Clone)]
 struct TrackLocalStaticSampleInternal;
 
@@ -11,7 +9,6 @@ struct TrackLocalStaticSampleInternal;
 #[derive(Debug)]
 pub struct TrackLocalStaticSample {
     rtp_track: TrackLocalStaticRTP,
-    internal: Mutex<TrackLocalStaticSampleInternal>,
 }
 
 #[async_trait]

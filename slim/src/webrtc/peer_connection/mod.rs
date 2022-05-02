@@ -11,7 +11,6 @@ pub mod policy;
 pub mod sdp;
 pub mod signaling_state;
 
-use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::api::API;
 use crate::webrtc::data_channel::data_channel_parameters::DataChannelParameters;
