@@ -1,11 +1,8 @@
-#[cfg(test)]
-mod rtp_sender_test;
 
 use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
-use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTPCodecType};
-use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
+use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
 use crate::webrtc::rtp_transceiver::srtp_writer_future::SrtpWriterFuture;
 use crate::webrtc::rtp_transceiver::{
     create_stream_info, PayloadType, RTCRtpEncodingParameters, RTCRtpSendParameters,
@@ -223,10 +220,10 @@ impl RTCRtpSender {
 
         let mut send_parameters = {
             RTCRtpSendParameters {
-                rtp_parameters: self
-                    .media_engine
-                    .get_rtp_parameters_by_kind(kind, &[RTCRtpTransceiverDirection::Sendonly])
-                    .await,
+                rtp_parameters: RTCRtpParameters {
+                    header_extensions: vec![],
+                    codecs: vec![],
+                },
                 encodings: vec![RTCRtpEncodingParameters {
                     ssrc: self.ssrc,
                     payload_type: self.payload_type,
@@ -241,10 +238,10 @@ impl RTCRtpSender {
                 if let Some(t) = t.upgrade() {
                     t.get_codecs().await
                 } else {
-                    self.media_engine.get_codecs_by_kind(kind).await
+                    vec![]
                 }
             } else {
-                self.media_engine.get_codecs_by_kind(kind).await
+                vec![]
             }
         };
         send_parameters.rtp_parameters.codecs = codecs;
@@ -305,10 +302,10 @@ impl RTCRtpSender {
         let result = if let Some(t) = &track {
             let new_context = TrackLocalContext {
                 id: context.id.clone(),
-                params: self
-                    .media_engine
-                    .get_rtp_parameters_by_kind(t.kind(), &[RTCRtpTransceiverDirection::Sendonly])
-                    .await,
+                params: RTCRtpParameters {
+                    header_extensions: vec![],
+                    codecs: vec![],
+                },
                 ssrc: context.ssrc,
                 write_stream: context.write_stream.clone(),
             };
@@ -356,17 +353,10 @@ impl RTCRtpSender {
             let track = self.track.lock().await;
             let mut context = TrackLocalContext {
                 id: self.id.clone(),
-                params: self
-                    .media_engine
-                    .get_rtp_parameters_by_kind(
-                        if let Some(t) = &*track {
-                            t.kind()
-                        } else {
-                            RTPCodecType::default()
-                        },
-                        &[RTCRtpTransceiverDirection::Sendonly],
-                    )
-                    .await,
+                params: RTCRtpParameters {
+                    header_extensions: vec![],
+                    codecs: vec![],
+                },
                 ssrc: parameters.encodings[0].ssrc,
                 write_stream: Some(
                     Arc::clone(&write_stream) as Arc<dyn TrackLocalWriter + Send + Sync>

@@ -190,20 +190,8 @@ impl RTCRtpTransceiver {
 
     /// set_codec_preferences sets preferred list of supported codecs
     /// if codecs is empty or nil we reset to default from MediaEngine
-    pub async fn set_codec_preferences(&self, codecs: Vec<RTCRtpCodecParameters>) -> Result<()> {
-        for codec in &codecs {
-            let media_engine_codecs = self.media_engine.get_codecs_by_kind(self.kind).await;
-            let (_, match_type) = codec_parameters_fuzzy_search(codec, &media_engine_codecs);
-            if match_type == CodecMatch::None {
-                return Err(Error::ErrRTPTransceiverCodecUnsupported);
-            }
-        }
-
-        {
-            let mut c = self.codecs.lock().await;
-            *c = codecs;
-        }
-        Ok(())
+    pub async fn set_codec_preferences(&self, _codecs: Vec<RTCRtpCodecParameters>) -> Result<()> {
+        return Err(Error::ErrRTPTransceiverCodecUnsupported);
     }
 
     /// Codecs returns list of supported codecs

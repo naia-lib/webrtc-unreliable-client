@@ -1,8 +1,6 @@
 pub(crate) mod generic;
 pub(crate) mod h264;
 
-use crate::webrtc::rtp_transceiver::fmtp::generic::GenericFmtp;
-use crate::webrtc::rtp_transceiver::fmtp::h264::H264Fmtp;
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt;
@@ -29,29 +27,5 @@ pub trait Fmtp: fmt::Debug {
 impl PartialEq for dyn Fmtp {
     fn eq(&self, other: &Self) -> bool {
         self.equal(other)
-    }
-}
-
-/// parse parses an fmtp string based on the MimeType
-pub fn parse(mime_type: &str, line: &str) -> Box<dyn Fmtp> {
-    let mut parameters = HashMap::new();
-    for p in line.split(';').collect::<Vec<&str>>() {
-        let pp: Vec<&str> = p.trim().splitn(2, '=').collect();
-        let key = pp[0].to_lowercase();
-        let value = if pp.len() > 1 {
-            pp[1].to_owned()
-        } else {
-            String::new()
-        };
-        parameters.insert(key, value);
-    }
-
-    if mime_type.to_uppercase() == "video/h264".to_uppercase() {
-        Box::new(H264Fmtp { parameters })
-    } else {
-        Box::new(GenericFmtp {
-            mime_type: mime_type.to_owned(),
-            parameters,
-        })
     }
 }

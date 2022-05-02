@@ -63,7 +63,6 @@ use crate::webrtc::rtp_transceiver::{RTCRtpTransceiverInit, SSRC};
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-use crate::webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSample;
 use crate::webrtc::track::track_local::TrackLocal;
 use crate::webrtc::track::track_remote::TrackRemote;
 
@@ -1252,10 +1251,6 @@ impl RTCPeerConnection {
             .await?;
 
         if let Some(parsed) = &desc.parsed {
-            self.internal
-                .media_engine
-                .update_from_remote_description(parsed)
-                .await?;
 
             let mut local_transceivers = self.get_transceivers().await;
             let remote_description = self.remote_description().await;

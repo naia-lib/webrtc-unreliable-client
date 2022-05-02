@@ -87,7 +87,7 @@ impl PeerConnectionInternal {
 
             setting_engine: Arc::clone(&api.setting_engine),
             media_engine: if !api.setting_engine.disable_media_engine_copy {
-                Arc::new(api.media_engine.clone_to())
+                Arc::new(MediaEngine)
             } else {
                 Arc::clone(&api.media_engine)
             },
@@ -467,17 +467,7 @@ impl PeerConnectionInternal {
 
         let t = match direction {
             RTCRtpTransceiverDirection::Sendonly | RTCRtpTransceiverDirection::Sendrecv => {
-                let codecs = self.media_engine.get_codecs_by_kind(kind).await;
-                if codecs.is_empty() {
-                    return Err(Error::ErrNoCodecsAvailable);
-                }
-                let track = Arc::new(TrackLocalStaticSample::new(
-                    codecs[0].capability.clone(),
-                    math_rand_alpha(16),
-                    math_rand_alpha(16),
-                ));
-
-                self.new_transceiver_from_track(direction, track).await?
+                return Err(Error::ErrNoCodecsAvailable);
             }
             RTCRtpTransceiverDirection::Recvonly => {
                 let interceptor = self

@@ -19,22 +19,6 @@ pub struct TrackLocalStaticSample {
     internal: Mutex<TrackLocalStaticSampleInternal>,
 }
 
-impl TrackLocalStaticSample {
-    /// returns a TrackLocalStaticSample
-    pub fn new(codec: RTCRtpCodecCapability, id: String, stream_id: String) -> Self {
-        let rtp_track = TrackLocalStaticRTP::new(codec, id, stream_id);
-
-        TrackLocalStaticSample {
-            rtp_track,
-            internal: Mutex::new(TrackLocalStaticSampleInternal {
-                packetizer: None,
-                sequencer: None,
-                clock_rate: 0.0f64,
-            }),
-        }
-    }
-}
-
 #[async_trait]
 impl TrackLocal for TrackLocalStaticSample {
     /// Bind is called by the PeerConnection after negotiation is complete

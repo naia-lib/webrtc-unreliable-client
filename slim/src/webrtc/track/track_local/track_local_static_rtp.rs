@@ -13,45 +13,13 @@ pub struct TrackLocalStaticRTP {
     stream_id: String,
 }
 
-impl TrackLocalStaticRTP {
-    /// returns a TrackLocalStaticRTP.
-    pub fn new(codec: RTCRtpCodecCapability, id: String, stream_id: String) -> Self {
-        TrackLocalStaticRTP {
-            codec,
-            bindings: Mutex::new(vec![]),
-            id,
-            stream_id,
-        }
-    }
-}
-
 #[async_trait]
 impl TrackLocal for TrackLocalStaticRTP {
     /// bind is called by the PeerConnection after negotiation is complete
     /// This asserts that the code requested is supported by the remote peer.
     /// If so it setups all the state (SSRC and PayloadType) to have a call
     async fn bind(&self, t: &TrackLocalContext) -> Result<RTCRtpCodecParameters> {
-        let parameters = RTCRtpCodecParameters {
-            capability: self.codec.clone(),
-            ..Default::default()
-        };
-
-        let (codec, match_type) = codec_parameters_fuzzy_search(&parameters, t.codec_parameters());
-        if match_type != CodecMatch::None {
-            {
-                let mut bindings = self.bindings.lock().await;
-                bindings.push(Arc::new(TrackBinding {
-                    ssrc: t.ssrc(),
-                    payload_type: codec.payload_type,
-                    write_stream: t.write_stream(),
-                    id: t.id(),
-                }));
-            }
-
-            Ok(codec)
-        } else {
-            Err(Error::ErrUnsupportedCodec)
-        }
+        Err(Error::ErrUnsupportedCodec)
     }
 
     /// unbind implements the teardown logic when the track is no longer needed. This happens

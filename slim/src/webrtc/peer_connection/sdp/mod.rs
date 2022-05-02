@@ -8,7 +8,7 @@ use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
+use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpParameters, RTPCodecType};
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
 use crate::webrtc::rtp_transceiver::SSRC;
@@ -490,9 +490,10 @@ pub(crate) async fn add_transceiver_sdp(
         directions.push(RTCRtpTransceiverDirection::Recvonly);
     }
 
-    let parameters = media_engine
-        .get_rtp_parameters_by_kind(t.kind, &directions)
-        .await;
+    let parameters = RTCRtpParameters {
+        header_extensions: vec![],
+        codecs: vec![],
+    };
     for rtp_extension in &parameters.header_extensions {
         let ext_url = Url::parse(rtp_extension.uri.as_str())?;
         media = media.with_extmap(sdp::extmap::ExtMap {

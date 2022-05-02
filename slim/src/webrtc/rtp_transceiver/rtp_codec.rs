@@ -1,6 +1,5 @@
 use super::*;
 use crate::webrtc::error::{Error, Result};
-use crate::webrtc::rtp_transceiver::fmtp;
 
 use std::fmt;
 
@@ -97,44 +96,10 @@ pub struct RTCRtpParameters {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum CodecMatch {
     None = 0,
-    Partial = 1,
-    Exact = 2,
 }
 
 impl Default for CodecMatch {
     fn default() -> Self {
         CodecMatch::None
     }
-}
-
-/// Do a fuzzy find for a codec in the list of codecs
-/// Used for lookup up a codec in an existing list to find a match
-/// Returns codecMatchExact, codecMatchPartial, or codecMatchNone
-pub(crate) fn codec_parameters_fuzzy_search(
-    needle: &RTCRtpCodecParameters,
-    haystack: &[RTCRtpCodecParameters],
-) -> (RTCRtpCodecParameters, CodecMatch) {
-    let needle_fmtp = fmtp::parse(
-        &needle.capability.mime_type,
-        &needle.capability.sdp_fmtp_line,
-    );
-
-    //TODO: add unicode case-folding equal support
-
-    // First attempt to match on mime_type + sdpfmtp_line
-    for c in haystack {
-        let cfmpt = fmtp::parse(&c.capability.mime_type, &c.capability.sdp_fmtp_line);
-        if needle_fmtp.match_fmtp(&*cfmpt) {
-            return (c.clone(), CodecMatch::Exact);
-        }
-    }
-
-    // Fallback to just mime_type
-    for c in haystack {
-        if c.capability.mime_type.to_uppercase() == needle.capability.mime_type.to_uppercase() {
-            return (c.clone(), CodecMatch::Partial);
-        }
-    }
-
-    (RTCRtpCodecParameters::default(), CodecMatch::None)
 }

@@ -1,15 +1,12 @@
-#[cfg(test)]
-mod rtp_receiver_test;
 
 use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{flatten_errs, Error, Result};
 use crate::webrtc::peer_connection::sdp::TrackDetails;
 use crate::webrtc::rtp_transceiver::rtp_codec::{
-    codec_parameters_fuzzy_search, CodecMatch, RTCRtpCodecCapability, RTCRtpCodecParameters,
+    RTCRtpCodecCapability, RTCRtpCodecParameters,
     RTCRtpParameters, RTPCodecType,
 };
-use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::{
     create_stream_info, RTCRtpDecodingParameters, RTCRtpReceiveParameters, SSRC,
 };
@@ -180,10 +177,10 @@ impl RTPReceiverInternal {
     }
 
     async fn get_parameters(&self) -> RTCRtpParameters {
-        let mut parameters = self
-            .media_engine
-            .get_rtp_parameters_by_kind(self.kind, &[RTCRtpTransceiverDirection::Recvonly])
-            .await;
+        let mut parameters = RTCRtpParameters {
+            header_extensions: vec![],
+            codecs: vec![],
+        };
 
         let transceiver_codecs = self.transceiver_codecs.lock().await;
         if let Some(codecs) = &*transceiver_codecs {
@@ -200,22 +197,7 @@ impl RTPReceiverInternal {
         kind: RTPCodecType,
         media_engine: &Arc<MediaEngine>,
     ) -> Vec<RTCRtpCodecParameters> {
-        let media_engine_codecs = media_engine.get_codecs_by_kind(kind).await;
-        if codecs.is_empty() {
-            return media_engine_codecs;
-        }
-        let mut filtered_codecs = vec![];
-        for codec in codecs {
-            let (c, match_type) = codec_parameters_fuzzy_search(codec, &media_engine_codecs);
-            if match_type != CodecMatch::None {
-                if codec.payload_type == 0 {
-                    codec.payload_type = c.payload_type;
-                }
-                filtered_codecs.push(codec.clone());
-            }
-        }
-
-        filtered_codecs
+        vec![]
     }
 }
 
