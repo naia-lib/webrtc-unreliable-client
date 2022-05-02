@@ -1,8 +1,6 @@
 [workspace]
 members = [
-    "old_client",
     "new_client",
-    "proxy",
     "slim",
     "demos/client",
     "demos/server",

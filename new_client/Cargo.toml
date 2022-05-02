@@ -1,5 +1,5 @@
 [package]
-name = "webrtc-unreliable-client-new"
+name = "webrtc-unreliable-client"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = ".."
