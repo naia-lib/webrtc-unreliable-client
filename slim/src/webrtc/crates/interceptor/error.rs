@@ -23,12 +23,6 @@ pub enum Error {
     ErrInvalidSize,
 
     #[error("{0}")]
-    Srtp(#[from] srtp::Error),
-    #[error("{0}")]
-    Rtcp(#[from] rtcp::Error),
-    #[error("{0}")]
-    Rtp(#[from] rtp::Error),
-    #[error("{0}")]
     Util(#[from] util::Error),
 
     #[error("{0}")]

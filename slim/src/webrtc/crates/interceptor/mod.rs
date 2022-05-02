@@ -16,7 +16,6 @@ pub mod noop;
 pub mod registry;
 pub mod report;
 pub mod stream_info;
-pub mod stream_reader;
 pub mod twcc;
 
 pub use error::Error;
@@ -33,27 +32,6 @@ pub trait InterceptorBuilder {
 /// packets, or sending your own packets as needed.
 #[async_trait]
 pub trait Interceptor {
-    /// bind_rtcp_reader lets you modify any incoming RTCP packets. It is called once per sender/receiver, however this might
-    /// change in the future. The returned method will be called once per packet batch.
-    async fn bind_rtcp_reader(
-        &self,
-        reader: Arc<dyn RTCPReader + Send + Sync>,
-    ) -> Arc<dyn RTCPReader + Send + Sync>;
-
-    /// bind_rtcp_writer lets you modify any outgoing RTCP packets. It is called once per PeerConnection. The returned method
-    /// will be called once per packet batch.
-    async fn bind_rtcp_writer(
-        &self,
-        writer: Arc<dyn RTCPWriter + Send + Sync>,
-    ) -> Arc<dyn RTCPWriter + Send + Sync>;
-
-    /// bind_local_stream lets you modify any outgoing RTP packets. It is called once for per LocalStream. The returned method
-    /// will be called once per rtp packet.
-    async fn bind_local_stream(
-        &self,
-        info: &StreamInfo,
-        writer: Arc<dyn RTPWriter + Send + Sync>,
-    ) -> Arc<dyn RTPWriter + Send + Sync>;
 
     /// unbind_local_stream is called when the Stream is removed. It can be used to clean up any data related to that track.
     async fn unbind_local_stream(&self, info: &StreamInfo);

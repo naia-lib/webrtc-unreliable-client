@@ -17,44 +17,6 @@ pub(crate) struct ReceiverReportInternal {
     pub(crate) close_rx: Mutex<Option<mpsc::Receiver<()>>>,
 }
 
-pub(crate) struct ReceiverReportRtcpReader {
-    pub(crate) internal: Arc<ReceiverReportInternal>,
-    pub(crate) parent_rtcp_reader: Arc<dyn RTCPReader + Send + Sync>,
-}
-
-#[async_trait]
-impl RTCPReader for ReceiverReportRtcpReader {
-    async fn read(&self, buf: &mut [u8], a: &Attributes) -> Result<(usize, Attributes)> {
-        let (n, attr) = { self.parent_rtcp_reader.read(buf, a).await? };
-
-        let mut b = &buf[..n];
-        let pkts = rtcp::packet::unmarshal(&mut b)?;
-
-        let now = if let Some(f) = &self.internal.now {
-            f().await
-        } else {
-            SystemTime::now()
-        };
-
-        for p in &pkts {
-            if let Some(sr) = p
-                .as_any()
-                .downcast_ref::<rtcp::sender_report::SenderReport>()
-            {
-                let stream = {
-                    let m = self.internal.streams.lock().await;
-                    m.get(&sr.ssrc).cloned()
-                };
-                if let Some(stream) = stream {
-                    stream.process_sender_report(now, sr).await;
-                }
-            }
-        }
-
-        Ok((n, attr))
-    }
-}
-
 /// ReceiverReport interceptor generates receiver reports.
 pub struct ReceiverReport {
     pub(crate) internal: Arc<ReceiverReportInternal>,

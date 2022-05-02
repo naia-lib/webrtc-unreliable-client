@@ -79,32 +79,6 @@ impl ResponderInternal {
     }
 }
 
-pub struct ResponderRtcpReader {
-    parent_rtcp_reader: Arc<dyn RTCPReader + Send + Sync>,
-    internal: Arc<ResponderInternal>,
-}
-
-#[async_trait]
-impl RTCPReader for ResponderRtcpReader {
-    async fn read(&self, buf: &mut [u8], a: &Attributes) -> Result<(usize, Attributes)> {
-        let (n, attr) = { self.parent_rtcp_reader.read(buf, a).await? };
-
-        let mut b = &buf[..n];
-        let pkts = rtcp::packet::unmarshal(&mut b)?;
-        for p in &pkts {
-            if let Some(nack) = p.as_any().downcast_ref::<TransportLayerNack>() {
-                let nack = nack.clone();
-                let streams = Arc::clone(&self.internal.streams);
-                tokio::spawn(async move {
-                    ResponderInternal::resend_packets(streams, nack).await;
-                });
-            }
-        }
-
-        Ok((n, attr))
-    }
-}
-
 /// Responder responds to nack feedback messages
 pub struct Responder {
     internal: Arc<ResponderInternal>,
@@ -112,26 +86,6 @@ pub struct Responder {
 
 #[async_trait]
 impl Interceptor for Responder {
-    /// bind_rtcp_reader lets you modify any incoming RTCP packets. It is called once per sender/receiver, however this might
-    /// change in the future. The returned method will be called once per packet batch.
-    async fn bind_rtcp_reader(
-        &self,
-        reader: Arc<dyn RTCPReader + Send + Sync>,
-    ) -> Arc<dyn RTCPReader + Send + Sync> {
-        Arc::new(ResponderRtcpReader {
-            internal: Arc::clone(&self.internal),
-            parent_rtcp_reader: reader,
-        }) as Arc<dyn RTCPReader + Send + Sync>
-    }
-
-    /// bind_rtcp_writer lets you modify any outgoing RTCP packets. It is called once per PeerConnection. The returned method
-    /// will be called once per packet batch.
-    async fn bind_rtcp_writer(
-        &self,
-        writer: Arc<dyn RTCPWriter + Send + Sync>,
-    ) -> Arc<dyn RTCPWriter + Send + Sync> {
-        writer
-    }
 
     /// bind_local_stream lets you modify any outgoing RTP packets. It is called once for per LocalStream. The returned method
     /// will be called once per rtp packet.
