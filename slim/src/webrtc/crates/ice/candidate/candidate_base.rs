@@ -28,8 +28,6 @@ pub struct CandidateBaseConfig {
     pub initialized_ch: Option<broadcast::Receiver<()>>,
 }
 
-pub(crate) type OnClose = fn() -> Result<()>;
-
 pub struct CandidateBase {
     pub(crate) id: String,
     pub(crate) network_type: AtomicU8,

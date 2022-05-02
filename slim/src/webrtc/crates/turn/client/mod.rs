@@ -25,7 +25,6 @@ use stun::fingerprint::*;
 use stun::integrity::*;
 use stun::message::*;
 use stun::textattrs::*;
-use stun::xoraddr::*;
 use tokio::sync::{mpsc, Mutex};
 use crate::webrtc::util::{conn::*, vnet::net::*};
 
@@ -204,11 +203,6 @@ impl ClientInternal {
             integrity: MessageIntegrity::new_short_term_integrity(String::new()),
             read_ch_tx: Arc::new(Mutex::new(None)),
         })
-    }
-
-    // stun_server_addr return the STUN server address
-    fn stun_server_addr(&self) -> String {
-        self.stun_serv_addr.clone()
     }
 
     // Listen will have this client start listening on the relay_conn provided via the config.
@@ -433,43 +427,6 @@ impl ClientInternal {
         }
     }
 
-    // send_binding_request_to sends a new STUN request to the given transport address
-    async fn send_binding_request_to(&mut self, to: &str) -> Result<SocketAddr> {
-        let msg = {
-            let attrs: Vec<Box<dyn Setter>> = if !self.software.text.is_empty() {
-                vec![
-                    Box::new(TransactionId::new()),
-                    Box::new(BINDING_REQUEST),
-                    Box::new(self.software.clone()),
-                ]
-            } else {
-                vec![Box::new(TransactionId::new()), Box::new(BINDING_REQUEST)]
-            };
-
-            let mut msg = Message::new();
-            msg.build(&attrs)?;
-            msg
-        };
-
-        log::debug!("client.SendBindingRequestTo call PerformTransaction 1");
-        let tr_res = self.perform_transaction(&msg, to, false).await?;
-
-        let mut refl_addr = XorMappedAddress::default();
-        refl_addr.get_from(&tr_res.msg)?;
-
-        Ok(SocketAddr::new(refl_addr.ip, refl_addr.port))
-    }
-
-    // send_binding_request sends a new STUN request to the STUN server
-    async fn send_binding_request(&mut self) -> Result<SocketAddr> {
-        if self.stun_serv_addr.is_empty() {
-            Err(Error::ErrStunserverAddressNotSet)
-        } else {
-            self.send_binding_request_to(&self.stun_serv_addr.clone())
-                .await
-        }
-    }
-
     // find_addr_by_channel_number returns a peer address associated with the
     // channel number on this UDPConn
     async fn find_addr_by_channel_number(
@@ -605,17 +562,5 @@ impl Client {
         let mut ci = self.client_internal.lock().await;
         ci.close().await;
         Ok(())
-    }
-
-    // send_binding_request_to sends a new STUN request to the given transport address
-    pub async fn send_binding_request_to(&self, to: &str) -> Result<SocketAddr> {
-        let mut ci = self.client_internal.lock().await;
-        ci.send_binding_request_to(to).await
-    }
-
-    // send_binding_request sends a new STUN request to the STUN server
-    pub async fn send_binding_request(&self) -> Result<SocketAddr> {
-        let mut ci = self.client_internal.lock().await;
-        ci.send_binding_request().await
     }
 }

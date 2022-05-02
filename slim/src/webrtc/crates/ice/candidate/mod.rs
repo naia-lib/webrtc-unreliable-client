@@ -31,8 +31,6 @@ pub(crate) const DEFAULT_LOCAL_PREFERENCE: u16 = 65535;
 
 /// Indicates that the candidate is used for RTP.
 pub(crate) const COMPONENT_RTP: u16 = 1;
-/// Indicates that the candidate is used for RTCP.
-pub(crate) const COMPONENT_RTCP: u16 = 0;
 
 /// Candidate represents an ICE candidate
 #[async_trait]

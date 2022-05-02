@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod conn_test;
 
 use crate::webrtc::dtls::alert::*;
 use crate::webrtc::dtls::application_data::*;
@@ -8,7 +6,6 @@ use crate::webrtc::dtls::config::*;
 use crate::webrtc::dtls::content::*;
 use crate::webrtc::dtls::curve::named_curve::NamedCurve;
 use crate::webrtc::dtls::error::*;
-use crate::webrtc::dtls::extension::extension_use_srtp::*;
 use crate::webrtc::dtls::flight::flight0::*;
 use crate::webrtc::dtls::flight::flight1::*;
 use crate::webrtc::dtls::flight::flight5::*;
@@ -485,17 +482,6 @@ impl DTLSConn {
         }
 
         Ok(())
-    }
-
-    /// connection_state returns basic DTLS details about the connection.
-    /// Note that this replaced the `Export` function of v1.
-    pub async fn connection_state(&self) -> State {
-        self.state.clone().await
-    }
-
-    /// selected_srtpprotection_profile returns the selected SRTPProtectionProfile
-    pub fn selected_srtpprotection_profile(&self) -> SrtpProtectionProfile {
-        self.state.srtp_protection_profile
     }
 
     pub(crate) async fn notify(&self, level: AlertLevel, desc: AlertDescription) -> Result<()> {

@@ -70,8 +70,6 @@ impl fmt::Debug for HandshakeMessageClientHello {
     }
 }
 
-const HANDSHAKE_MESSAGE_CLIENT_HELLO_VARIABLE_WIDTH_START: usize = 34;
-
 impl HandshakeMessageClientHello {
     pub fn handshake_type(&self) -> HandshakeType {
         HandshakeType::ClientHello

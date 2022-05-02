@@ -104,14 +104,6 @@ impl BindingManager {
         }
     }
 
-    pub(crate) fn get_by_number(&mut self, number: u16) -> Option<&mut Binding> {
-        if let Some(s) = self.chan_map.get(&number) {
-            self.addr_map.get_mut(s)
-        } else {
-            None
-        }
-    }
-
     pub(crate) fn delete_by_addr(&mut self, addr: &SocketAddr) -> bool {
         if let Some(b) = self.addr_map.remove(&addr.to_string()) {
             self.chan_map.remove(&b.number);
@@ -119,18 +111,5 @@ impl BindingManager {
         } else {
             false
         }
-    }
-
-    pub(crate) fn delete_by_number(&mut self, number: u16) -> bool {
-        if let Some(s) = self.chan_map.remove(&number) {
-            self.addr_map.remove(&s);
-            true
-        } else {
-            false
-        }
-    }
-
-    pub(crate) fn size(&self) -> usize {
-        self.addr_map.len()
     }
 }

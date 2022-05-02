@@ -1,8 +1,6 @@
 use crate::webrtc::ice::candidate::{CandidatePairState, CandidateType};
 
-use crate::webrtc::ice::agent::agent_internal::AgentInternal;
 use crate::webrtc::ice::network_type::NetworkType;
-use std::sync::atomic::Ordering;
 use tokio::time::Instant;
 
 /// Contains ICE candidate pair statistics.
@@ -208,75 +206,5 @@ impl Default for CandidateStats {
             relay_protocol: String::new(),
             deleted: false,
         }
-    }
-}
-
-impl AgentInternal {
-    /// Returns a list of candidate pair stats.
-    pub(crate) async fn get_candidate_pairs_stats(&self) -> Vec<CandidatePairStats> {
-        let checklist = self.agent_conn.checklist.lock().await;
-        let mut res = Vec::with_capacity(checklist.len());
-        for cp in &*checklist {
-            let stat = CandidatePairStats {
-                timestamp: Instant::now(),
-                local_candidate_id: cp.local.id(),
-                remote_candidate_id: cp.remote.id(),
-                state: cp.state.load(Ordering::SeqCst).into(),
-                nominated: cp.nominated.load(Ordering::SeqCst),
-                ..CandidatePairStats::default()
-            };
-            res.push(stat);
-        }
-        res
-    }
-
-    /// Returns a list of local candidates stats.
-    pub(crate) async fn get_local_candidates_stats(&self) -> Vec<CandidateStats> {
-        let local_candidates = self.local_candidates.lock().await;
-        let mut res = Vec::with_capacity(local_candidates.len());
-        for (network_type, local_candidates) in &*local_candidates {
-            for c in local_candidates {
-                let stat = CandidateStats {
-                    timestamp: Instant::now(),
-                    id: c.id(),
-                    network_type: *network_type,
-                    ip: c.address(),
-                    port: c.port(),
-                    candidate_type: c.candidate_type(),
-                    priority: c.priority(),
-                    // URL string
-                    relay_protocol: "udp".to_owned(),
-                    // Deleted bool
-                    ..CandidateStats::default()
-                };
-                res.push(stat);
-            }
-        }
-        res
-    }
-
-    /// Returns a list of remote candidates stats.
-    pub(crate) async fn get_remote_candidates_stats(&self) -> Vec<CandidateStats> {
-        let remote_candidates = self.remote_candidates.lock().await;
-        let mut res = Vec::with_capacity(remote_candidates.len());
-        for (network_type, remote_candidates) in &*remote_candidates {
-            for c in remote_candidates {
-                let stat = CandidateStats {
-                    timestamp: Instant::now(),
-                    id: c.id(),
-                    network_type: *network_type,
-                    ip: c.address(),
-                    port: c.port(),
-                    candidate_type: c.candidate_type(),
-                    priority: c.priority(),
-                    // URL string
-                    relay_protocol: "udp".to_owned(),
-                    // Deleted bool
-                    ..CandidateStats::default()
-                };
-                res.push(stat);
-            }
-        }
-        res
     }
 }

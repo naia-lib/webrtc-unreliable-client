@@ -13,8 +13,6 @@ pub struct HandshakeMessageCertificateVerify {
     pub(crate) signature: Vec<u8>,
 }
 
-const HANDSHAKE_MESSAGE_CERTIFICATE_VERIFY_MIN_LENGTH: usize = 4;
-
 impl HandshakeMessageCertificateVerify {
     pub fn handshake_type(&self) -> HandshakeType {
         HandshakeType::CertificateVerify

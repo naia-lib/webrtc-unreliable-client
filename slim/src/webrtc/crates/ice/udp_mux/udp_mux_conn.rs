@@ -89,10 +89,6 @@ impl UDPMuxConnInner {
         self.params.udp_mux.send_to(buf, target).await
     }
 
-    fn is_closed(&self) -> bool {
-        self.closed_watch_tx.lock().is_none()
-    }
-
     fn close(self: &Arc<Self>) {
         let mut closed_tx = self.closed_watch_tx.lock();
 
@@ -172,39 +168,6 @@ impl UDPMuxConn {
 
     pub(crate) fn key(&self) -> &str {
         &self.inner.params.key
-    }
-
-    pub(crate) async fn write_packet(&self, data: &[u8], addr: SocketAddr) -> ConnResult<()> {
-        // NOTE: Pion/ice uses Sync.Pool to optimise this.
-        let mut buffer = make_buffer();
-        let mut offset = 0;
-
-        if (data.len() + MAX_ADDR_SIZE) > (RECEIVE_MTU + MAX_ADDR_SIZE) {
-            return Err(Error::ErrBufferShort);
-        }
-
-        // Format of buffer: | data len(2) | data bytes(dn) | addr len(2) | addr bytes(an) |
-        // Where the number in parenthesis indicate the number of bytes used
-        // `dn` and `an` are the length in bytes of data and addr respectively.
-
-        // SAFETY: `data.len()` is at most RECEIVE_MTU(8192) - MAX_ADDR_SIZE(27)
-        buffer[0..2].copy_from_slice(&(data.len() as u16).to_le_bytes()[..]);
-        offset += 2;
-
-        buffer[offset..offset + data.len()].copy_from_slice(data);
-        offset += data.len();
-
-        let len = addr.encode(&mut buffer[offset + 2..])?;
-        buffer[offset..offset + 2].copy_from_slice(&(len as u16).to_le_bytes()[..]);
-        offset += 2 + len;
-
-        self.inner.buffer.write(&buffer[..offset]).await?;
-
-        Ok(())
-    }
-
-    pub(crate) fn is_closed(&self) -> bool {
-        self.inner.is_closed()
     }
 
     /// Get a copy of the close [`tokio::sync::watch::Receiver`] that fires when this

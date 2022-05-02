@@ -9,21 +9,13 @@ use async_trait::async_trait;
 use ipnet::*;
 use std::collections::HashMap;
 use std::net::IpAddr;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 
-const DEFAULT_ROUTER_QUEUE_SIZE: usize = 0; // unlimited
-
 lazy_static! {
     pub static ref ROUTER_ID_CTR: AtomicU64 = AtomicU64::new(0);
-}
-
-// Generate a unique router name
-fn assign_router_name() -> String {
-    let n = ROUTER_ID_CTR.fetch_add(1, Ordering::SeqCst);
-    format!("router{}", n)
 }
 
 // RouterConfig ...
@@ -203,11 +195,6 @@ impl Nic for Router {
 }
 
 impl Router {
-
-    // caller must hold the mutex
-    pub(crate) fn get_interfaces(&self) -> &[Interface] {
-        &self.interfaces
-    }
 
     pub(crate) async fn push(&self, mut c: Box<dyn Chunk + Send + Sync>) {
         log::debug!("[{}] route {}", self.name, c);

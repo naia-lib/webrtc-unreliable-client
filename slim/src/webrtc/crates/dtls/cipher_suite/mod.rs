@@ -181,20 +181,6 @@ pub(crate) fn default_cipher_suites() -> Vec<Box<dyn CipherSuite + Send + Sync>>
     ]
 }
 
-fn all_cipher_suites() -> Vec<Box<dyn CipherSuite + Send + Sync>> {
-    vec![
-        Box::new(new_cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm()),
-        Box::new(new_cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm8()),
-        Box::new(CipherSuiteAes128GcmSha256::new(false)),
-        Box::new(CipherSuiteAes128GcmSha256::new(true)),
-        Box::new(CipherSuiteAes256CbcSha::new(false)),
-        Box::new(CipherSuiteAes256CbcSha::new(true)),
-        Box::new(new_cipher_suite_tls_psk_with_aes_128_ccm()),
-        Box::new(new_cipher_suite_tls_psk_with_aes_128_ccm8()),
-        Box::new(CipherSuiteTlsPskWithAes128GcmSha256::default()),
-    ]
-}
-
 fn cipher_suites_for_ids(ids: &[CipherSuiteId]) -> Result<Vec<Box<dyn CipherSuite + Send + Sync>>> {
     let mut cipher_suites = vec![];
     for id in ids {

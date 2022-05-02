@@ -1,10 +1,6 @@
-#[cfg(test)]
-mod renegotiation_info_test;
 
 use super::*;
 use crate::webrtc::dtls::error::Error::ErrInvalidPacketLength;
-
-const RENEGOTIATION_INFO_HEADER_SIZE: usize = 5;
 
 /// RenegotiationInfo allows a Client/Server to
 /// communicate their renegotation support

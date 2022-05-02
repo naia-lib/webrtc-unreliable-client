@@ -4,10 +4,9 @@ use super::curve::named_curve::*;
 use super::extension::extension_use_srtp::SrtpProtectionProfile;
 use super::handshake::handshake_random::*;
 use super::prf::*;
-use crate::webrtc::dtls::error::*;
 
 use async_trait::async_trait;
-use std::io::{BufWriter, Cursor};
+use std::io::BufWriter;
 use std::marker::{Send, Sync};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
@@ -96,155 +95,6 @@ impl Default for State {
             peer_certificates_verified: false,
             //replay_detector: vec![],
         }
-    }
-}
-
-impl State {
-    pub(crate) async fn clone(&self) -> Self {
-        let mut state = State::default();
-
-        if let Ok(serialized) = self.serialize().await {
-            let _ = state.deserialize(&serialized).await;
-        }
-
-        state
-    }
-
-    async fn serialize(&self) -> Result<SerializedState> {
-        let mut local_rand = vec![];
-        {
-            let mut writer = BufWriter::<&mut Vec<u8>>::new(local_rand.as_mut());
-            self.local_random.marshal(&mut writer)?;
-        }
-        let mut remote_rand = vec![];
-        {
-            let mut writer = BufWriter::<&mut Vec<u8>>::new(remote_rand.as_mut());
-            self.remote_random.marshal(&mut writer)?;
-        }
-
-        let mut local_random = [0u8; HANDSHAKE_RANDOM_LENGTH];
-        let mut remote_random = [0u8; HANDSHAKE_RANDOM_LENGTH];
-
-        local_random.copy_from_slice(&local_rand);
-        remote_random.copy_from_slice(&remote_rand);
-
-        let local_epoch = self.local_epoch.load(Ordering::SeqCst);
-        let remote_epoch = self.remote_epoch.load(Ordering::SeqCst);
-        let sequence_number = {
-            let lsn = self.local_sequence_number.lock().await;
-            lsn[local_epoch as usize]
-        };
-        let cipher_suite_id = {
-            let cipher_suite = self.cipher_suite.lock().await;
-            match &*cipher_suite {
-                Some(cipher_suite) => cipher_suite.id() as u16,
-                None => return Err(Error::ErrCipherSuiteUnset),
-            }
-        };
-
-        Ok(SerializedState {
-            local_epoch,
-            remote_epoch,
-            local_random,
-            remote_random,
-            cipher_suite_id,
-            master_secret: self.master_secret.clone(),
-            sequence_number,
-            srtp_protection_profile: self.srtp_protection_profile as u16,
-            peer_certificates: self.peer_certificates.clone(),
-            identity_hint: self.identity_hint.clone(),
-            is_client: self.is_client,
-        })
-    }
-
-    async fn deserialize(&mut self, serialized: &SerializedState) -> Result<()> {
-        // Set epoch values
-        self.local_epoch
-            .store(serialized.local_epoch, Ordering::SeqCst);
-        self.remote_epoch
-            .store(serialized.remote_epoch, Ordering::SeqCst);
-        {
-            let mut lsn = self.local_sequence_number.lock().await;
-            while lsn.len() <= serialized.local_epoch as usize {
-                lsn.push(0);
-            }
-            lsn[serialized.local_epoch as usize] = serialized.sequence_number;
-        }
-
-        // Set random values
-        let mut reader = Cursor::new(&serialized.local_random);
-        self.local_random = HandshakeRandom::unmarshal(&mut reader)?;
-
-        let mut reader = Cursor::new(&serialized.remote_random);
-        self.remote_random = HandshakeRandom::unmarshal(&mut reader)?;
-
-        self.is_client = serialized.is_client;
-
-        // Set master secret
-        self.master_secret = serialized.master_secret.clone();
-
-        // Set cipher suite
-        self.cipher_suite = Arc::new(Mutex::new(Some(cipher_suite_for_id(
-            serialized.cipher_suite_id.into(),
-        )?)));
-
-        self.srtp_protection_profile = serialized.srtp_protection_profile.into();
-
-        // Set remote certificate
-        self.peer_certificates = serialized.peer_certificates.clone();
-        self.identity_hint = serialized.identity_hint.clone();
-
-        Ok(())
-    }
-
-    pub async fn init_cipher_suite(&mut self) -> Result<()> {
-        let mut cipher_suite = self.cipher_suite.lock().await;
-        if let Some(cipher_suite) = &mut *cipher_suite {
-            if cipher_suite.is_initialized() {
-                return Ok(());
-            }
-
-            let mut local_random = vec![];
-            {
-                let mut writer = BufWriter::<&mut Vec<u8>>::new(local_random.as_mut());
-                self.local_random.marshal(&mut writer)?;
-            }
-            let mut remote_random = vec![];
-            {
-                let mut writer = BufWriter::<&mut Vec<u8>>::new(remote_random.as_mut());
-                self.remote_random.marshal(&mut writer)?;
-            }
-
-            if self.is_client {
-                cipher_suite.init(&self.master_secret, &local_random, &remote_random, true)
-            } else {
-                cipher_suite.init(&self.master_secret, &remote_random, &local_random, false)
-            }
-        } else {
-            Err(Error::ErrCipherSuiteUnset)
-        }
-    }
-
-    // marshal_binary is a binary.BinaryMarshaler.marshal_binary implementation
-    pub async fn marshal_binary(&self) -> Result<Vec<u8>> {
-        let serialized = self.serialize().await?;
-
-        match bincode::serialize(&serialized) {
-            Ok(enc) => Ok(enc),
-            Err(err) => Err(Error::Other(err.to_string())),
-        }
-    }
-
-    // unmarshal_binary is a binary.BinaryUnmarshaler.unmarshal_binary implementation
-    pub async fn unmarshal_binary(&mut self, data: &[u8]) -> Result<()> {
-        let serialized: SerializedState = match bincode::deserialize(data) {
-            Ok(dec) => dec,
-            Err(err) => return Err(Error::Other(err.to_string())),
-        };
-        self.deserialize(&serialized).await?;
-        self.init_cipher_suite().await?;
-
-        Ok(())
     }
 }
 

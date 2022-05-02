@@ -235,32 +235,4 @@ impl Url {
             proto,
         })
     }
-
-    /*
-    fn parse_proto(raw:&str) ->Result<ProtoType> {
-        let qArgs= raw.split('=');
-        if qArgs.len() != 2 {
-            return Err(Error::ErrInvalidQuery.into());
-        }
-
-        var proto ProtoType
-        if rawProto := qArgs.Get("transport"); rawProto != "" {
-            if proto = NewProtoType(rawProto); proto == ProtoType(0) {
-                return ProtoType(Unknown), ErrProtoType
-            }
-            return proto, nil
-        }
-
-        if len(qArgs) > 0 {
-            return ProtoType(Unknown), ErrInvalidQuery
-        }
-
-        return proto, nil
-    }*/
-
-    /// Returns whether the this URL's scheme describes secure scheme or not.
-    #[must_use]
-    pub fn is_secure(&self) -> bool {
-        self.scheme == SchemeType::Stuns || self.scheme == SchemeType::Turns
-    }
 }

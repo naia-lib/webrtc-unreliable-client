@@ -149,16 +149,6 @@ impl AgentConn {
 
         best.cloned()
     }
-
-    /// Returns the number of bytes sent.
-    pub fn bytes_sent(&self) -> usize {
-        self.bytes_sent.load(Ordering::SeqCst)
-    }
-
-    /// Returns the number of bytes received.
-    pub fn bytes_received(&self) -> usize {
-        self.bytes_received.load(Ordering::SeqCst)
-    }
 }
 
 #[async_trait]

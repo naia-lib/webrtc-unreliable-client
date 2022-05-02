@@ -21,8 +21,6 @@ pub struct HandshakeMessageCertificateRequest {
     pub(crate) signature_hash_algorithms: Vec<SignatureHashAlgorithm>,
 }
 
-const HANDSHAKE_MESSAGE_CERTIFICATE_REQUEST_MIN_LENGTH: usize = 5;
-
 impl HandshakeMessageCertificateRequest {
     pub fn handshake_type(&self) -> HandshakeType {
         HandshakeType::CertificateRequest

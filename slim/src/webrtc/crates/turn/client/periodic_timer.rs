@@ -89,11 +89,4 @@ impl PeriodicTimer {
         let mut close_tx = self.close_tx.lock().await;
         close_tx.take();
     }
-
-    // is_running tests if the timer is running.
-    // Debug purpose only
-    pub async fn is_running(&self) -> bool {
-        let close_tx = self.close_tx.lock().await;
-        close_tx.is_some()
-    }
 }

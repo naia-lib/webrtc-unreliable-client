@@ -25,7 +25,6 @@ use crate::webrtc::ice::udp_network::UDPNetwork;
 use crate::webrtc::ice::url::*;
 use agent_config::*;
 use agent_internal::*;
-use agent_stats::*;
 
 use mdns::conn::*;
 use std::collections::HashMap;
@@ -321,12 +320,6 @@ impl Agent {
         (ufrag_pwd.local_ufrag.clone(), ufrag_pwd.local_pwd.clone())
     }
 
-    /// Returns the remote user credentials.
-    pub async fn get_remote_user_credentials(&self) -> (String, String) {
-        let ufrag_pwd = self.internal.ufrag_pwd.lock().await;
-        (ufrag_pwd.remote_ufrag.clone(), ufrag_pwd.remote_pwd.clone())
-    }
-
     /// Cleans up the Agent.
     pub async fn close(&self) -> Result<()> {
         if let Some(gather_candidate_cancel) = &self.gather_candidate_cancel {
@@ -345,17 +338,6 @@ impl Agent {
     /// Returns the selected pair or nil if there is none
     pub async fn get_selected_candidate_pair(&self) -> Option<Arc<CandidatePair>> {
         self.internal.agent_conn.get_selected_pair().await
-    }
-
-    /// Sets the credentials of the remote agent.
-    pub async fn set_remote_credentials(
-        &self,
-        remote_ufrag: String,
-        remote_pwd: String,
-    ) -> Result<()> {
-        self.internal
-            .set_remote_credentials(remote_ufrag, remote_pwd)
-            .await
     }
 
     /// Restarts the ICE Agent with the provided ufrag/pwd
@@ -464,21 +446,6 @@ impl Agent {
         });
 
         Ok(())
-    }
-
-    /// Returns a list of candidate pair stats.
-    pub async fn get_candidate_pairs_stats(&self) -> Vec<CandidatePairStats> {
-        self.internal.get_candidate_pairs_stats().await
-    }
-
-    /// Returns a list of local candidates stats.
-    pub async fn get_local_candidates_stats(&self) -> Vec<CandidateStats> {
-        self.internal.get_local_candidates_stats().await
-    }
-
-    /// Returns a list of remote candidates stats.
-    pub async fn get_remote_candidates_stats(&self) -> Vec<CandidateStats> {
-        self.internal.get_remote_candidates_stats().await
     }
 
     async fn resolve_and_add_multicast_candidate(

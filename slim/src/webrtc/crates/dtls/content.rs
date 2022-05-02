@@ -4,7 +4,7 @@ use super::change_cipher_spec::*;
 use super::handshake::*;
 use crate::webrtc::dtls::error::*;
 
-use std::io::{Read, Write};
+use std::io::Write;
 
 // https://tools.ietf.org/html/rfc4346#section-6.2.1
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -67,20 +67,6 @@ impl Content {
             Content::Alert(c) => c.marshal(writer),
             Content::Handshake(c) => c.marshal(writer),
             Content::ApplicationData(c) => c.marshal(writer),
-        }
-    }
-
-    pub fn unmarshal<R: Read>(content_type: ContentType, reader: &mut R) -> Result<Self> {
-        match content_type {
-            ContentType::ChangeCipherSpec => Ok(Content::ChangeCipherSpec(
-                ChangeCipherSpec::unmarshal(reader)?,
-            )),
-            ContentType::Alert => Ok(Content::Alert(Alert::unmarshal(reader)?)),
-            ContentType::Handshake => Ok(Content::Handshake(Handshake::unmarshal(reader)?)),
-            ContentType::ApplicationData => Ok(Content::ApplicationData(
-                ApplicationData::unmarshal(reader)?,
-            )),
-            _ => Err(Error::ErrInvalidContentType),
         }
     }
 }

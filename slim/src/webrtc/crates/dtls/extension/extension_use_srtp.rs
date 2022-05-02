@@ -27,8 +27,6 @@ impl From<u16> for SrtpProtectionProfile {
     }
 }
 
-const EXTENSION_USE_SRTPHEADER_SIZE: usize = 6;
-
 // https://tools.ietf.org/html/rfc8422
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug, PartialEq)]

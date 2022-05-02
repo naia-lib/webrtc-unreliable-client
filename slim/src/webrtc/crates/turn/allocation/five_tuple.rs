@@ -34,10 +34,3 @@ impl fmt::Display for FiveTuple {
         write!(f, "{}_{}_{}", self.protocol, self.src_addr, self.dst_addr)
     }
 }
-
-impl FiveTuple {
-    // fingerprint is the identity of a FiveTuple
-    pub fn fingerprint(&self) -> String {
-        self.to_string()
-    }
-}

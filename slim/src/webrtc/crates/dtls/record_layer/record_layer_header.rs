@@ -14,10 +14,6 @@ pub const DTLS1_2MINOR: u8 = 0xfd;
 pub const DTLS1_0MAJOR: u8 = 0xfe;
 pub const DTLS1_0MINOR: u8 = 0xff;
 
-// VERSION_DTLS12 is the DTLS version in the same style as
-// VersionTLSXX from crypto/tls
-pub const VERSION_DTLS12: u16 = 0xfefd;
-
 pub const PROTOCOL_VERSION1_0: ProtocolVersion = ProtocolVersion {
     major: DTLS1_0MAJOR,
     minor: DTLS1_0MINOR,

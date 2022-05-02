@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::ErrorKind, net::SocketAddr, sync::Arc};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 
 use crate::webrtc::util::{sync::RwLock, Conn, Error};
 
@@ -9,15 +9,7 @@ use tokio::sync::{watch, Mutex};
 mod udp_mux_conn;
 use udp_mux_conn::{UDPMuxConn, UDPMuxConnParams};
 
-#[cfg(test)]
-mod udp_mux_test;
-
 mod socket_addr_ext;
-
-use stun::{
-    attributes::ATTR_USERNAME,
-    message::{is_message as is_stun_message, Message as STUNMessage},
-};
 
 use crate::webrtc::ice::candidate::RECEIVE_MTU;
 
@@ -52,17 +44,6 @@ pub struct UDPMuxParams {
     conn: Box<dyn Conn + Send + Sync>,
 }
 
-impl UDPMuxParams {
-    pub fn new<C>(conn: C) -> Self
-    where
-        C: Conn + Send + Sync + 'static,
-    {
-        Self {
-            conn: Box::new(conn),
-        }
-    }
-}
-
 pub struct UDPMuxDefault {
     /// The params this instance is configured with.
     /// Contains the underlying UDP socket in use
@@ -82,22 +63,6 @@ pub struct UDPMuxDefault {
 }
 
 impl UDPMuxDefault {
-    pub fn new(params: UDPMuxParams) -> Arc<Self> {
-        let (closed_watch_tx, closed_watch_rx) = watch::channel(());
-
-        let mux = Arc::new(Self {
-            params,
-            conns: Mutex::default(),
-            address_map: RwLock::default(),
-            closed_watch_tx: Mutex::new(Some(closed_watch_tx)),
-            closed_watch_rx: closed_watch_rx.clone(),
-        });
-
-        let cloned_mux = Arc::clone(&mux);
-        cloned_mux.start_conn_worker(closed_watch_rx);
-
-        mux
-    }
 
     pub async fn is_closed(&self) -> bool {
         self.closed_watch_tx.lock().await.is_none()
@@ -145,107 +110,6 @@ impl UDPMuxDefault {
         }
 
         log::debug!("Registered {} for {}", addr, key);
-    }
-
-    async fn conn_from_stun_message(&self, buffer: &[u8], addr: &SocketAddr) -> Option<UDPMuxConn> {
-        let (result, message) = {
-            let mut m = STUNMessage::new();
-
-            (m.unmarshal_binary(buffer), m)
-        };
-
-        match result {
-            Err(err) => {
-                log::warn!("Failed to handle decode ICE from {}: {}", addr, err);
-                None
-            }
-            Ok(_) => {
-                let (attr, found) = message.attributes.get(ATTR_USERNAME);
-                if !found {
-                    log::warn!("No username attribute in STUN message from {}", &addr);
-                    return None;
-                }
-
-                let s = match String::from_utf8(attr.value) {
-                    // Per the RFC this shouldn't happen
-                    // https://datatracker.ietf.org/doc/html/rfc5389#section-15.3
-                    Err(err) => {
-                        log::warn!(
-                            "Failed to decode USERNAME from STUN message as UTF-8: {}",
-                            err
-                        );
-                        return None;
-                    }
-                    Ok(s) => s,
-                };
-
-                let conns = self.conns.lock().await;
-                let conn = s
-                    .split(':')
-                    .next()
-                    .and_then(|ufrag| conns.get(ufrag))
-                    .map(Clone::clone);
-
-                conn
-            }
-        }
-    }
-
-    fn start_conn_worker(self: Arc<Self>, mut closed_watch_rx: watch::Receiver<()>) {
-        tokio::spawn(async move {
-            let mut buffer = [0u8; RECEIVE_MTU];
-
-            loop {
-                let loop_self = Arc::clone(&self);
-                let conn = &loop_self.params.conn;
-
-                tokio::select! {
-                    res = conn.recv_from(&mut buffer) => {
-                        match res {
-                            Ok((len, addr)) => {
-                                // Find connection based on previously having seen this source address
-                                let conn = {
-                                    let address_map = loop_self
-                                        .address_map
-                                        .read();
-
-                                    address_map.get(&addr).map(Clone::clone)
-                                };
-
-                                let conn = match conn {
-                                    // If we couldn't find the connection based on source address, see if
-                                    // this is a STUN mesage and if so if we can find the connection based on ufrag.
-                                    None if is_stun_message(&buffer) => {
-                                        loop_self.conn_from_stun_message(&buffer, &addr).await
-                                    }
-                                    s @ Some(_) => s,
-                                    _ => None,
-                                };
-
-                                match conn {
-                                    None => {
-                                        log::trace!("Dropping packet from {}", &addr);
-                                    }
-                                    Some(conn) => {
-                                        if let Err(err) = conn.write_packet(&buffer[..len], addr).await {
-                                            log::error!("Failed to write packet: {}", err);
-                                        }
-                                    }
-                                }
-                            }
-                            Err(Error::Io(err)) if err.0.kind() == ErrorKind::TimedOut => continue,
-                            Err(err) => {
-                                log::error!("Could not read udp packet: {}", err);
-                                break;
-                            }
-                        }
-                    }
-                    _ = closed_watch_rx.changed() => {
-                        return;
-                    }
-                }
-            }
-        });
     }
 }
 

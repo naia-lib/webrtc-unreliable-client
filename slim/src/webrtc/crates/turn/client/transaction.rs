@@ -271,9 +271,4 @@ impl TransactionMap {
         }
         self.tr_map.clear();
     }
-
-    // Size returns the length of the transaction map
-    pub fn size(&self) -> usize {
-        self.tr_map.len()
-    }
 }

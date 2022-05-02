@@ -13,17 +13,6 @@ pub trait AuthHandler {
     fn auth_handle(&self, username: &str, realm: &str, src_addr: SocketAddr) -> Result<Vec<u8>>;
 }
 
-// generate_long_term_credentials can be used to create credentials valid for [duration] time
-pub fn generate_long_term_credentials(
-    shared_secret: &str,
-    duration: Duration,
-) -> Result<(String, String)> {
-    let t = SystemTime::now().duration_since(UNIX_EPOCH)? + duration;
-    let username = format!("{}", t.as_secs());
-    let password = long_term_credentials(&username, shared_secret);
-    Ok((username, password))
-}
-
 fn long_term_credentials(username: &str, shared_secret: &str) -> String {
     let mac = hmac::Key::new(
         hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY,
@@ -65,12 +54,5 @@ impl AuthHandler for LongTermAuthHandler {
 
         let password = long_term_credentials(username, &self.shared_secret);
         Ok(generate_auth_key(username, realm, &password))
-    }
-}
-
-impl LongTermAuthHandler {
-    // https://tools.ietf.org/search/rfc5389#section-10.2
-    pub fn new(shared_secret: String) -> Self {
-        LongTermAuthHandler { shared_secret }
     }
 }
