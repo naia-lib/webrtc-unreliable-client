@@ -15,6 +15,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
+use ice::udp_network::UDPNetwork;
 use tokio::sync::Mutex;
 
 /// ICEGatherOptions provides options relating to the gathering of ICE candidates.
@@ -104,7 +105,7 @@ impl RTCIceGatherer {
         }
 
         let mut config = ice::agent::agent_config::AgentConfig {
-            udp_network: self.setting_engine.udp_network.clone(),
+            udp_network: UDPNetwork::Ephemeral(Default::default()),
             lite: self.setting_engine.candidates.ice_lite,
             urls: self.validated_servers.clone(),
             disconnected_timeout: self.setting_engine.timeout.ice_disconnected_timeout,

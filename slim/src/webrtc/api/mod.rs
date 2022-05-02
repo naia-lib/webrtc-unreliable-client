@@ -78,7 +78,6 @@ impl API {
         Ok(RTCDtlsTransport::new(
             ice_transport,
             certificates,
-            Arc::clone(&self.setting_engine),
         ))
     }
 

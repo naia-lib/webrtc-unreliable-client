@@ -12,7 +12,6 @@ use util::Conn;
 
 use dtls_role::*;
 
-use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::error::{flatten_errs, Error, Result};
@@ -40,7 +39,6 @@ pub type OnDTLSTransportStateChangeHdlrFn = Box<
 pub struct RTCDtlsTransport {
     pub(crate) ice_transport: Arc<RTCIceTransport>,
     pub(crate) certificates: Vec<RTCCertificate>,
-    pub(crate) setting_engine: Arc<SettingEngine>,
 
     pub(crate) remote_parameters: Mutex<DTLSParameters>,
     pub(crate) remote_certificate: Mutex<Bytes>,
@@ -53,12 +51,10 @@ impl RTCDtlsTransport {
     pub(crate) fn new(
         ice_transport: Arc<RTCIceTransport>,
         certificates: Vec<RTCCertificate>,
-        setting_engine: Arc<SettingEngine>,
     ) -> Self {
         RTCDtlsTransport {
             ice_transport,
             certificates,
-            setting_engine,
             state: AtomicU8::new(RTCDtlsTransportState::New as u8),
             ..Default::default()
         }
@@ -156,10 +152,7 @@ impl RTCDtlsTransport {
         let dtls_conn_result = if let Some(dtls_endpoint) =
             self.ice_transport.new_endpoint(Box::new(match_dtls)).await
         {
-            let (_, mut dtls_config) = self.prepare_transport(remote_parameters).await?;
-            if self.setting_engine.replay_protection.dtls != 0 {
-                dtls_config.replay_protection_window = self.setting_engine.replay_protection.dtls;
-            }
+            let (_, dtls_config) = self.prepare_transport(remote_parameters).await?;
 
             // Connect as DTLS Client/Server, function is blocking and we
             // must not hold the DTLSTransport lock

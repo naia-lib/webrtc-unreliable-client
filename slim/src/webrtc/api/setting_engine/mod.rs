@@ -3,7 +3,6 @@ use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
 use ice::agent::agent_config::InterfaceFilterFn;
 use ice::mdns::MulticastDnsMode;
 use ice::network_type::NetworkType;
-use ice::udp_network::UDPNetwork;
 
 use std::sync::Arc;
 use tokio::time::Duration;
@@ -40,8 +39,6 @@ pub struct Candidates {
 #[derive(Default, Clone)]
 pub struct ReplayProtection {
     pub dtls: usize,
-    pub srtp: usize,
-    pub srtcp: usize,
 }
 
 /// SettingEngine allows influencing behavior in ways that are not
@@ -51,9 +48,6 @@ pub struct ReplayProtection {
 pub struct SettingEngine {
     pub(crate) timeout: Timeout,
     pub(crate) candidates: Candidates,
-    pub(crate) replay_protection: ReplayProtection,
-
-    pub(crate) udp_network: UDPNetwork,
 }
 
 impl SettingEngine {
