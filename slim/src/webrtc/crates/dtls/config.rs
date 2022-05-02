@@ -3,7 +3,6 @@ use crate::webrtc::dtls::crypto::*;
 use crate::webrtc::dtls::error::*;
 use crate::webrtc::dtls::extension::extension_use_srtp::SrtpProtectionProfile;
 use crate::webrtc::dtls::handshaker::VerifyPeerCertificateFn;
-use crate::webrtc::dtls::signature_hash_algorithm::SignatureScheme;
 
 use std::sync::Arc;
 use tokio::time::Duration;
@@ -20,9 +19,6 @@ pub struct Config {
     /// cipher_suites is a list of supported cipher suites.
     /// If cipher_suites is nil, a default list is used
     pub cipher_suites: Vec<CipherSuiteId>,
-
-    /// signature_schemes contains the signature and hash schemes that the peer requests to verify.
-    pub signature_schemes: Vec<SignatureScheme>,
 
     /// srtp_protection_profiles are the supported protection profiles
     /// Clients will send this via use_srtp and assert that the server properly responds
@@ -103,7 +99,6 @@ impl Default for Config {
         Config {
             certificates: vec![],
             cipher_suites: vec![],
-            signature_schemes: vec![],
             srtp_protection_profiles: vec![],
             client_auth: ClientAuthType::default(),
             extended_master_secret: ExtendedMasterSecretType::default(),

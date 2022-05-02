@@ -54,19 +54,6 @@ impl fmt::Display for HashAlgorithm {
     }
 }
 
-impl HashAlgorithm {
-    pub(crate) fn insecure(&self) -> bool {
-        matches!(
-            *self,
-            HashAlgorithm::Md2 | HashAlgorithm::Md5 | HashAlgorithm::Sha1
-        )
-    }
-
-    pub(crate) fn invalid(&self) -> bool {
-        matches!(*self, HashAlgorithm::Md2)
-    }
-}
-
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-16
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SignatureAlgorithm {
@@ -155,61 +142,5 @@ pub(crate) fn select_signature_scheme(
 // RFC 8446, Section 4.2.3.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SignatureScheme {
-    // RSASSA-PKCS1-v1_5 algorithms.
-    Pkcs1WithSha256 = 0x0401,
-    Pkcs1WithSha384 = 0x0501,
-    Pkcs1WithSha512 = 0x0601,
 
-    // RSASSA-PSS algorithms with public key OID rsaEncryption.
-    PssWithSha256 = 0x0804,
-    PssWithSha384 = 0x0805,
-    PssWithSha512 = 0x0806,
-
-    // ECDSA algorithms. Only constrained to a specific curve in TLS 1.3.
-    EcdsaWithP256AndSha256 = 0x0403,
-    EcdsaWithP384AndSha384 = 0x0503,
-    EcdsaWithP521AndSha512 = 0x0603,
-
-    // EdDSA algorithms.
-    Ed25519 = 0x0807,
-
-    // Legacy signature and hash algorithms for TLS 1.2.
-    Pkcs1WithSha1 = 0x0201,
-    EcdsaWithSha1 = 0x0203,
-}
-
-// parse_signature_schemes translates []tls.SignatureScheme to []signatureHashAlgorithm.
-// It returns default signature scheme list if no SignatureScheme is passed.
-pub(crate) fn parse_signature_schemes(
-    sigs: &[u16],
-    insecure_hashes: bool,
-) -> Result<Vec<SignatureHashAlgorithm>> {
-    if sigs.is_empty() {
-        return Ok(default_signature_schemes());
-    }
-
-    let mut out = vec![];
-    for ss in sigs {
-        let sig: SignatureAlgorithm = ((*ss & 0xFF) as u8).into();
-        if sig == SignatureAlgorithm::Unsupported {
-            return Err(Error::ErrInvalidSignatureAlgorithm);
-        }
-        let h: HashAlgorithm = (((*ss >> 8) & 0xFF) as u8).into();
-        if h == HashAlgorithm::Unsupported || h.invalid() {
-            return Err(Error::ErrInvalidHashAlgorithm);
-        }
-        if h.insecure() && !insecure_hashes {
-            continue;
-        }
-        out.push(SignatureHashAlgorithm {
-            hash: h,
-            signature: sig,
-        })
-    }
-
-    if out.is_empty() {
-        Err(Error::ErrNoAvailableSignatureSchemes)
-    } else {
-        Ok(out)
-    }
 }

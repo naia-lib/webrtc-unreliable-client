@@ -18,7 +18,7 @@ use crate::webrtc::dtls::handshake::*;
 use crate::webrtc::dtls::handshaker::*;
 use crate::webrtc::dtls::record_layer::record_layer_header::*;
 use crate::webrtc::dtls::record_layer::*;
-use crate::webrtc::dtls::signature_hash_algorithm::parse_signature_schemes;
+use crate::webrtc::dtls::signature_hash_algorithm::default_signature_schemes;
 use crate::webrtc::dtls::state::*;
 
 use crate::webrtc::util::{replay_detector::*, Conn};
@@ -159,8 +159,7 @@ impl DTLSConn {
         .map(|cs| cs.id())
         .collect();
 
-        let sigs: Vec<u16> = config.signature_schemes.iter().map(|x| *x as u16).collect();
-        let local_signature_schemes = parse_signature_schemes(&sigs, config.insecure_hashes)?;
+        let local_signature_schemes = default_signature_schemes();
 
         let retransmit_interval = if config.flight_interval != Duration::from_secs(0) {
             config.flight_interval
