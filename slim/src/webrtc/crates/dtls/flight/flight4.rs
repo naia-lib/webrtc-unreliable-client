@@ -461,27 +461,7 @@ impl Flight for Flight4 {
                     ));
                 }
             }
-            ClientAuthType::RequireAndVerifyClientCert => {
-                if state.peer_certificates.is_empty() {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::NoCertificate,
-                        }),
-                        Some(Error::ErrClientCertificateRequired),
-                    ));
-                }
-                if !state.peer_certificates_verified {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::BadCertificate,
-                        }),
-                        Some(Error::ErrClientCertificateNotVerified),
-                    ));
-                }
-            }
-            ClientAuthType::NoClientCert | ClientAuthType::RequestClientCert => {
+            ClientAuthType::NoClientCert => {
                 return Ok(Box::new(Flight6 {}) as Box<dyn Flight + Send + Sync>);
             }
         }
@@ -546,7 +526,7 @@ impl Flight for Flight4 {
                 ))),
             ),
             should_encrypt: false,
-            reset_local_sequence_number: false,
+
         }];
 
         if cfg.local_psk_callback.is_none() {
@@ -578,7 +558,7 @@ impl Flight for Flight4 {
                     ))),
                 ),
                 should_encrypt: false,
-                reset_local_sequence_number: false,
+
             });
 
             let mut server_random = vec![];
@@ -650,7 +630,7 @@ impl Flight for Flight4 {
                         ))),
                     ),
                     should_encrypt: false,
-                    reset_local_sequence_number: false,
+
                 });
             }
 
@@ -670,7 +650,7 @@ impl Flight for Flight4 {
                         ))),
                     ),
                     should_encrypt: false,
-                    reset_local_sequence_number: false,
+
                 });
             }
         } else if let Some(local_psk_identity_hint) = &cfg.local_psk_identity_hint {
@@ -698,7 +678,7 @@ impl Flight for Flight4 {
                     ))),
                 ),
                 should_encrypt: false,
-                reset_local_sequence_number: false,
+
             });
         }
 
@@ -711,7 +691,7 @@ impl Flight for Flight4 {
                 ))),
             ),
             should_encrypt: false,
-            reset_local_sequence_number: false,
+
         });
 
         Ok(pkts)

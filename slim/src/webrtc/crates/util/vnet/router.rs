@@ -52,33 +52,21 @@ pub trait Nic {
     async fn set_router(&self, r: Arc<Mutex<Router>>) -> Result<()>;
 }
 
-// ChunkFilter is a handler users can add to filter chunks.
-// If the filter returns false, the packet will be dropped.
-pub type ChunkFilterFn = Box<dyn (Fn(&(dyn Chunk + Send + Sync)) -> bool) + Send + Sync>;
-
 #[derive(Default)]
 pub struct RouterInternal {
     pub(crate) nat_type: Option<NatType>,          // read-only
-    pub(crate) ipv4net: IpNet,                     // read-only
     pub(crate) parent: Option<Arc<Mutex<Router>>>, // read-only
     pub(crate) nat: NetworkAddressTranslator,      // read-only
-    pub(crate) nics: HashMap<String, Arc<Mutex<dyn Nic + Send + Sync>>>, // read-only
-    pub(crate) chunk_filters: Vec<ChunkFilterFn>,  // requires mutex [x]
-    pub(crate) last_id: u8, // requires mutex [x], used to assign the last digit of IPv4 address
 }
 
 // Router ...
 #[derive(Default)]
 pub struct Router {
     name: String,                              // read-only
-    ipv4net: IpNet,                            // read-only
-    min_delay: Duration,                       // requires mutex [x]
-    max_jitter: Duration,                      // requires mutex [x]
     queue: Arc<ChunkQueue>,                    // read-only
     interfaces: Vec<Interface>,                // read-only
     static_ips: Vec<IpAddr>,                   // read-only
     static_local_ips: HashMap<String, IpAddr>, // read-only,
-    children: Vec<Arc<Mutex<Router>>>,         // read-only
     done: Option<mpsc::Sender<()>>,            // requires mutex [x]
     pub(crate) resolver: Arc<Mutex<Resolver>>, // read-only
     push_ch: Option<mpsc::Sender<()>>,         // writer requires mutex

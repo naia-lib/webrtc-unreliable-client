@@ -65,7 +65,6 @@ struct ClientInternal {
     password: String,
     realm: Realm,
     integrity: MessageIntegrity,
-    software: Software,
     tr_map: Arc<Mutex<TransactionMap>>,
     binding_mgr: Arc<Mutex<BindingManager>>,
     rto_in_ms: u16,
@@ -192,7 +191,6 @@ impl ClientInternal {
             username: Username::new(ATTR_USERNAME, config.username),
             password: config.password,
             realm: Realm::new(ATTR_REALM, config.realm),
-            software: Software::new(ATTR_SOFTWARE, config.software),
             tr_map: Arc::new(Mutex::new(TransactionMap::new())),
             binding_mgr: Arc::new(Mutex::new(BindingManager::new())),
             rto_in_ms: if config.rto_in_ms != 0 {

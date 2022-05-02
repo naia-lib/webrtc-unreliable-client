@@ -60,7 +60,6 @@ pub struct AgentInternal {
     pub(crate) agent_conn: Arc<AgentConn>,
 
     // the following variables won't be changed after init_with_defaults()
-    pub(crate) insecure_skip_verify: bool,
     pub(crate) max_binding_requests: u16,
     pub(crate) host_acceptance_min_wait: Duration,
     pub(crate) srflx_acceptance_min_wait: Duration,
@@ -116,8 +115,6 @@ impl AgentInternal {
             nominated_pair: Mutex::new(None),
 
             connection_state: AtomicU8::new(ConnectionState::New as u8),
-
-            insecure_skip_verify: config.insecure_skip_verify,
 
             started_ch_tx: Mutex::new(Some(started_ch_tx)),
 

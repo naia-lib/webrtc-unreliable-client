@@ -80,7 +80,7 @@ impl Flight for Flight6 {
                 Content::ChangeCipherSpec(ChangeCipherSpec {}),
             ),
             should_encrypt: false,
-            reset_local_sequence_number: false,
+
         }];
 
         if state.local_verify_data.is_empty() {
@@ -181,7 +181,6 @@ impl Flight for Flight6 {
                 ))),
             ),
             should_encrypt: true,
-            reset_local_sequence_number: true,
         });
 
         Ok(pkts)

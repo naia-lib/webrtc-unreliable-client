@@ -406,7 +406,7 @@ impl Flight for Flight3 {
                 ))),
             ),
             should_encrypt: false,
-            reset_local_sequence_number: false,
+
         }])
     }
 }

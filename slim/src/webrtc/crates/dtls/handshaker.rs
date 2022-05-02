@@ -51,7 +51,6 @@ use std::sync::Arc;
 
 #[derive(Copy, Clone, PartialEq)]
 pub(crate) enum HandshakeState {
-    Errored,
     Preparing,
     Sending,
     Waiting,
@@ -61,7 +60,6 @@ pub(crate) enum HandshakeState {
 impl fmt::Display for HandshakeState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            HandshakeState::Errored => write!(f, "Errored"),
             HandshakeState::Preparing => write!(f, "Preparing"),
             HandshakeState::Sending => write!(f, "Sending"),
             HandshakeState::Waiting => write!(f, "Waiting"),
@@ -215,7 +213,6 @@ impl DTLSConn {
                 HandshakeState::Sending => self.send().await?,
                 HandshakeState::Waiting => self.wait().await?,
                 HandshakeState::Finished => self.finish().await?,
-                _ => return Err(Error::ErrInvalidFsmTransition),
             };
         }
     }

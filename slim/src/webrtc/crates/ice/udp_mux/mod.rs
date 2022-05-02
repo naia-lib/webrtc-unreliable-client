@@ -57,9 +57,6 @@ pub struct UDPMuxDefault {
 
     // Close sender
     closed_watch_tx: Mutex<Option<watch::Sender<()>>>,
-
-    /// Close reciever
-    closed_watch_rx: watch::Receiver<()>,
 }
 
 impl UDPMuxDefault {

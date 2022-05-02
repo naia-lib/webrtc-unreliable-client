@@ -20,7 +20,6 @@ use crate::webrtc::ice::external_ip_mapper::*;
 use crate::webrtc::ice::mdns::*;
 use crate::webrtc::ice::network_type::*;
 use crate::webrtc::ice::state::*;
-use crate::webrtc::ice::udp_mux::UDPMux;
 use crate::webrtc::ice::udp_network::UDPNetwork;
 use crate::webrtc::ice::url::*;
 use agent_config::*;
@@ -324,11 +323,6 @@ impl Agent {
     pub async fn close(&self) -> Result<()> {
         if let Some(gather_candidate_cancel) = &self.gather_candidate_cancel {
             gather_candidate_cancel();
-        }
-
-        if let UDPNetwork::Muxed(ref udp_mux) = self.udp_network {
-            let (ufrag, _) = self.get_local_user_credentials().await;
-            udp_mux.remove_conn_by_ufrag(&ufrag).await;
         }
 
         //FIXME: deadlock here

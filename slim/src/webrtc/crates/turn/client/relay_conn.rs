@@ -62,7 +62,6 @@ pub(crate) struct RelayConnConfig {
 
 pub struct RelayConnInternal<T: 'static + RelayConnObserver + Send + Sync> {
     obs: Arc<Mutex<T>>,
-    relayed_addr: SocketAddr,
     perm_map: PermissionMap,
     binding_mgr: Arc<Mutex<BindingManager>>,
     integrity: MessageIntegrity,
@@ -195,7 +194,6 @@ impl<T: RelayConnObserver + Send + Sync> RelayConnInternal<T> {
     fn new(obs: Arc<Mutex<T>>, config: RelayConnConfig) -> Self {
         RelayConnInternal {
             obs,
-            relayed_addr: config.relayed_addr,
             perm_map: PermissionMap::new(),
             binding_mgr: config.binding_mgr,
             integrity: config.integrity,

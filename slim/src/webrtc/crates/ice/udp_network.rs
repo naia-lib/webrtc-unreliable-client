@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use super::udp_mux::UDPMux;
 
 #[derive(Default, Clone)]
 pub struct EphemeralUDP {
@@ -35,7 +32,6 @@ impl EphemeralUDP {
 #[derive(Clone)]
 pub enum UDPNetwork {
     Ephemeral(EphemeralUDP),
-    Muxed(Arc<dyn UDPMux + Send + Sync>),
 }
 
 impl Default for UDPNetwork {

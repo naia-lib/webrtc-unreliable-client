@@ -77,7 +77,6 @@ pub struct DTLSConn {
     pub(crate) state: State,                              // Internal state
 
     handshake_completed_successfully: Arc<AtomicBool>,
-    connection_closed_by_user: bool,
     // closeLock              sync.Mutex
     closed: AtomicBool, //  *closer.Closer
     //handshakeLoopsFinished sync.WaitGroup
@@ -275,7 +274,6 @@ impl DTLSConn {
             decrypted_rx: Mutex::new(decrypted_rx),
             state,
             handshake_completed_successfully,
-            connection_closed_by_user: false,
             closed: AtomicBool::new(false),
 
             current_flight: flight,
@@ -442,7 +440,7 @@ impl DTLSConn {
                 Content::ApplicationData(ApplicationData { data: p.to_vec() }),
             ),
             should_encrypt: true,
-            reset_local_sequence_number: false,
+
         }];
 
         if let Some(d) = duration {
@@ -495,7 +493,7 @@ impl DTLSConn {
                 }),
             ),
             should_encrypt: self.is_handshake_completed_successfully(),
-            reset_local_sequence_number: false,
+
         }])
         .await
     }
@@ -762,7 +760,7 @@ impl DTLSConn {
                                 }),
                             ),
                             should_encrypt: handshake_completed_successfully.load(Ordering::SeqCst),
-                            reset_local_sequence_number: false,
+
                         }],
                         None,
                     ))
@@ -843,7 +841,7 @@ impl DTLSConn {
                                 }),
                             ),
                             should_encrypt: handshake_completed_successfully.load(Ordering::SeqCst),
-                            reset_local_sequence_number: false,
+
                         }],
                         None,
                     ))

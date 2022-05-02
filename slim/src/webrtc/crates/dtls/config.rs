@@ -133,10 +133,8 @@ pub(crate) type PskCallback = Arc<dyn (Fn(&[u8]) -> Result<Vec<u8>>) + Send + Sy
 #[derive(Copy, Clone, PartialEq)]
 pub enum ClientAuthType {
     NoClientCert = 0,
-    RequestClientCert = 1,
     RequireAnyClientCert = 2,
     VerifyClientCertIfGiven = 3,
-    RequireAndVerifyClientCert = 4,
 }
 
 impl Default for ClientAuthType {

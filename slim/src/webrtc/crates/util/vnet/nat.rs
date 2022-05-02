@@ -5,7 +5,6 @@ use crate::webrtc::util::vnet::net::UDP_STR;
 
 use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
-use std::sync::atomic::AtomicU16;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
@@ -23,8 +22,6 @@ const DEFAULT_NAT_MAPPING_LIFE_TIME: Duration = Duration::from_secs(30);
 pub enum EndpointDependencyType {
     // EndpointIndependent means the behavior is independent of the endpoint's address or port
     EndpointIndependent,
-    // EndpointAddrDependent means the behavior is dependent on the endpoint's address
-    EndpointAddrDependent,
     // EndpointAddrPortDependent means the behavior is dependent on the endpoint's address and port
     EndpointAddrPortDependent,
 }
@@ -103,7 +100,6 @@ pub(crate) struct NetworkAddressTranslator {
     pub(crate) local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
     pub(crate) outbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<local-ip>:<local-port>[:remote-ip[:remote-port]]
     pub(crate) inbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<mapped-ip>:<mapped-port>"
-    pub(crate) udp_port_counter: Arc<AtomicU16>,
 }
 
 impl NetworkAddressTranslator {
@@ -138,7 +134,6 @@ impl NetworkAddressTranslator {
             local_ips: config.local_ips,
             outbound_map: Arc::new(Mutex::new(HashMap::new())),
             inbound_map: Arc::new(Mutex::new(HashMap::new())),
-            udp_port_counter: Arc::new(AtomicU16::new(0)),
         })
     }
 
@@ -175,9 +170,6 @@ impl NetworkAddressTranslator {
                 // Normal (NAPT) behavior
                 let filter_key = match self.nat_type.filtering_behavior {
                     EndpointDependencyType::EndpointIndependent => "".to_owned(),
-                    EndpointDependencyType::EndpointAddrDependent => {
-                        from.get_source_ip().to_string()
-                    }
                     EndpointDependencyType::EndpointAddrPortDependent => {
                         from.source_addr().to_string()
                     }

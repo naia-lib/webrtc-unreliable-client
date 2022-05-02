@@ -77,7 +77,6 @@ pub struct Bridge {
     stack: [Mutex<VecDeque<Bytes>>; 2],
     queue: [Mutex<VecDeque<Bytes>>; 2],
 
-    wr_tx: [Option<mpsc::Sender<Bytes>>; 2],
     filter_cb: [Option<FilterCbFn>; 2],
 }
 

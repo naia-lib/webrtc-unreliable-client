@@ -214,7 +214,7 @@ impl Flight for Flight5 {
                     ))),
                 ),
                 should_encrypt: false,
-                reset_local_sequence_number: false,
+
             });
         }
 
@@ -239,7 +239,7 @@ impl Flight for Flight5 {
                 ))),
             ),
             should_encrypt: false,
-            reset_local_sequence_number: false,
+
         });
 
         let server_key_exchange_data = cache
@@ -445,7 +445,7 @@ impl Flight for Flight5 {
                     ))),
                 ),
                 should_encrypt: false,
-                reset_local_sequence_number: false,
+
             };
 
             let h = match &mut p.record.content {
@@ -489,7 +489,7 @@ impl Flight for Flight5 {
                 Content::ChangeCipherSpec(ChangeCipherSpec {}),
             ),
             should_encrypt: false,
-            reset_local_sequence_number: false,
+
         });
 
         if state.local_verify_data.is_empty() {
@@ -592,7 +592,6 @@ impl Flight for Flight5 {
                 ))),
             ),
             should_encrypt: true,
-            reset_local_sequence_number: true,
         });
 
         Ok(pkts)

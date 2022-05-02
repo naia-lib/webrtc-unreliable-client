@@ -54,7 +54,6 @@ use tokio::sync::mpsc;
 pub(crate) struct Packet {
     pub(crate) record: RecordLayer,
     pub(crate) should_encrypt: bool,
-    pub(crate) reset_local_sequence_number: bool,
 }
 
 #[async_trait]
