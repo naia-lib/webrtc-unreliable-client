@@ -350,7 +350,7 @@ pub enum Error {
     #[error("{0}")]
     Ice(#[from] ice::Error),
     #[error("{0}")]
-    Dtls(#[from] dtls::Error),
+    Dtls(#[from] crate::webrtc::dtls::Error),
     #[error("{0}")]
     Data(#[from] crate::webrtc::data::Error),
     #[error("{0}")]

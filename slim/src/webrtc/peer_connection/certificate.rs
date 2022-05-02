@@ -2,7 +2,7 @@ use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::peer_connection::math_rand_alpha;
 
-use dtls::crypto::{CryptoPrivateKey, CryptoPrivateKeyKind};
+use crate::webrtc::dtls::crypto::{CryptoPrivateKey, CryptoPrivateKeyKind};
 use rcgen::{CertificateParams, KeyPair, RcgenError};
 use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};
 use sha2::{Digest, Sha256};
@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime};
 
 /// Certificate represents a x509Cert used to authenticate WebRTC communications.
 pub struct RTCCertificate {
-    pub(crate) certificate: dtls::crypto::Certificate,
+    pub(crate) certificate: crate::webrtc::dtls::crypto::Certificate,
     pub(crate) expires: SystemTime,
 }
 
@@ -82,7 +82,7 @@ impl RTCCertificate {
         let certificate = x509_cert.serialize_der()?;
 
         Ok(RTCCertificate {
-            certificate: dtls::crypto::Certificate {
+            certificate: crate::webrtc::dtls::crypto::Certificate {
                 certificate: vec![rustls::Certificate(certificate)],
                 private_key,
             },

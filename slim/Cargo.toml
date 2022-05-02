@@ -14,7 +14,6 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 sdp = { version = "0.5.1", path = "../../Forks/sdp" }
 ice = { package = "webrtc-ice", version = "0.6.6", path = "../../Forks/ice" }
-dtls = { package = "webrtc-dtls", version = "0.5.2", path = "../../Forks/dtls" }
 
 tokio = { version = "1.15.0", features = ["full"] }
 log = "0.4.14"
@@ -30,13 +29,30 @@ url = "2.2.2"
 rustls = { version = "0.19.0", features = ["dangerous_configuration"]}
 rcgen = { version = "0.8.14", features = ["pem", "x509-parser"]}
 ring = "0.16.20"
-sha2 = "0.10.1"
+sha-1 = "0.9.1"
+sha2 = "0.9.1"
 lazy_static = "1.4.0"
 hex = "0.4.3"
 crc = "2.1.0"
 derive_builder = "0.10.2"
 ipnet = "2.3.1"
 parking_lot = "0.11.2"
+serde_derive = "1.0.130"
+block-modes = "0.7.0"
+byteorder = "1.4.3"
+aes = "0.6.0"
+subtle = "2.4.1"
+ccm = "0.3.0"
+aes-gcm = "0.8.0"
+der-parser = "5.0"
+x509-parser = "0.9"
+webpki = "0.21.4"
+rand_core = "0.6.3"
+p256 = { version = "0.10", features=["default", "ecdh", "ecdsa"] }
+x25519-dalek = "2.0.0-pre.1"
+hmac = "0.10.1"
+elliptic-curve = { version = "0.11.12", features = ["default", "ecdh"] }
+bincode = "1.3.3"
 
 [target.'cfg(not(windows))'.dependencies]
 nix = "0.23"

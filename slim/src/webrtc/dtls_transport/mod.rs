@@ -5,8 +5,8 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
 use bytes::Bytes;
-use dtls::config::ClientAuthType;
-use dtls::conn::DTLSConn;
+use crate::webrtc::dtls::config::ClientAuthType;
+use crate::webrtc::dtls::conn::DTLSConn;
 use tokio::sync::Mutex;
 use crate::webrtc::util::Conn;
 
@@ -116,7 +116,7 @@ impl RTCDtlsTransport {
     async fn prepare_transport(
         &self,
         remote_parameters: DTLSParameters,
-    ) -> Result<(DTLSRole, dtls::config::Config)> {
+    ) -> Result<(DTLSRole, crate::webrtc::dtls::config::Config)> {
         self.ensure_ice_conn()?;
 
         if self.state() != RTCDtlsTransportState::New {
@@ -137,7 +137,7 @@ impl RTCDtlsTransport {
 
         Ok((
             DTLSRole::Client,
-            dtls::config::Config {
+            crate::webrtc::dtls::config::Config {
                 certificates: vec![certificate],
                 srtp_protection_profiles: vec![],
                 client_auth: ClientAuthType::RequireAnyClientCert,
@@ -156,7 +156,7 @@ impl RTCDtlsTransport {
 
             // Connect as DTLS Client/Server, function is blocking and we
             // must not hold the DTLSTransport lock
-            dtls::conn::DTLSConn::new(
+            crate::webrtc::dtls::conn::DTLSConn::new(
                 dtls_endpoint as Arc<dyn Conn + Send + Sync>,
                 dtls_config,
                 true,
@@ -164,7 +164,7 @@ impl RTCDtlsTransport {
             )
                 .await
         } else {
-            Err(dtls::Error::Other(
+            Err(crate::webrtc::dtls::Error::Other(
                 "ice_transport.new_endpoint failed".to_owned(),
             ))
         };
@@ -196,7 +196,7 @@ impl RTCDtlsTransport {
             match conn.close().await {
                 Ok(_) => {}
                 Err(err) => {
-                    if err.to_string() != dtls::Error::ErrConnClosed.to_string() {
+                    if err.to_string() != crate::webrtc::dtls::Error::ErrConnClosed.to_string() {
                         close_errs.push(err.into());
                     }
                 }

@@ -4,6 +4,7 @@ mod crates;
 pub use crates::data;
 pub use crates::sctp;
 pub use crates::util;
+pub use crates::dtls;
 
 pub mod api;
 pub mod data_channel;
