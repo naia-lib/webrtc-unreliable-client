@@ -5,22 +5,10 @@ use ice::mdns::MulticastDnsMode;
 use ice::network_type::NetworkType;
 
 use std::sync::Arc;
-use tokio::time::Duration;
 
 #[derive(Default, Clone)]
 pub struct Detach {
     pub data_channels: bool,
-}
-
-#[derive(Default, Clone)]
-pub struct Timeout {
-    pub ice_disconnected_timeout: Option<Duration>,
-    pub ice_failed_timeout: Option<Duration>,
-    pub ice_keepalive_interval: Option<Duration>,
-    pub ice_host_acceptance_min_wait: Option<Duration>,
-    pub ice_srflx_acceptance_min_wait: Option<Duration>,
-    pub ice_prflx_acceptance_min_wait: Option<Duration>,
-    pub ice_relay_acceptance_min_wait: Option<Duration>,
 }
 
 #[derive(Default, Clone)]
@@ -36,17 +24,11 @@ pub struct Candidates {
     pub password: String,
 }
 
-#[derive(Default, Clone)]
-pub struct ReplayProtection {
-    pub dtls: usize,
-}
-
 /// SettingEngine allows influencing behavior in ways that are not
 /// supported by the WebRTC API. This allows us to support additional
 /// use-cases without deviating from the WebRTC API elsewhere.
 #[derive(Default, Clone)]
 pub struct SettingEngine {
-    pub(crate) timeout: Timeout,
     pub(crate) candidates: Candidates,
 }
 
