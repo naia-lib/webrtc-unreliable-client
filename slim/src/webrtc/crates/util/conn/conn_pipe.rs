@@ -9,23 +9,6 @@ struct Pipe {
     wr_tx: Mutex<mpsc::Sender<Vec<u8>>>,
 }
 
-pub fn pipe() -> (impl Conn, impl Conn) {
-    let (cb1_tx, cb1_rx) = mpsc::channel(16);
-    let (cb2_tx, cb2_rx) = mpsc::channel(16);
-
-    let p1 = Pipe {
-        rd_rx: Mutex::new(cb1_rx),
-        wr_tx: Mutex::new(cb2_tx),
-    };
-
-    let p2 = Pipe {
-        rd_rx: Mutex::new(cb2_rx),
-        wr_tx: Mutex::new(cb1_tx),
-    };
-
-    (p1, p2)
-}
-
 #[async_trait]
 impl Conn for Pipe {
     async fn connect(&self, _addr: SocketAddr) -> Result<()> {

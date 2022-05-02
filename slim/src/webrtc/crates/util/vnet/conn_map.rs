@@ -107,13 +107,4 @@ impl UdpConnMap {
 
         Ok(())
     }
-
-    pub(crate) async fn len(&self) -> usize {
-        let port_map = self.port_map.lock().await;
-        let mut n = 0;
-        for conns in port_map.values() {
-            n += conns.len();
-        }
-        n
-    }
 }

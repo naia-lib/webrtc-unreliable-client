@@ -1,13 +1,8 @@
-#[cfg(test)]
-mod resolver_test;
-
-use crate::webrtc::util::error::*;
 
 use std::collections::HashMap;
 use std::future::Future;
 use std::net::IpAddr;
 use std::pin::Pin;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -18,30 +13,9 @@ pub(crate) struct Resolver {
 }
 
 impl Resolver {
-    pub(crate) fn new() -> Self {
-        let mut r = Resolver {
-            parent: None,
-            hosts: HashMap::new(),
-        };
-
-        if let Err(err) = r.add_host("localhost".to_owned(), "127.0.0.1".to_owned()) {
-            log::warn!("failed to add localhost to Resolver: {}", err);
-        }
-        r
-    }
 
     pub(crate) fn set_parent(&mut self, p: Arc<Mutex<Resolver>>) {
         self.parent = Some(p);
-    }
-
-    pub(crate) fn add_host(&mut self, name: String, ip_addr: String) -> Result<()> {
-        if name.is_empty() {
-            return Err(Error::ErrHostnameEmpty);
-        }
-        let ip = IpAddr::from_str(&ip_addr)?;
-        self.hosts.insert(name, ip);
-
-        Ok(())
     }
 
     pub(crate) fn lookup(

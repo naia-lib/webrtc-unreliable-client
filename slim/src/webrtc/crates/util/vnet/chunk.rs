@@ -331,20 +331,3 @@ impl Chunk for ChunkTcp {
         Ok(())
     }
 }
-
-impl ChunkTcp {
-    pub(crate) fn new(src_addr: SocketAddr, dst_addr: SocketAddr, flags: TcpFlag) -> Self {
-        ChunkTcp {
-            chunk_ip: ChunkIp {
-                timestamp: SystemTime::now(),
-                source_ip: src_addr.ip(),
-                destination_ip: dst_addr.ip(),
-                tag: assign_chunk_tag(),
-            },
-            source_port: src_addr.port(),
-            destination_port: dst_addr.port(),
-            flags,
-            user_data: vec![],
-        }
-    }
-}

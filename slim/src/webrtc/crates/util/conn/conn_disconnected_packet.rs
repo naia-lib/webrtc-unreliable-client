@@ -1,6 +1,5 @@
 use super::*;
 
-use std::net::Ipv4Addr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -10,15 +9,6 @@ use tokio::sync::Mutex;
 pub struct DisconnectedPacketConn {
     raddr: Mutex<SocketAddr>,
     pconn: Arc<dyn Conn + Send + Sync>,
-}
-
-impl DisconnectedPacketConn {
-    pub fn new(conn: Arc<dyn Conn + Send + Sync>) -> Self {
-        DisconnectedPacketConn {
-            raddr: Mutex::new(SocketAddr::new(Ipv4Addr::new(0, 0, 0, 0).into(), 0)),
-            pconn: conn,
-        }
-    }
 }
 
 #[async_trait]

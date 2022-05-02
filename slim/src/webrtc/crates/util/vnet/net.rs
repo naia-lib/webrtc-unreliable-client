@@ -14,7 +14,7 @@ use ipnet::IpNet;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::str::FromStr;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::Mutex;
@@ -24,15 +24,6 @@ pub(crate) const UDP_STR: &str = "udp";
 
 lazy_static! {
     pub static ref MAC_ADDR_COUNTER: AtomicU64 = AtomicU64::new(0xBEEFED910200);
-}
-
-pub(crate) type HardwareAddr = Vec<u8>;
-
-pub(crate) fn new_mac_address() -> HardwareAddr {
-    let b = MAC_ADDR_COUNTER
-        .fetch_add(1, Ordering::SeqCst)
-        .to_be_bytes();
-    b[2..].to_vec()
 }
 
 #[derive(Default)]
@@ -354,36 +345,6 @@ impl VNet {
 
         Ok(conn)
     }
-
-    pub(crate) async fn dail(
-        &self,
-        use_ipv4: bool,
-        remote_addr: &str,
-    ) -> Result<Arc<dyn Conn + Send + Sync>> {
-        let rem_addr = self.resolve_addr(use_ipv4, remote_addr).await?;
-
-        // Determine source address
-        let src_ip = {
-            let vi = self.vi.lock().await;
-            let any_ip = if use_ipv4 {
-                Ipv4Addr::new(0, 0, 0, 0).into()
-            } else {
-                Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0).into()
-            };
-            if let Some(src_ip) = vi.determine_source_ip(any_ip, rem_addr.ip()) {
-                src_ip
-            } else {
-                any_ip
-            }
-        };
-
-        let loc_addr = SocketAddr::new(src_ip, 0);
-
-        let conn = self.bind(loc_addr).await?;
-        conn.connect(rem_addr).await?;
-
-        Ok(conn)
-    }
 }
 
 // NetConfig is a bag of configuration parameters passed to NewNet().
@@ -488,24 +449,6 @@ impl Net {
         }
     }
 
-    // InterfaceByName returns the interface specified by name.
-    pub async fn get_interface(&self, ifc_name: &str) -> Option<Interface> {
-        match self {
-            Net::VNet(vnet) => {
-                let net = vnet.lock().await;
-                net.get_interface(ifc_name).await
-            }
-            Net::Ifs(ifs) => {
-                for ifc in ifs {
-                    if ifc.name == ifc_name {
-                        return Some(ifc.clone());
-                    }
-                }
-                None
-            }
-        }
-    }
-
     // IsVirtual tests if the virtual network is enabled.
     pub fn is_virtual(&self) -> bool {
         match self {
@@ -531,39 +474,6 @@ impl Net {
                 net.bind(addr).await
             }
             Net::Ifs(_) => Ok(Arc::new(UdpSocket::bind(addr).await?)),
-        }
-    }
-
-    pub async fn dail(
-        &self,
-        use_ipv4: bool,
-        remote_addr: &str,
-    ) -> Result<Arc<dyn Conn + Send + Sync>> {
-        match self {
-            Net::VNet(vnet) => {
-                let net = vnet.lock().await;
-                net.dail(use_ipv4, remote_addr).await
-            }
-            Net::Ifs(_) => {
-                let any_ip = if use_ipv4 {
-                    Ipv4Addr::new(0, 0, 0, 0).into()
-                } else {
-                    Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0).into()
-                };
-                let local_addr = SocketAddr::new(any_ip, 0);
-
-                let conn = UdpSocket::bind(local_addr).await?;
-                conn.connect(remote_addr).await?;
-
-                Ok(Arc::new(conn))
-            }
-        }
-    }
-
-    pub fn get_nic(&self) -> Result<Arc<Mutex<dyn Nic + Send + Sync>>> {
-        match self {
-            Net::VNet(vnet) => Ok(Arc::clone(vnet) as Arc<Mutex<dyn Nic + Send + Sync>>),
-            Net::Ifs(_) => Err(Error::ErrVnetDisabled),
         }
     }
 }
