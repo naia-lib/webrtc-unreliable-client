@@ -30,29 +30,3 @@ pub fn match_range(lower: u8, upper: u8) -> MatchFunc {
 pub fn match_dtls(b: &[u8]) -> bool {
     match_range(20, 63)(b)
 }
-
-// match_srtp_or_srtcp is a MatchFunc that accepts packets with the first byte in [128..191]
-// as defied in RFC7983
-pub fn match_srtp_or_srtcp(b: &[u8]) -> bool {
-    match_range(128, 191)(b)
-}
-
-pub(crate) fn is_rtcp(buf: &[u8]) -> bool {
-    // Not long enough to determine RTP/RTCP
-    if buf.len() < 4 {
-        return false;
-    }
-
-    let rtcp_packet_type = buf[1];
-    (192..=223).contains(&rtcp_packet_type)
-}
-
-/// match_srtp is a MatchFunc that only matches SRTP and not SRTCP
-pub fn match_srtp(buf: &[u8]) -> bool {
-    match_srtp_or_srtcp(buf) && !is_rtcp(buf)
-}
-
-/// match_srtcp is a MatchFunc that only matches SRTCP and not SRTP
-pub fn match_srtcp(buf: &[u8]) -> bool {
-    match_srtp_or_srtcp(buf) && is_rtcp(buf)
-}

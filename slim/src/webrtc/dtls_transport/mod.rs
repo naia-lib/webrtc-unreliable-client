@@ -7,8 +7,6 @@ use std::sync::Arc;
 use bytes::Bytes;
 use dtls::config::ClientAuthType;
 use dtls::conn::DTLSConn;
-use dtls::extension::extension_use_srtp::SrtpProtectionProfile;
-use srtp::protection_profile::ProtectionProfile;
 use tokio::sync::Mutex;
 use util::Conn;
 
@@ -21,21 +19,13 @@ use crate::webrtc::error::{flatten_errs, Error, Result};
 use crate::webrtc::ice_transport::ice_role::RTCIceRole;
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
-use crate::webrtc::mux::endpoint::Endpoint;
-use crate::webrtc::mux::mux_func::{match_dtls, match_srtcp, match_srtp};
+use crate::webrtc::mux::mux_func::match_dtls;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 
 pub mod dtls_fingerprint;
 pub mod dtls_parameters;
 pub mod dtls_role;
 pub mod dtls_transport_state;
-
-pub(crate) fn default_srtp_protection_profiles() -> Vec<SrtpProtectionProfile> {
-    vec![
-        SrtpProtectionProfile::Srtp_Aead_Aes_128_Gcm,
-        SrtpProtectionProfile::Srtp_Aes128_Cm_Hmac_Sha1_80,
-    ]
-}
 
 pub type OnDTLSTransportStateChangeHdlrFn = Box<
     dyn (FnMut(RTCDtlsTransportState) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
@@ -56,12 +46,8 @@ pub struct RTCDtlsTransport {
     pub(crate) remote_parameters: Mutex<DTLSParameters>,
     pub(crate) remote_certificate: Mutex<Bytes>,
     pub(crate) state: AtomicU8, //DTLSTransportState,
-    pub(crate) srtp_protection_profile: Mutex<ProtectionProfile>,
     pub(crate) on_state_change_handler: Arc<Mutex<Option<OnDTLSTransportStateChangeHdlrFn>>>,
     pub(crate) conn: Mutex<Option<Arc<DTLSConn>>>,
-
-    pub(crate) srtp_endpoint: Mutex<Option<Arc<Endpoint>>>,
-    pub(crate) srtcp_endpoint: Mutex<Option<Arc<Endpoint>>>,
 }
 
 impl RTCDtlsTransport {
@@ -169,14 +155,6 @@ impl RTCDtlsTransport {
         }
 
         {
-            let mut srtp_endpoint = self.srtp_endpoint.lock().await;
-            *srtp_endpoint = self.ice_transport.new_endpoint(Box::new(match_srtp)).await;
-        }
-        {
-            let mut srtcp_endpoint = self.srtcp_endpoint.lock().await;
-            *srtcp_endpoint = self.ice_transport.new_endpoint(Box::new(match_srtcp)).await;
-        }
-        {
             let mut rp = self.remote_parameters.lock().await;
             *rp = remote_parameters;
         }
@@ -192,15 +170,7 @@ impl RTCDtlsTransport {
             self.role().await,
             dtls::config::Config {
                 certificates: vec![certificate],
-                srtp_protection_profiles: if !self
-                    .setting_engine
-                    .srtp_protection_profiles
-                    .is_empty()
-                {
-                    self.setting_engine.srtp_protection_profiles.clone()
-                } else {
-                    default_srtp_protection_profiles()
-                },
+                srtp_protection_profiles: vec![],
                 client_auth: ClientAuthType::RequireAnyClientCert,
                 insecure_skip_verify: true,
                 ..Default::default()
@@ -213,30 +183,20 @@ impl RTCDtlsTransport {
         let dtls_conn_result = if let Some(dtls_endpoint) =
             self.ice_transport.new_endpoint(Box::new(match_dtls)).await
         {
-            let (role, mut dtls_config) = self.prepare_transport(remote_parameters).await?;
+            let (_, mut dtls_config) = self.prepare_transport(remote_parameters).await?;
             if self.setting_engine.replay_protection.dtls != 0 {
                 dtls_config.replay_protection_window = self.setting_engine.replay_protection.dtls;
             }
 
             // Connect as DTLS Client/Server, function is blocking and we
             // must not hold the DTLSTransport lock
-            if role == DTLSRole::Client {
-                dtls::conn::DTLSConn::new(
-                    dtls_endpoint as Arc<dyn Conn + Send + Sync>,
-                    dtls_config,
-                    true,
-                    None,
-                )
+            dtls::conn::DTLSConn::new(
+                dtls_endpoint as Arc<dyn Conn + Send + Sync>,
+                dtls_config,
+                true,
+                None,
+            )
                 .await
-            } else {
-                dtls::conn::DTLSConn::new(
-                    dtls_endpoint as Arc<dyn Conn + Send + Sync>,
-                    dtls_config,
-                    false,
-                    None,
-                )
-                .await
-            }
         } else {
             Err(dtls::Error::Other(
                 "ice_transport.new_endpoint failed".to_owned(),
@@ -250,27 +210,6 @@ impl RTCDtlsTransport {
                 return Err(err.into());
             }
         };
-
-        let srtp_profile = dtls_conn.selected_srtpprotection_profile();
-        {
-            let mut srtp_protection_profile = self.srtp_protection_profile.lock().await;
-            *srtp_protection_profile = match srtp_profile {
-                dtls::extension::extension_use_srtp::SrtpProtectionProfile::Srtp_Aead_Aes_128_Gcm => {
-                    srtp::protection_profile::ProtectionProfile::AeadAes128Gcm
-                }
-                dtls::extension::extension_use_srtp::SrtpProtectionProfile::Srtp_Aes128_Cm_Hmac_Sha1_80 => {
-                    srtp::protection_profile::ProtectionProfile::Aes128CmHmacSha1_80
-                }
-                _ => {
-                    if let Err(err) = dtls_conn.close().await {
-                        log::error!("{}", err);
-                    }
-
-                    self.state_change(RTCDtlsTransportState::Failed).await;
-                    return Err(Error::ErrNoSRTPProtectionProfile);
-                }
-            };
-        }
 
         {
             let mut conn = self.conn.lock().await;

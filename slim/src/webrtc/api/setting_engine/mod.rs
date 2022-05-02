@@ -1,9 +1,6 @@
-#[cfg(test)]
-mod setting_engine_test;
 
 use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
-use dtls::extension::extension_use_srtp::SrtpProtectionProfile;
 use ice::agent::agent_config::InterfaceFilterFn;
 use ice::mdns::MulticastDnsMode;
 use ice::network_type::NetworkType;
@@ -64,7 +61,6 @@ pub struct SettingEngine {
     //iceTCPMux                                 :ice.TCPMux,?
     //iceProxyDialer                            :proxy.Dialer,?
     pub(crate) udp_network: UDPNetwork,
-    pub(crate) srtp_protection_profiles: Vec<SrtpProtectionProfile>,
 }
 
 impl SettingEngine {
