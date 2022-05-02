@@ -84,14 +84,13 @@ impl RTCDtlsTransport {
         certificates: Vec<RTCCertificate>,
         setting_engine: Arc<SettingEngine>,
     ) -> Self {
-        let (srtp_ready_tx, srtp_ready_rx) = mpsc::channel(1);
+        let (srtp_ready_tx, _) = mpsc::channel(1);
         RTCDtlsTransport {
             ice_transport,
             certificates,
             setting_engine,
             srtp_ready_signal: Arc::new(AtomicBool::new(false)),
             srtp_ready_tx: Mutex::new(Some(srtp_ready_tx)),
-            //srtp_ready_rx: Mutex::new(Some(srtp_ready_rx)),
             state: AtomicU8::new(RTCDtlsTransportState::New as u8),
             ..Default::default()
         }

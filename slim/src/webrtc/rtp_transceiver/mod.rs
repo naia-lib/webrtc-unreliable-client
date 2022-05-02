@@ -1,10 +1,8 @@
 
-use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::*;
-use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::AtomicU8;
 use tokio::sync::Mutex;
 
 pub(crate) mod fmtp;
@@ -100,29 +98,4 @@ pub struct RTCRtpTransceiver {
     direction: AtomicU8,                          //RTPTransceiverDirection, //atomic.Value
     pub(crate) stopped: bool,
     pub(crate) kind: bool,
-}
-
-impl RTCRtpTransceiver {
-
-    /// set_mid sets the RTPTransceiver's mid. If it was already set, will return an error.
-    pub(crate) async fn set_mid(&self, mid: String) -> Result<()> {
-        let mut m = self.mid.lock().await;
-        if !m.is_empty() {
-            return Err(Error::ErrRTPTransceiverCannotChangeMid);
-        }
-        *m = mid;
-
-        Ok(())
-    }
-
-    /// mid gets the Transceiver's mid value. When not already set, this value will be set in CreateOffer or create_answer.
-    pub async fn mid(&self) -> String {
-        let mid = self.mid.lock().await;
-        mid.clone()
-    }
-
-    /// direction returns the RTPTransceiver's current direction
-    pub fn direction(&self) -> RTCRtpTransceiverDirection {
-        self.direction.load(Ordering::SeqCst).into()
-    }
 }

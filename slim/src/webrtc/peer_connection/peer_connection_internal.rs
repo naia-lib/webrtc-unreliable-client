@@ -446,22 +446,6 @@ impl PeerConnectionInternal {
 
         ice_transport
     }
-
-    /// has_local_description_changed returns whether local media (rtp_transceivers) has changed
-    /// caller of this method should hold `pc.mu` lock
-    pub(super) async fn has_local_description_changed(&self, desc: &RTCSessionDescription) -> bool {
-        let rtp_transceivers = self.rtp_transceivers.lock().await;
-        for t in &*rtp_transceivers {
-            if let Some(m) = get_by_mid(t.mid().await.as_str(), desc) {
-                if get_peer_direction(m) != t.direction() {
-                    return true;
-                }
-            } else {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 type IResult<T> = std::result::Result<T, interceptor::Error>;

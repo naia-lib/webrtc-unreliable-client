@@ -280,16 +280,6 @@ pub(crate) fn description_is_plan_b(
     Ok(false)
 }
 
-pub(crate) fn get_peer_direction(media: &MediaDescription) -> RTCRtpTransceiverDirection {
-    for a in &media.attributes {
-        let direction = RTCRtpTransceiverDirection::from(a.key.as_str());
-        if direction != RTCRtpTransceiverDirection::Unspecified {
-            return direction;
-        }
-    }
-    RTCRtpTransceiverDirection::Unspecified
-}
-
 pub(crate) fn extract_fingerprint(desc: &SessionDescription) -> Result<(String, String)> {
     let mut fingerprints = vec![];
 
@@ -384,22 +374,6 @@ pub(crate) fn have_application_media_section(desc: &SessionDescription) -> bool 
     }
 
     false
-}
-
-pub(crate) fn get_by_mid<'a, 'b>(
-    search_mid: &'a str,
-    desc: &'b session_description::RTCSessionDescription,
-) -> Option<&'b MediaDescription> {
-    if let Some(parsed) = &desc.parsed {
-        for m in &parsed.media_descriptions {
-            if let Some(mid) = m.attribute(ATTR_KEY_MID).and_then(|o| o) {
-                if mid == search_mid {
-                    return Some(m);
-                }
-            }
-        }
-    }
-    None
 }
 
 /// have_data_channel return MediaDescription with MediaName equal application

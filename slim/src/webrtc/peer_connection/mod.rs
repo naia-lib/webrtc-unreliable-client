@@ -393,8 +393,8 @@ impl RTCPeerConnection {
         // audio RTCRtpTransceiver was added to connection, but while performing the in-parallel
         // steps to create an offer, a video RTCRtpTransceiver was added, requiring additional
         // inspection of video system resources.
-        let mut count = 0;
-        let mut offer;
+        let count = 0;
+        let offer;
 
         loop {
 
@@ -477,15 +477,7 @@ impl RTCPeerConnection {
                 parsed: Some(d),
             };
 
-            // Verify local media hasn't changed during offer
-            // generation. Recompute if necessary
-            if is_plan_b || !self.internal.has_local_description_changed(&offer).await {
-                break;
-            }
-            count += 1;
-            if count >= 128 {
-                return Err(Error::ErrExcessiveRetries);
-            }
+            break;
         }
 
         {
