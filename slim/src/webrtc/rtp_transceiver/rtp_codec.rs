@@ -80,14 +80,3 @@ pub struct RTCRtpCodecParameters {
 /// <https://w3c.github.io/webrtc-pc/#dictionary-rtcrtpparameters-members>
 #[derive(Default, Debug, Clone)]
 pub struct RTCRtpParameters;
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum CodecMatch {
-    None = 0,
-}
-
-impl Default for CodecMatch {
-    fn default() -> Self {
-        CodecMatch::None
-    }
-}

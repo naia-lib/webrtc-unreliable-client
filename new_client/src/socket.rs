@@ -8,10 +8,8 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use webrtc::{
-    ice_transport::ice_candidate::RTCIceCandidateInit,
-    peer_connection::{
-        sdp::session_description::RTCSessionDescription, RTCPeerConnection
-    }
+    peer_connection::{sdp::session_description::RTCSessionDescription, RTCPeerConnection},
+    data::data_channel::DataChannel
 };
 
 use super::addr_cell::AddrCell;
@@ -116,15 +114,8 @@ impl Socket {
             .receive_candidate(session_response.candidate.candidate.as_str())
             .await;
 
-        // create ice candidate
-        let ice_candidate = RTCIceCandidateInit {
-            candidate: session_response.candidate.candidate,
-            sdp_mid: Some(session_response.candidate.sdp_mid),
-            sdp_mline_index: Some(session_response.candidate.sdp_m_line_index),
-            ..Default::default()
-        };
         // add ice candidate to connection
-        if let Err(error) = peer_connection.add_ice_candidate(ice_candidate).await {
+        if let Err(error) = peer_connection.add_ice_candidate(session_response.candidate.candidate).await {
             panic!("Error during add_ice_candidate: {:?}", error);
         }
 
@@ -134,7 +125,7 @@ impl Socket {
 
 // read_loop shows how to read from the datachannel directly
 async fn read_loop(
-    data_channel: Arc<webrtc::data::data_channel::DataChannel>,
+    data_channel: Arc<DataChannel>,
     to_client_sender: Sender<Box<[u8]>>,
 ) -> Result<()> {
     let mut buffer = vec![0u8; MESSAGE_SIZE];
@@ -158,7 +149,7 @@ async fn read_loop(
 
 // write_loop shows how to write to the datachannel directly
 async fn write_loop(
-    data_channel: Arc<webrtc::data::data_channel::DataChannel>,
+    data_channel: Arc<DataChannel>,
     mut to_server_receiver: Receiver<Box<[u8]>>,
 ) -> Result<()> {
     loop {

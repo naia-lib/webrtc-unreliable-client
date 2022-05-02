@@ -24,7 +24,7 @@ use crate::webrtc::dtls_transport::dtls_role::{
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{flatten_errs, Error, Result};
-use crate::webrtc::ice_transport::ice_candidate::{RTCIceCandidate, RTCIceCandidateInit};
+use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
 use crate::webrtc::ice_transport::ice_gatherer::{
@@ -1439,14 +1439,14 @@ impl RTCPeerConnection {
 
     /// add_ice_candidate accepts an ICE candidate string and adds it
     /// to the existing set of candidates.
-    pub async fn add_ice_candidate(&self, candidate: RTCIceCandidateInit) -> Result<()> {
+    pub async fn add_ice_candidate(&self, candidate_str: String) -> Result<()> {
         if self.remote_description().await.is_none() {
             return Err(Error::ErrNoRemoteDescription);
         }
 
-        let candidate_value = match candidate.candidate.strip_prefix("candidate:") {
+        let candidate_value = match candidate_str.strip_prefix("candidate:") {
             Some(s) => s,
-            None => candidate.candidate.as_str(),
+            None => candidate_str.as_str(),
         };
 
         let ice_candidate = if !candidate_value.is_empty() {

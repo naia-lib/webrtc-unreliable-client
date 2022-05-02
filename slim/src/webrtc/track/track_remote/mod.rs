@@ -1,6 +1,6 @@
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
-use crate::webrtc::rtp_transceiver::{PayloadType, SSRC};
+use crate::webrtc::rtp_transceiver::SSRC;
 
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTPReceiverInternal;
 
@@ -115,57 +115,9 @@ impl TrackRemote {
         self.rid.as_str()
     }
 
-    /// payload_type gets the PayloadType of the track
-    pub fn payload_type(&self) -> PayloadType {
-        self.payload_type.load(Ordering::SeqCst)
-    }
-
-    pub fn set_payload_type(&self, payload_type: PayloadType) {
-        self.payload_type.store(payload_type, Ordering::SeqCst);
-    }
-
-    /// kind gets the Kind of the track
-    pub fn kind(&self) -> RTPCodecType {
-        self.kind.load(Ordering::SeqCst).into()
-    }
-
-    pub fn set_kind(&self, kind: RTPCodecType) {
-        self.kind.store(kind as u8, Ordering::SeqCst);
-    }
-
     /// ssrc gets the SSRC of the track
     pub fn ssrc(&self) -> SSRC {
         self.ssrc.load(Ordering::SeqCst)
-    }
-
-    pub fn set_ssrc(&self, ssrc: SSRC) {
-        self.ssrc.store(ssrc, Ordering::SeqCst);
-    }
-
-    /// msid gets the Msid of the track
-    pub async fn msid(&self) -> String {
-        self.stream_id().await + " " + self.id().await.as_str()
-    }
-
-    /// codec gets the Codec of the track
-    pub async fn codec(&self) -> RTCRtpCodecParameters {
-        let codec = self.codec.lock().await;
-        codec.clone()
-    }
-
-    pub async fn set_codec(&self, codec: RTCRtpCodecParameters) {
-        let mut c = self.codec.lock().await;
-        *c = codec;
-    }
-
-    pub async fn params(&self) -> RTCRtpParameters {
-        let p = self.params.lock().await;
-        p.clone()
-    }
-
-    pub async fn set_params(&self, params: RTCRtpParameters) {
-        let mut p = self.params.lock().await;
-        *p = params;
     }
 
     /// Read reads data from the track.

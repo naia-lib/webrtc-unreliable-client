@@ -36,7 +36,7 @@ impl RTCSessionDescription {
     }
 
     /// Unmarshal is a helper to deserialize the sdp
-    pub fn unmarshal(&self) -> Result<SessionDescription> {
+    pub(crate) fn unmarshal(&self) -> Result<SessionDescription> {
         let mut reader = Cursor::new(self.sdp.as_bytes());
         let parsed = SessionDescription::unmarshal(&mut reader)?;
         Ok(parsed)
