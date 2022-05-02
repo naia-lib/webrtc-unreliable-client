@@ -16,8 +16,6 @@ util = { package = "webrtc-util", version = "0.5.3", path = "../../Forks/util" }
 sdp = { version = "0.5.1", path = "../../Forks/sdp" }
 ice = { package = "webrtc-ice", version = "0.6.6", path = "../../Forks/ice" }
 dtls = { package = "webrtc-dtls", version = "0.5.2", path = "../../Forks/dtls" }
-rtp = { version = "0.6.5", path = "../../Forks/rtp" }
-rtcp = { version = "0.6.5", path = "../../Forks/rtcp" }
 srtp = { package = "webrtc-srtp", version = "0.8.9", path = "../../Forks/srtp" }
 interceptor = { version = "0.7.6", path = "../../Forks/interceptor" }
 

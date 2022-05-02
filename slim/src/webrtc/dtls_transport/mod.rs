@@ -118,21 +118,6 @@ impl RTCDtlsTransport {
         self.state.load(Ordering::SeqCst).into()
     }
 
-    /// write_rtcp sends a user provided RTCP packet to the connected peer. If no peer is connected the
-    /// packet is discarded.
-    pub async fn write_rtcp(
-        &self,
-        pkts: &[Box<dyn rtcp::packet::Packet + Send + Sync>],
-    ) -> Result<usize> {
-        let srtcp_session = self.srtcp_session.lock().await;
-        if let Some(srtcp_session) = &*srtcp_session {
-            let raw = rtcp::packet::marshal(pkts)?;
-            Ok(srtcp_session.write(&raw, false).await?)
-        } else {
-            Ok(0)
-        }
-    }
-
     /// get_local_parameters returns the DTLS parameters of the local DTLSTransport upon construction.
     pub fn get_local_parameters(&self) -> Result<DTLSParameters> {
         let mut fingerprints = vec![];

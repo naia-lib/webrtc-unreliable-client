@@ -361,10 +361,6 @@ pub enum Error {
     Sdp(#[from] sdp::Error),
     #[error("{0}")]
     Interceptor(#[from] interceptor::Error),
-    #[error("{0}")]
-    Rtcp(#[from] rtcp::Error),
-    #[error("{0}")]
-    Rtp(#[from] rtp::Error),
 
     #[error("utf-8 error: {0}")]
     Utf8(#[from] FromUtf8Error),
