@@ -1285,10 +1285,7 @@ impl RTCPeerConnection {
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #12)
         params.negotiated = false;
 
-        let d = Arc::new(RTCDataChannel::new(
-            params,
-            Arc::clone(&self.internal.setting_engine),
-        ));
+        let d = Arc::new(RTCDataChannel::new(params));
 
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #16)
         if d.max_packet_lifetime.is_some() && d.max_retransmits.is_some() {

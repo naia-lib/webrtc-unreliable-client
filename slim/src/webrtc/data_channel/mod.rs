@@ -21,12 +21,8 @@ use tokio::sync::{Mutex, Notify};
 
 use data_channel_state::RTCDataChannelState;
 
-use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::error::{Error, OnErrorHdlrFn, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-
-/// message size limit for Chromium
-const DATA_CHANNEL_BUFFER_SIZE: u16 = u16::MAX;
 
 pub type OnMessageHdlrFn = Box<
     dyn (FnMut(DataChannelMessage) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
@@ -45,6 +41,10 @@ pub type OnCloseHdlrFn =
 /// which can be used for bidirectional peer-to-peer transfers of arbitrary data
 #[derive(Default)]
 pub struct RTCDataChannel {
+    // these fields, when removed, seem to crash compilation...
+    #[allow(dead_code)]
+    pub(crate) setting_engine: bool,
+
     pub(crate) label: String,
     pub(crate) ordered: bool,
     pub(crate) max_packet_lifetime: Option<u16>,
@@ -76,13 +76,11 @@ pub struct RTCDataChannel {
 
     pub(crate) notify_tx: Arc<Notify>,
 
-    // A reference to the associated api object used by this datachannel
-    pub(crate) setting_engine: Arc<SettingEngine>,
 }
 
 impl RTCDataChannel {
     // create the DataChannel object before the networking is set up.
-    pub(crate) fn new(params: DataChannelParameters, setting_engine: Arc<SettingEngine>) -> Self {
+    pub(crate) fn new(params: DataChannelParameters) -> Self {
         let id = match params.id {
             Some(inner) => inner,
             None => 0,
@@ -102,7 +100,7 @@ impl RTCDataChannel {
 
             notify_tx: Arc::new(Notify::new()),
 
-            setting_engine,
+            setting_engine: true,
             ..Default::default()
         }
     }
@@ -208,7 +206,7 @@ impl RTCDataChannel {
 
     async fn do_open(&self) {
         let on_open_handler = Arc::clone(&self.on_open_handler);
-        let detach_data_channels = self.setting_engine.detach.data_channels;
+        let detach_data_channels = true;
         let detach_called = Arc::clone(&self.detach_called);
         tokio::spawn(async move {
             let mut handler = on_open_handler.lock().await;
@@ -253,25 +251,6 @@ impl RTCDataChannel {
         self.set_ready_state(RTCDataChannelState::Open);
 
         self.do_open().await;
-
-        if !self.setting_engine.detach.data_channels {
-            let ready_state = Arc::clone(&self.ready_state);
-            let on_message_handler = Arc::clone(&self.on_message_handler);
-            let on_close_handler = Arc::clone(&self.on_close_handler);
-            let on_error_handler = Arc::clone(&self.on_error_handler);
-            let notify_rx = self.notify_tx.clone();
-            tokio::spawn(async move {
-                RTCDataChannel::read_loop(
-                    notify_rx,
-                    dc,
-                    ready_state,
-                    on_message_handler,
-                    on_close_handler,
-                    on_error_handler,
-                )
-                .await;
-            });
-        }
     }
 
     /// on_error sets an event handler which is invoked when
@@ -279,60 +258,6 @@ impl RTCDataChannel {
     pub async fn on_error(&self, f: OnErrorHdlrFn) {
         let mut handler = self.on_error_handler.lock().await;
         *handler = Some(f);
-    }
-
-    async fn read_loop(
-        notify_rx: Arc<Notify>,
-        data_channel: Arc<crate::webrtc::data::data_channel::DataChannel>,
-        ready_state: Arc<AtomicU8>,
-        on_message_handler: Arc<Mutex<Option<OnMessageHdlrFn>>>,
-        on_close_handler: Arc<Mutex<Option<OnCloseHdlrFn>>>,
-        on_error_handler: Arc<Mutex<Option<OnErrorHdlrFn>>>,
-    ) {
-        let mut buffer = vec![0u8; DATA_CHANNEL_BUFFER_SIZE as usize];
-        loop {
-            let (n, is_string) = tokio::select! {
-                _ = notify_rx.notified() => break,
-                result = data_channel.read_data_channel(&mut buffer) => {
-                    match result{
-                        Ok((n, is_string)) => (n, is_string),
-                        Err(err) => {
-                            ready_state.store(RTCDataChannelState::Closed as u8, Ordering::SeqCst);
-                            if err != crate::webrtc::sctp::Error::ErrStreamClosed {
-                                let on_error_handler2 = Arc::clone(&on_error_handler);
-                                tokio::spawn(async move {
-                                    let mut handler = on_error_handler2.lock().await;
-                                    if let Some(f) = &mut *handler {
-                                        f(err.into()).await;
-                                    }
-                                });
-                            }
-
-                            let on_close_handler2 = Arc::clone(&on_close_handler);
-                            tokio::spawn(async move {
-                                let mut handler = on_close_handler2.lock().await;
-                                if let Some(f) = &mut *handler {
-                                    f().await;
-                                }
-                            });
-
-                            break;
-                        }
-                    }
-                }
-            };
-
-            {
-                let mut handler = on_message_handler.lock().await;
-                if let Some(f) = &mut *handler {
-                    f(DataChannelMessage {
-                        is_string,
-                        data: Bytes::from(buffer[..n].to_vec()),
-                    })
-                    .await;
-                }
-            }
-        }
     }
 
     /// send sends the binary message to the DataChannel peer
@@ -376,9 +301,6 @@ impl RTCDataChannel {
     /// pion/datachannel documentation for the correct way to handle the
     /// resulting DataChannel object.
     pub async fn detach(&self) -> Result<Arc<crate::webrtc::data::data_channel::DataChannel>> {
-        if !self.setting_engine.detach.data_channels {
-            return Err(Error::ErrDetachNotEnabled);
-        }
 
         let data_channel = self.data_channel.lock().await;
         if let Some(dc) = &*data_channel {

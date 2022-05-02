@@ -7,7 +7,6 @@ pub mod sctp_transport_state;
 use sctp_transport_state::RTCSctpTransportState;
 use std::collections::HashSet;
 
-use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 use crate::webrtc::dtls_transport::*;
@@ -50,12 +49,17 @@ struct AcceptDataChannelParams {
     on_data_channel_opened_handler: Arc<Mutex<Option<OnDataChannelOpenedHdlrFn>>>,
     data_channels_opened: Arc<AtomicU32>,
     data_channels_accepted: Arc<AtomicU32>,
-    setting_engine: Arc<SettingEngine>,
 }
 
 /// SCTPTransport provides details about the SCTP transport.
 #[derive(Default)]
 pub struct RTCSctpTransport {
+    // removing this causes compile panic, last checked
+    #[allow(dead_code)]
+    max_message_size: bool,
+    #[allow(dead_code)]
+    setting_engine: bool,
+
     pub(crate) dtls_transport: Arc<RTCDtlsTransport>,
 
     // State represents the current state of the SCTP transport.
@@ -64,13 +68,6 @@ pub struct RTCSctpTransport {
     // SCTPTransportState doesn't have an enum to distinguish between New/Connecting
     // so we need a dedicated field
     is_started: AtomicBool,
-
-    // max_message_size represents the maximum size of data that can be passed to
-    // DataChannel's send() method.
-
-    // removing this causes compile panic, last checked
-    #[allow(dead_code)]
-    max_message_size: usize,
 
     // max_channels represents the maximum amount of DataChannel's that can
     // be used simultaneously.
@@ -90,33 +87,30 @@ pub struct RTCSctpTransport {
 
     notify_tx: Arc<Notify>,
 
-    setting_engine: Arc<SettingEngine>,
+
 }
 
 impl RTCSctpTransport {
     pub(crate) fn new(
-        dtls_transport: Arc<RTCDtlsTransport>,
-        setting_engine: Arc<SettingEngine>,
+        dtls_transport: Arc<RTCDtlsTransport>
     ) -> Self {
         RTCSctpTransport {
+            setting_engine: true,
+            max_message_size: true,
+
             dtls_transport,
             state: AtomicU8::new(RTCSctpTransportState::Connecting as u8),
             is_started: AtomicBool::new(false),
-            max_message_size: RTCSctpTransport::calc_message_size(65536, 65536),
             max_channels: SCTP_MAX_CHANNELS,
             sctp_association: Mutex::new(None),
             on_error_handler: Arc::new(Mutex::new(None)),
             on_data_channel_handler: Arc::new(Mutex::new(None)),
             on_data_channel_opened_handler: Arc::new(Mutex::new(None)),
-
             data_channels: Arc::new(Mutex::new(vec![])),
             data_channels_opened: Arc::new(AtomicU32::new(0)),
             data_channels_requested: Arc::new(AtomicU32::new(0)),
             data_channels_accepted: Arc::new(AtomicU32::new(0)),
-
             notify_tx: Arc::new(Notify::new()),
-
-            setting_engine,
         }
     }
 
@@ -169,7 +163,6 @@ impl RTCSctpTransport {
                 on_data_channel_opened_handler: Arc::clone(&self.on_data_channel_opened_handler),
                 data_channels_opened: Arc::clone(&self.data_channels_opened),
                 data_channels_accepted: Arc::clone(&self.data_channels_accepted),
-                setting_engine: Arc::clone(&self.setting_engine),
             };
             tokio::spawn(async move {
                 RTCSctpTransport::accept_data_channels(param).await;
@@ -262,8 +255,7 @@ impl RTCSctpTransport {
                     ordered,
                     max_packet_life_time: max_packet_lifetime,
                     max_retransmits,
-                },
-                Arc::clone(&param.setting_engine),
+                }
             ));
 
             {
@@ -308,18 +300,6 @@ impl RTCSctpTransport {
     pub async fn on_data_channel_opened(&self, f: OnDataChannelOpenedHdlrFn) {
         let mut handler = self.on_data_channel_opened_handler.lock().await;
         *handler = Some(f);
-    }
-
-    fn calc_message_size(remote_max_message_size: usize, can_send_size: usize) -> usize {
-        if remote_max_message_size == 0 && can_send_size == 0 {
-            usize::MAX
-        } else if remote_max_message_size == 0 {
-            can_send_size
-        } else if can_send_size == 0 || can_send_size > remote_max_message_size {
-            remote_max_message_size
-        } else {
-            can_send_size
-        }
     }
 
     /// max_channels is the maximum number of RTCDataChannels that can be open simultaneously.

@@ -90,8 +90,7 @@ impl API {
         dtls_transport: Arc<RTCDtlsTransport>,
     ) -> Result<RTCSctpTransport> {
         Ok(RTCSctpTransport::new(
-            dtls_transport,
-            Arc::clone(&self.setting_engine),
+            dtls_transport
         ))
     }
 }

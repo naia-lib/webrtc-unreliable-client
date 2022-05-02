@@ -55,7 +55,6 @@ pub struct ReplayProtection {
 /// use-cases without deviating from the WebRTC API elsewhere.
 #[derive(Default, Clone)]
 pub struct SettingEngine {
-    pub(crate) detach: Detach,
     pub(crate) timeout: Timeout,
     pub(crate) candidates: Candidates,
     pub(crate) replay_protection: ReplayProtection,
@@ -76,7 +75,6 @@ pub struct SettingEngine {
 impl SettingEngine {
     pub fn new() -> Self {
         let mut setting_engine = Self::default();
-        setting_engine.detach.data_channels = true;
         setting_engine.answering_dtls_role = DTLSRole::Client;
         setting_engine
     }
