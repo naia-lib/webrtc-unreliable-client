@@ -9,9 +9,7 @@ use tokio::sync::Mutex;
 
 pub(crate) mod fmtp;
 pub mod rtp_codec;
-pub mod rtp_sender;
 pub mod rtp_transceiver_direction;
-pub(crate) mod srtp_writer_future;
 
 /// SSRC represents a synchronization source
 /// A synchronization source is a randomly chosen

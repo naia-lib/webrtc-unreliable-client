@@ -264,16 +264,6 @@ impl RTCDtlsTransport {
         Ok(())
     }
 
-    pub(crate) async fn get_srtp_session(&self) -> Option<Arc<Session>> {
-        let srtp_session = self.srtp_session.lock().await;
-        srtp_session.clone()
-    }
-
-    pub(crate) async fn get_srtcp_session(&self) -> Option<Arc<Session>> {
-        let srtcp_session = self.srtcp_session.lock().await;
-        srtcp_session.clone()
-    }
-
     pub(crate) async fn role(&self) -> DTLSRole {
         // If remote has an explicit role use the inverse
         {
