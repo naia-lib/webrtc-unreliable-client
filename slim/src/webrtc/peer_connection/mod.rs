@@ -812,7 +812,7 @@ impl RTCPeerConnection {
                         let rd = Arc::clone(&remote_desc);
                         Box::pin(async move {
                             let _ = pc
-                                .start_rtp(rd)
+                                .maybe_start_sctp(rd)
                                 .await;
                             false
                         })
@@ -906,7 +906,7 @@ impl RTCPeerConnection {
                             .await;
 
                         if we_offer {
-                            let _ = pc.start_rtp(rd).await;
+                            let _ = pc.maybe_start_sctp(rd).await;
                         }
                         false
                     })

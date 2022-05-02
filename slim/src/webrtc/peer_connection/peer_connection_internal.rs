@@ -1,5 +1,6 @@
 use crate::webrtc::peer_connection::*;
 use std::sync::atomic::AtomicIsize;
+use tokio::sync::Notify;
 
 pub(crate) struct PeerConnectionInternal {
     /// a value containing the last known greater mid value
@@ -116,10 +117,19 @@ impl PeerConnectionInternal {
         Ok((Arc::new(pc), configuration))
     }
 
-    pub(super) async fn start_rtp(
+    pub(super) async fn maybe_start_sctp(
         self: &Arc<Self>,
         remote_desc: Arc<RTCSessionDescription>,
     ) -> Result<()> {
+
+        let dtls_transport = Arc::clone(&self.dtls_transport);
+        let notify = Arc::new(Notify::new());
+
+        // No idea why, but this code here that doesn't do anything is necessary for this app to function ...
+        tokio::spawn(async move {
+            let _holder = Arc::clone(&dtls_transport);
+            notify.notified().await;
+        });
 
         if let Some(parsed) = &remote_desc.parsed {
             if have_application_media_section(parsed) {
