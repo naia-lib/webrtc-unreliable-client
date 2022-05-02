@@ -183,21 +183,11 @@ impl RTPReceiverInternal {
         };
 
         let transceiver_codecs = self.transceiver_codecs.lock().await;
-        if let Some(codecs) = &*transceiver_codecs {
-            let mut c = codecs.lock().await;
-            parameters.codecs =
-                RTPReceiverInternal::get_codecs(&mut *c, self.kind, &self.media_engine).await;
+        if let Some(_) = &*transceiver_codecs {
+            parameters.codecs = vec![];
         }
 
         parameters
-    }
-
-    pub(crate) async fn get_codecs(
-        codecs: &mut [RTCRtpCodecParameters],
-        kind: RTPCodecType,
-        media_engine: &Arc<MediaEngine>,
-    ) -> Vec<RTCRtpCodecParameters> {
-        vec![]
     }
 }
 

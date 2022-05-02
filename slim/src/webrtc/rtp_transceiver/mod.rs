@@ -1,10 +1,8 @@
-#[cfg(test)]
-mod rtp_transceiver_test;
 
 use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::*;
-use crate::webrtc::rtp_transceiver::rtp_receiver::{RTCRtpReceiver, RTPReceiverInternal};
+use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
 use crate::webrtc::rtp_transceiver::rtp_sender::RTCRtpSender;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::track::track_local::TrackLocal;
@@ -196,8 +194,7 @@ impl RTCRtpTransceiver {
 
     /// Codecs returns list of supported codecs
     pub(crate) async fn get_codecs(&self) -> Vec<RTCRtpCodecParameters> {
-        let mut codecs = self.codecs.lock().await;
-        RTPReceiverInternal::get_codecs(&mut *codecs, self.kind, &self.media_engine).await
+        vec![]
     }
 
     /// sender returns the RTPTransceiver's RTPSender if it has one

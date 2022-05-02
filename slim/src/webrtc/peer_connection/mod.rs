@@ -205,7 +205,6 @@ impl RTCPeerConnection {
     pub async fn new() -> Arc<RTCPeerConnection> {
         let api = API {
             setting_engine: Arc::new(SettingEngine::new()),
-            media_engine: Arc::new(MediaEngine::default()),
             interceptor_registry: Registry::new(),
         };
 

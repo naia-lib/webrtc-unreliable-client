@@ -7,8 +7,6 @@ use interceptor::stream_info::StreamInfo;
 use interceptor::{RTCPReader, RTPReader};
 use std::sync::Arc;
 
-pub(crate) const RTP_OUTBOUND_MTU: usize = 1200;
-
 #[derive(Clone)]
 pub(crate) struct TrackStream {
     pub(crate) stream_info: Option<StreamInfo>,

@@ -294,52 +294,7 @@ impl RTCRtpSender {
             return Ok(());
         }
 
-        let context = {
-            let context = self.context.lock().await;
-            context.clone()
-        };
-
-        let result = if let Some(t) = &track {
-            let new_context = TrackLocalContext {
-                id: context.id.clone(),
-                params: RTCRtpParameters {
-                    header_extensions: vec![],
-                    codecs: vec![],
-                },
-                ssrc: context.ssrc,
-                write_stream: context.write_stream.clone(),
-            };
-
-            t.bind(&new_context).await
-        } else {
-            Err(Error::ErrRTPSenderTrackNil)
-        };
-
-        match result {
-            Err(err) => {
-                // Re-bind the original track
-                let track = self.track.lock().await;
-                if let Some(t) = &*track {
-                    t.bind(&context).await?;
-                }
-
-                Err(err)
-            }
-            Ok(codec) => {
-                // Codec has changed
-                if self.payload_type != codec.payload_type {
-                    let mut context = self.context.lock().await;
-                    context.params.codecs = vec![codec];
-                }
-
-                {
-                    let mut t = self.track.lock().await;
-                    *t = track;
-                }
-
-                Ok(())
-            }
-        }
+        Ok(())
     }
 
     /// send Attempts to set the parameters controlling the sending of media.
@@ -363,8 +318,8 @@ impl RTCRtpSender {
                 ),
             };
 
-            let codec = if let Some(t) = &*track {
-                t.bind(&context).await?
+            let codec = if let Some(_) = &*track {
+                return Err(Error::new("unsupported codec".to_string()));
             } else {
                 RTCRtpCodecParameters::default()
             };

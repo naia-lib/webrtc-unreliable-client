@@ -7,7 +7,6 @@ use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 
-use media_engine::*;
 use setting_engine::*;
 
 use crate::webrtc::error::{Error, Result};
@@ -24,7 +23,6 @@ use std::time::SystemTime;
 /// may be phased out in the future.
 pub struct API {
     pub(crate) setting_engine: Arc<SettingEngine>,
-    pub(crate) media_engine: Arc<MediaEngine>,
     pub(crate) interceptor_registry: Registry,
 }
 

@@ -8,19 +8,12 @@ use tokio::sync::Mutex;
 #[derive(Debug)]
 pub struct TrackLocalStaticRTP {
     pub(crate) bindings: Mutex<Vec<Arc<TrackBinding>>>,
-    codec: RTCRtpCodecCapability,
     id: String,
     stream_id: String,
 }
 
 #[async_trait]
 impl TrackLocal for TrackLocalStaticRTP {
-    /// bind is called by the PeerConnection after negotiation is complete
-    /// This asserts that the code requested is supported by the remote peer.
-    /// If so it setups all the state (SSRC and PayloadType) to have a call
-    async fn bind(&self, t: &TrackLocalContext) -> Result<RTCRtpCodecParameters> {
-        Err(Error::ErrUnsupportedCodec)
-    }
 
     /// unbind implements the teardown logic when the track is no longer needed. This happens
     /// because a track has been stopped.

@@ -1,15 +1,10 @@
 use super::track_local_static_rtp::TrackLocalStaticRTP;
 use super::*;
 
-use crate::webrtc::track::RTP_OUTBOUND_MTU;
 use tokio::sync::Mutex;
 
 #[derive(Debug, Clone)]
-struct TrackLocalStaticSampleInternal {
-    packetizer: Option<Box<dyn rtp::packetizer::Packetizer + Send + Sync>>,
-    sequencer: Option<Box<dyn rtp::sequence::Sequencer + Send + Sync>>,
-    clock_rate: f64,
-}
+struct TrackLocalStaticSampleInternal;
 
 /// TrackLocalStaticSample is a TrackLocal that has a pre-set codec and accepts Samples.
 /// If you wish to send a RTP Packet use TrackLocalStaticRTP
@@ -21,35 +16,6 @@ pub struct TrackLocalStaticSample {
 
 #[async_trait]
 impl TrackLocal for TrackLocalStaticSample {
-    /// Bind is called by the PeerConnection after negotiation is complete
-    /// This asserts that the code requested is supported by the remote peer.
-    /// If so it setups all the state (SSRC and PayloadType) to have a call
-    async fn bind(&self, t: &TrackLocalContext) -> Result<RTCRtpCodecParameters> {
-        let codec = self.rtp_track.bind(t).await?;
-
-        let mut internal = self.internal.lock().await;
-
-        // We only need one packetizer
-        if internal.packetizer.is_some() {
-            return Ok(codec);
-        }
-
-        let payloader = codec.capability.payloader_for_codec()?;
-        let sequencer: Box<dyn rtp::sequence::Sequencer + Send + Sync> =
-            Box::new(rtp::sequence::new_random_sequencer());
-        internal.packetizer = Some(Box::new(rtp::packetizer::new_packetizer(
-            RTP_OUTBOUND_MTU,
-            0, // Value is handled when writing
-            0, // Value is handled when writing
-            payloader,
-            sequencer.clone(),
-            codec.capability.clock_rate,
-        )));
-        internal.sequencer = Some(sequencer);
-        internal.clock_rate = codec.capability.clock_rate as f64;
-
-        Ok(codec)
-    }
 
     /// unbind implements the teardown logic when the track is no longer needed. This happens
     /// because a track has been stopped.

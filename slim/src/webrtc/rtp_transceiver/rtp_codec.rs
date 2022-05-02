@@ -1,5 +1,4 @@
 use super::*;
-use crate::webrtc::error::{Error, Result};
 
 use std::fmt;
 
@@ -49,14 +48,6 @@ pub struct RTCRtpCodecCapability {
     pub channels: u16,
     pub sdp_fmtp_line: String,
     pub rtcp_feedback: Vec<RTCPFeedback>,
-}
-
-impl RTCRtpCodecCapability {
-    pub(crate) fn payloader_for_codec(
-        &self,
-    ) -> Result<Box<dyn rtp::packetizer::Payloader + Send + Sync>> {
-        Err(Error::ErrNoPayloaderForCodec)
-    }
 }
 
 /// RTPHeaderExtensionCapability is used to define a RFC5285 RTP header extension supported by the codec.
