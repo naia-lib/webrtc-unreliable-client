@@ -76,7 +76,6 @@ pub struct RTCDtlsTransport {
 
     pub(crate) srtp_ready_signal: Arc<AtomicBool>,
     pub(crate) srtp_ready_tx: Mutex<Option<mpsc::Sender<()>>>,
-    pub(crate) srtp_ready_rx: Mutex<Option<mpsc::Receiver<()>>>,
 }
 
 impl RTCDtlsTransport {
@@ -92,7 +91,7 @@ impl RTCDtlsTransport {
             setting_engine,
             srtp_ready_signal: Arc::new(AtomicBool::new(false)),
             srtp_ready_tx: Mutex::new(Some(srtp_ready_tx)),
-            srtp_ready_rx: Mutex::new(Some(srtp_ready_rx)),
+            //srtp_ready_rx: Mutex::new(Some(srtp_ready_rx)),
             state: AtomicU8::new(RTCDtlsTransportState::New as u8),
             ..Default::default()
         }
@@ -253,13 +252,13 @@ impl RTCDtlsTransport {
             };
         }
 
-        {
-            let mut srtp_ready_tx = self.srtp_ready_tx.lock().await;
-            srtp_ready_tx.take();
-            if srtp_ready_tx.is_none() {
-                self.srtp_ready_signal.store(true, Ordering::SeqCst);
-            }
-        }
+        // {
+        //     let mut srtp_ready_tx = self.srtp_ready_tx.lock().await;
+        //     srtp_ready_tx.take();
+        //     if srtp_ready_tx.is_none() {
+        //         self.srtp_ready_signal.store(true, Ordering::SeqCst);
+        //     }
+        // }
 
         Ok(())
     }

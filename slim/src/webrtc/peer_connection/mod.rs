@@ -118,9 +118,7 @@ pub type OnNegotiationNeededHdlrFn =
 #[derive(Clone)]
 struct CheckNegotiationNeededParams {
     sctp_transport: Arc<RTCSctpTransport>,
-    rtp_transceivers: Arc<Mutex<Vec<Arc<RTCRtpTransceiver>>>>,
     current_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-    current_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
 }
 
 #[derive(Clone)]
@@ -399,13 +397,6 @@ impl RTCPeerConnection {
         let mut offer;
 
         loop {
-            // We cache current transceivers to ensure they aren't
-            // mutated during offer generation. We later check if they have
-            // been mutated and recompute the offer if necessary.
-            let current_transceivers = {
-                let rtp_transceivers = self.internal.rtp_transceivers.lock().await;
-                rtp_transceivers.clone()
-            };
 
             // in-parallel steps to create an offer
             // https://w3c.github.io/webrtc-pc/#dfn-in-parallel-steps-to-create-an-offer
@@ -448,13 +439,7 @@ impl RTCPeerConnection {
                         }
                     }
                 }
-                for t in &current_transceivers {
-                    if !t.mid().await.is_empty() {
-                        continue;
-                    }
-                    let greater_mid = self.internal.greater_mid.fetch_add(1, Ordering::SeqCst);
-                    t.set_mid(format!("{}", greater_mid + 1)).await?;
-                }
+
             }
 
             let current_remote_description_is_none = {
@@ -792,14 +777,9 @@ impl RTCPeerConnection {
                         signaling_state: Arc::clone(&self.internal.signaling_state),
                         check_negotiation_needed_params: CheckNegotiationNeededParams {
                             sctp_transport: Arc::clone(&self.internal.sctp_transport),
-                            rtp_transceivers: Arc::clone(&self.internal.rtp_transceivers),
                             current_local_description: self
                                 .internal
                                 .current_local_description
-                                .clone(),
-                            current_remote_description: self
-                                .internal
-                                .current_remote_description
                                 .clone(),
                         },
                     })
@@ -1073,9 +1053,7 @@ impl RTCPeerConnection {
             signaling_state: Arc::clone(&self.internal.signaling_state),
             check_negotiation_needed_params: CheckNegotiationNeededParams {
                 sctp_transport: Arc::clone(&self.internal.sctp_transport),
-                rtp_transceivers: Arc::clone(&self.internal.rtp_transceivers),
                 current_local_description: self.internal.current_local_description.clone(),
-                current_remote_description: self.internal.current_remote_description.clone(),
             },
         })
         .await;
