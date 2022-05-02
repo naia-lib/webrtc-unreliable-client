@@ -1,7 +1,4 @@
 use crate::webrtc::peer_connection::*;
-use crate::webrtc::rtp_transceiver::create_stream_info;
-use crate::webrtc::track::TrackStream;
-use crate::webrtc::{SDES_REPAIR_RTP_STREAM_ID_URI, SDP_ATTRIBUTE_RID};
 use std::sync::atomic::AtomicIsize;
 use std::sync::Weak;
 
@@ -680,34 +677,6 @@ impl PeerConnectionInternal {
 
         // Needed for self.sctpTransport.dataChannelsRequested
         if is_plan_b {
-            let mut video = vec![];
-            let mut audio = vec![];
-
-            for t in &local_transceivers {
-                if t.kind == RTPCodecType::Video {
-                    video.push(Arc::clone(t));
-                } else if t.kind == RTPCodecType::Audio {
-                    audio.push(Arc::clone(t));
-                }
-                if let Some(sender) = t.sender().await {
-                    sender.set_negotiated();
-                }
-            }
-
-            if !video.is_empty() {
-                media_sections.push(MediaSection {
-                    id: "video".to_owned(),
-                    transceivers: video,
-                    ..Default::default()
-                })
-            }
-            if !audio.is_empty() {
-                media_sections.push(MediaSection {
-                    id: "audio".to_owned(),
-                    transceivers: audio,
-                    ..Default::default()
-                });
-            }
 
             if self
                 .sctp_transport
@@ -975,226 +944,16 @@ impl PeerConnectionInternal {
         }
     }
 
-    async fn handle_undeclared_ssrc(
-        self: &Arc<Self>,
-        ssrc: SSRC,
-        remote_description: &SessionDescription,
-    ) -> Result<bool> {
-        if remote_description.media_descriptions.len() != 1 {
-            return Ok(false);
-        }
-
-        let only_media_section = &remote_description.media_descriptions[0];
-        let mut stream_id = "";
-        let mut id = "";
-
-        for a in &only_media_section.attributes {
-            match a.key.as_str() {
-                ATTR_KEY_MSID => {
-                    if let Some(value) = &a.value {
-                        let split: Vec<&str> = value.split(' ').collect();
-                        if split.len() == 2 {
-                            stream_id = split[0];
-                            id = split[1];
-                        }
-                    }
-                }
-                ATTR_KEY_SSRC => return Err(Error::ErrPeerConnSingleMediaSectionHasExplicitSSRC),
-                SDP_ATTRIBUTE_RID => return Ok(false),
-                _ => {}
-            };
-        }
-
-        let mut incoming = TrackDetails {
-            ssrcs: vec![ssrc],
-            kind: RTPCodecType::Video,
-            stream_id: stream_id.to_owned(),
-            id: id.to_owned(),
-            ..Default::default()
-        };
-        if only_media_section.media_name.media == RTPCodecType::Audio.to_string() {
-            incoming.kind = RTPCodecType::Audio;
-        }
-
-        let t = self
-            .add_transceiver_from_kind(
-                incoming.kind,
-                &[RTCRtpTransceiverInit {
-                    direction: RTCRtpTransceiverDirection::Sendrecv,
-                    send_encodings: vec![],
-                }],
-            )
-            .await?;
-
-        if let Some(receiver) = t.receiver().await {
-            PeerConnectionInternal::start_receiver(
-                self.setting_engine.get_receive_mtu(),
-                &incoming,
-                receiver,
-                Arc::clone(&self.on_track_handler),
-            )
-            .await;
-        }
-        Ok(true)
-    }
-
     async fn handle_incoming_ssrc(
         self: &Arc<Self>,
-        rtp_stream: Arc<Stream>,
-        ssrc: SSRC,
+        _rtp_stream: Arc<Stream>,
+        _ssrc: SSRC,
     ) -> Result<()> {
-        if let Some(rd) = self.remote_description().await {
-            if let Some(parsed) = &rd.parsed {
-                // If the remote SDP was only one media section the ssrc doesn't have to be explicitly declared
-                let handled = self.handle_undeclared_ssrc(ssrc, parsed).await?;
-                if handled {
-                    return Ok(());
-                }
-
-                let (mid_extension_id, audio_supported, video_supported) = self
-                    .media_engine
-                    .get_header_extension_id(RTCRtpHeaderExtensionCapability {
-                        uri: ::sdp::extmap::SDES_MID_URI.to_owned(),
-                    })
-                    .await;
-                if !audio_supported && !video_supported {
-                    return Err(Error::ErrPeerConnSimulcastMidRTPExtensionRequired);
-                }
-
-                let (sid_extension_id, audio_supported, video_supported) = self
-                    .media_engine
-                    .get_header_extension_id(RTCRtpHeaderExtensionCapability {
-                        uri: ::sdp::extmap::SDES_RTP_STREAM_ID_URI.to_owned(),
-                    })
-                    .await;
-                if !audio_supported && !video_supported {
-                    return Err(Error::ErrPeerConnSimulcastStreamIDRTPExtensionRequired);
-                }
-
-                let (rsid_extension_id, _, _) = self
-                    .media_engine
-                    .get_header_extension_id(RTCRtpHeaderExtensionCapability {
-                        uri: SDES_REPAIR_RTP_STREAM_ID_URI.to_owned(),
-                    })
-                    .await;
-
-                let mut buf = vec![0u8; self.setting_engine.get_receive_mtu()];
-
-                let n = rtp_stream.read(&mut buf).await?;
-
-                let (mut mid, mut rid, mut rsid, payload_type) = handle_unknown_rtp_packet(
-                    &buf[..n],
-                    mid_extension_id as u8,
-                    sid_extension_id as u8,
-                    rsid_extension_id as u8,
-                )?;
-
-                let params = self
-                    .media_engine
-                    .get_rtp_parameters_by_payload_type(payload_type)
-                    .await?;
-
-                if let Some(icpr) = self.interceptor.upgrade() {
-                    let stream_info = create_stream_info(
-                        "".to_owned(),
-                        ssrc,
-                        params.codecs[0].payload_type,
-                        params.codecs[0].capability.clone(),
-                        &params.header_extensions,
-                    );
-                    let (rtp_read_stream, rtp_interceptor, rtcp_read_stream, rtcp_interceptor) =
-                        self.dtls_transport
-                            .streams_for_ssrc(ssrc, &stream_info, &icpr)
-                            .await?;
-
-                    let a = Attributes::new();
-                    for _ in 0..=SIMULCAST_PROBE_COUNT {
-                        if mid.is_empty() || (rid.is_empty() && rsid.is_empty()) {
-                            if let Some(icpr) = &rtp_interceptor {
-                                let (n, _) = icpr.read(&mut buf, &a).await?;
-                                let (m, r, rs, _) = handle_unknown_rtp_packet(
-                                    &buf[..n],
-                                    mid_extension_id as u8,
-                                    sid_extension_id as u8,
-                                    rsid_extension_id as u8,
-                                )?;
-                                mid = m;
-                                rid = r;
-                                rsid = rs;
-
-                                continue;
-                            } else {
-                                return Err(Error::ErrInterceptorNotBind);
-                            }
-                        }
-
-                        let transceivers = self.rtp_transceivers.lock().await;
-                        for t in &*transceivers {
-                            if t.mid().await != mid || t.receiver().await.is_none() {
-                                continue;
-                            }
-
-                            if let Some(receiver) = t.receiver().await {
-                                if !rsid.is_empty() {
-                                    return receiver
-                                        .receive_for_rtx(
-                                            0,
-                                            rsid,
-                                            TrackStream {
-                                                stream_info: Some(stream_info.clone()),
-                                                rtp_read_stream,
-                                                rtp_interceptor,
-                                                rtcp_read_stream,
-                                                rtcp_interceptor,
-                                            },
-                                        )
-                                        .await;
-                                }
-
-                                let track = receiver
-                                    .receive_for_rid(
-                                        rid,
-                                        params,
-                                        TrackStream {
-                                            stream_info: Some(stream_info.clone()),
-                                            rtp_read_stream,
-                                            rtp_interceptor,
-                                            rtcp_read_stream,
-                                            rtcp_interceptor,
-                                        },
-                                    )
-                                    .await?;
-
-                                RTCPeerConnection::do_track(
-                                    Arc::clone(&self.on_track_handler),
-                                    Some(track),
-                                    Some(receiver.clone()),
-                                )
-                                .await;
-                            }
-                            return Ok(());
-                        }
-                    }
-
-                    if let Some(rtp_read_stream) = rtp_read_stream {
-                        let _ = rtp_read_stream.close().await;
-                    }
-                    if let Some(rtcp_read_stream) = rtcp_read_stream {
-                        let _ = rtcp_read_stream.close().await;
-                    }
-                    icpr.unbind_remote_stream(&stream_info).await;
-                    self.dtls_transport.remove_simulcast_stream(ssrc).await;
-                }
-
-                return Err(Error::ErrPeerConnSimulcastIncomingSSRCFailed);
-            }
-        }
-
-        Err(Error::ErrPeerConnRemoteDescriptionNil)
+        Ok(())
     }
 
     async fn start_receiver(
-        receive_mtu: usize,
+        _receive_mtu: usize,
         incoming: &TrackDetails,
         receiver: Arc<RTCRtpReceiver>,
         on_track_handler: Arc<Mutex<Option<OnTrackHdlrFn>>>,
@@ -1208,28 +967,7 @@ impl PeerConnectionInternal {
             let receiver2 = Arc::clone(&receiver);
             let on_track_handler2 = Arc::clone(&on_track_handler);
             tokio::spawn(async move {
-                if let Some(track) = receiver2.track().await {
-                    let mut b = vec![0u8; receive_mtu];
-                    let n = match track.peek(&mut b).await {
-                        Ok((n, _)) => n,
-                        Err(err) => {
-                            log::warn!(
-                                "Could not determine PayloadType for SSRC {} ({})",
-                                track.ssrc(),
-                                err
-                            );
-                            return;
-                        }
-                    };
-
-                    if let Err(err) = track.check_and_update_track(&b[..n]).await {
-                        log::warn!(
-                            "Failed to set codec settings for track SSRC {} ({})",
-                            track.ssrc(),
-                            err
-                        );
-                        return;
-                    }
+                if let Some(_track) = receiver2.track().await {
 
                     RTCPeerConnection::do_track(
                         on_track_handler2,

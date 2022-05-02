@@ -1,5 +1,4 @@
 use super::*;
-use crate::webrtc::api::media_engine::*;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::fmtp;
 
@@ -9,12 +8,6 @@ use std::fmt;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum RTPCodecType {
     Unspecified = 0,
-
-    /// RTPCodecTypeAudio indicates this is an audio codec
-    Audio = 1,
-
-    /// RTPCodecTypeVideo indicates this is a video codec
-    Video = 2,
 }
 
 impl Default for RTPCodecType {
@@ -26,8 +19,6 @@ impl Default for RTPCodecType {
 impl From<&str> for RTPCodecType {
     fn from(raw: &str) -> Self {
         match raw {
-            "audio" => RTPCodecType::Audio,
-            "video" => RTPCodecType::Video,
             _ => RTPCodecType::Unspecified,
         }
     }
@@ -36,8 +27,6 @@ impl From<&str> for RTPCodecType {
 impl From<u8> for RTPCodecType {
     fn from(v: u8) -> Self {
         match v {
-            1 => RTPCodecType::Audio,
-            2 => RTPCodecType::Video,
             _ => RTPCodecType::Unspecified,
         }
     }
@@ -46,8 +35,6 @@ impl From<u8> for RTPCodecType {
 impl fmt::Display for RTPCodecType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {
-            RTPCodecType::Audio => "audio",
-            RTPCodecType::Video => "video",
             RTPCodecType::Unspecified => crate::webrtc::UNSPECIFIED_STR,
         };
         write!(f, "{}", s)
@@ -69,25 +56,7 @@ impl RTCRtpCodecCapability {
     pub(crate) fn payloader_for_codec(
         &self,
     ) -> Result<Box<dyn rtp::packetizer::Payloader + Send + Sync>> {
-        let mime_type = self.mime_type.to_lowercase();
-        if mime_type == MIME_TYPE_H264.to_lowercase() {
-            Ok(Box::new(rtp::codecs::h264::H264Payloader::default()))
-        } else if mime_type == MIME_TYPE_VP8.to_lowercase() {
-            let mut vp8_payloader = rtp::codecs::vp8::Vp8Payloader::default();
-            vp8_payloader.enable_picture_id = true;
-            Ok(Box::new(vp8_payloader))
-        } else if mime_type == MIME_TYPE_VP9.to_lowercase() {
-            Ok(Box::new(rtp::codecs::vp9::Vp9Payloader::default()))
-        } else if mime_type == MIME_TYPE_OPUS.to_lowercase() {
-            Ok(Box::new(rtp::codecs::opus::OpusPayloader::default()))
-        } else if mime_type == MIME_TYPE_G722.to_lowercase()
-            || mime_type == MIME_TYPE_PCMU.to_lowercase()
-            || mime_type == MIME_TYPE_PCMA.to_lowercase()
-        {
-            Ok(Box::new(rtp::codecs::g7xx::G7xxPayloader::default()))
-        } else {
-            Err(Error::ErrNoPayloaderForCodec)
-        }
+        Err(Error::ErrNoPayloaderForCodec)
     }
 }
 

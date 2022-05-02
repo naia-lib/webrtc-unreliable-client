@@ -8,12 +8,10 @@ use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::rtp_transceiver::rtp_codec::{
-    RTCRtpCodecCapability, RTCRtpCodecParameters, RTPCodecType,
-};
+use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
-use crate::webrtc::rtp_transceiver::{PayloadType, RTCPFeedback, SSRC};
+use crate::webrtc::rtp_transceiver::SSRC;
 
 pub mod sdp_type;
 pub mod session_description;
@@ -25,11 +23,9 @@ use ice::candidate::Candidate;
 use sdp::description::common::{Address, ConnectionInformation};
 use sdp::description::media::{MediaDescription, MediaName, RangedPort};
 use sdp::description::session::*;
-use sdp::extmap::ExtMap;
 use sdp::util::ConnectionRole;
 use std::collections::HashMap;
 use std::convert::From;
-use std::io::BufReader;
 use std::sync::Arc;
 use url::Url;
 
@@ -822,84 +818,6 @@ pub(crate) fn have_data_channel(
         }
     }
     None
-}
-
-pub(crate) fn codecs_from_media_description(
-    m: &MediaDescription,
-) -> Result<Vec<RTCRtpCodecParameters>> {
-    let s = SessionDescription {
-        media_descriptions: vec![m.clone()],
-        ..Default::default()
-    };
-
-    let mut out = vec![];
-    for payload_str in &m.media_name.formats {
-        let payload_type: PayloadType = payload_str.parse::<u8>()?;
-        let codec = match s.get_codec_for_payload_type(payload_type) {
-            Ok(codec) => codec,
-            Err(err) => {
-                if payload_type == 0 {
-                    continue;
-                }
-                return Err(err.into());
-            }
-        };
-
-        let channels = codec.encoding_parameters.parse::<u16>().unwrap_or(0);
-
-        let mut feedback = vec![];
-        for raw in &codec.rtcp_feedback {
-            let split: Vec<&str> = raw.split(' ').collect();
-
-            let entry = if split.len() == 2 {
-                RTCPFeedback {
-                    typ: split[0].to_string(),
-                    parameter: split[1].to_string(),
-                }
-            } else {
-                RTCPFeedback {
-                    typ: split[0].to_string(),
-                    parameter: String::new(),
-                }
-            };
-
-            feedback.push(entry);
-        }
-
-        out.push(RTCRtpCodecParameters {
-            capability: RTCRtpCodecCapability {
-                mime_type: m.media_name.media.clone() + "/" + codec.name.as_str(),
-                clock_rate: codec.clock_rate,
-                channels,
-                sdp_fmtp_line: codec.fmtp.clone(),
-                rtcp_feedback: feedback,
-            },
-            payload_type,
-            stats_id: String::new(),
-        })
-    }
-
-    Ok(out)
-}
-
-pub(crate) fn rtp_extensions_from_media_description(
-    m: &MediaDescription,
-) -> Result<HashMap<String, isize>> {
-    let mut out = HashMap::new();
-
-    for a in &m.attributes {
-        if a.key == ATTR_KEY_EXT_MAP {
-            let a_str = a.to_string();
-            let mut reader = BufReader::new(a_str.as_bytes());
-            let e = ExtMap::unmarshal(&mut reader)?;
-
-            if let Some(uri) = e.uri {
-                out.insert(uri.to_string(), e.value);
-            }
-        }
-    }
-
-    Ok(out)
 }
 
 /// update_sdp_origin saves sdp.Origin in PeerConnection when creating 1st local SDP;

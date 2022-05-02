@@ -352,7 +352,7 @@ impl RTCRtpReceiver {
             received_tx.take()
         };
 
-        let (global_params, interceptor, media_engine) = {
+        let (global_params, interceptor, _media_engine) = {
             (
                 self.internal.get_parameters().await,
                 Arc::clone(&self.internal.interceptor),
@@ -399,7 +399,6 @@ impl RTCRtpReceiver {
                     encoding.ssrc,
                     encoding.rid.clone(),
                     receiver.clone(),
-                    Arc::clone(&media_engine),
                 )),
                 stream: TrackStream {
                     stream_info,
@@ -573,32 +572,6 @@ impl RTCRtpReceiver {
         }
 
         flatten_errs(errs)
-    }
-
-    /// receive_for_rid is the sibling of Receive expect for RIDs instead of SSRCs
-    /// It populates all the internal state for the given RID
-    pub(crate) async fn receive_for_rid(
-        &self,
-        rid: String,
-        params: RTCRtpParameters,
-        stream: TrackStream,
-    ) -> Result<Arc<TrackRemote>> {
-        let mut tracks = self.internal.tracks.write().await;
-        for t in &mut *tracks {
-            if t.track.rid() == rid {
-                t.track.set_kind(self.kind);
-                if let Some(codec) = params.codecs.first() {
-                    t.track.set_codec(codec.clone()).await;
-                }
-                t.track.set_params(params.clone()).await;
-                t.track
-                    .set_ssrc(stream.stream_info.as_ref().map_or(0, |s| s.ssrc));
-                t.stream = stream;
-                return Ok(Arc::clone(&t.track));
-            }
-        }
-
-        Err(Error::ErrRTPReceiverForRIDTrackStreamNotFound)
     }
 
     /// receiveForRtx starts a routine that processes the repair stream

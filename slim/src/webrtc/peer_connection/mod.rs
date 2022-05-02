@@ -52,12 +52,12 @@ use crate::webrtc::peer_connection::sdp::*;
 use crate::webrtc::peer_connection::signaling_state::{
     check_next_signaling_state, RTCSignalingState, StateChangeOp,
 };
-use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpHeaderExtensionCapability, RTPCodecType};
+use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
 use crate::webrtc::rtp_transceiver::rtp_sender::RTCRtpSender;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::{
-    find_by_mid, handle_unknown_rtp_packet, satisfy_type_and_direction, RTCRtpTransceiver,
+    find_by_mid, satisfy_type_and_direction, RTCRtpTransceiver,
 };
 use crate::webrtc::rtp_transceiver::{RTCRtpTransceiverInit, SSRC};
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
@@ -85,11 +85,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use ::sdp::description::session::{ATTR_KEY_ICELITE, ATTR_KEY_MSID};
 use interceptor::registry::Registry;
 use tokio::sync::{mpsc, Mutex};
-
-/// SIMULCAST_PROBE_COUNT is the amount of RTP Packets
-/// that handleUndeclaredSSRC will read and try to dispatch from
-/// mid and rid values
-pub(crate) const SIMULCAST_PROBE_COUNT: usize = 10;
 
 /// SIMULCAST_MAX_PROBE_ROUTINES is how many active routines can be used to probe
 /// If the total amount of incoming SSRCes exceeds this new requests will be ignored

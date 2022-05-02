@@ -559,11 +559,6 @@ impl RTCDtlsTransport {
         simulcast_streams.insert(ssrc, stream);
     }
 
-    pub(crate) async fn remove_simulcast_stream(&self, ssrc: SSRC) {
-        let mut simulcast_streams = self.simulcast_streams.lock().await;
-        simulcast_streams.remove(&ssrc);
-    }
-
     pub(crate) async fn streams_for_ssrc(
         &self,
         ssrc: SSRC,

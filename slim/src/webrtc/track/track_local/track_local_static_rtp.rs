@@ -87,13 +87,7 @@ impl TrackLocal for TrackLocalStaticRTP {
 
     /// kind controls if this TrackLocal is audio or video
     fn kind(&self) -> RTPCodecType {
-        if self.codec.mime_type.starts_with("audio/") {
-            RTPCodecType::Audio
-        } else if self.codec.mime_type.starts_with("video/") {
-            RTPCodecType::Video
-        } else {
-            RTPCodecType::Unspecified
-        }
+        RTPCodecType::Unspecified
     }
 
     fn as_any(&self) -> &dyn Any {

@@ -1,15 +1,13 @@
-use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
 use crate::webrtc::rtp_transceiver::{PayloadType, SSRC};
 
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTPReceiverInternal;
 
-use crate::webrtc::track::RTP_PAYLOAD_TYPE_BITMASK;
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use interceptor::Attributes;
 use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
-use std::sync::{Arc, Weak};
+use std::sync::Weak;
 use tokio::sync::Mutex;
 use util::Unmarshal;
 
@@ -38,8 +36,6 @@ pub struct TrackRemote {
     pub(crate) params: Mutex<RTCRtpParameters>,
     rid: String,
 
-    media_engine: Arc<MediaEngine>,
-
     receiver: Option<Weak<RTPReceiverInternal>>,
     internal: Mutex<TrackRemoteInternal>,
 }
@@ -66,7 +62,6 @@ impl TrackRemote {
         ssrc: SSRC,
         rid: String,
         receiver: Weak<RTPReceiverInternal>,
-        media_engine: Arc<MediaEngine>,
     ) -> Self {
         TrackRemote {
             tid: TRACK_REMOTE_UNIQUE_ID.fetch_add(1, Ordering::SeqCst),
@@ -80,7 +75,6 @@ impl TrackRemote {
             params: Default::default(),
             rid,
             receiver: Some(receiver),
-            media_engine,
 
             internal: Default::default(),
         }
@@ -186,7 +180,6 @@ impl TrackRemote {
             // released the lock.  Deal with it.
             let n = std::cmp::min(b.len(), data.len());
             b[..n].copy_from_slice(&data[..n]);
-            self.check_and_update_track(&b[..n]).await?;
             Ok((n, attributes))
         } else {
             let (n, attributes) = {
@@ -200,46 +193,8 @@ impl TrackRemote {
                     return Err(Error::ErrRTPReceiverNil);
                 }
             };
-            self.check_and_update_track(&b[..n]).await?;
             Ok((n, attributes))
         }
-    }
-
-    /// check_and_update_track checks payloadType for every incoming packet
-    /// once a different payloadType is detected the track will be updated
-    pub(crate) async fn check_and_update_track(&self, b: &[u8]) -> Result<()> {
-        if b.len() < 2 {
-            return Err(Error::ErrRTPTooShort);
-        }
-
-        let payload_type = b[1] & RTP_PAYLOAD_TYPE_BITMASK;
-        if payload_type != self.payload_type() {
-            let p = self
-                .media_engine
-                .get_rtp_parameters_by_payload_type(payload_type)
-                .await?;
-
-            if let Some(receiver) = &self.receiver {
-                if let Some(receiver) = receiver.upgrade() {
-                    self.kind.store(receiver.kind as u8, Ordering::SeqCst);
-                }
-            }
-            self.payload_type.store(payload_type, Ordering::SeqCst);
-            {
-                let mut codec = self.codec.lock().await;
-                *codec = if let Some(codec) = p.codecs.first() {
-                    codec.clone()
-                } else {
-                    return Err(Error::ErrCodecNotFound);
-                };
-            }
-            {
-                let mut params = self.params.lock().await;
-                *params = p;
-            }
-        }
-
-        Ok(())
     }
 
     /// read_rtp is a convenience method that wraps Read and unmarshals for you.
@@ -250,22 +205,5 @@ impl TrackRemote {
         let mut buf = &b[..n];
         let r = rtp::packet::Packet::unmarshal(&mut buf)?;
         Ok((r, attributes))
-    }
-
-    /// peek is like Read, but it doesn't discard the packet read
-    pub(crate) async fn peek(&self, b: &mut [u8]) -> Result<(usize, Attributes)> {
-        let (n, a) = self.read(b).await?;
-
-        // this might overwrite data if somebody peeked between the Read
-        // and us getting the lock.  Oh well, we'll just drop a packet in
-        // that case.
-        let mut data = BytesMut::new();
-        data.extend(b[..n].to_vec());
-        {
-            let mut internal = self.internal.lock().await;
-            internal.peeked = Some(data.freeze());
-            internal.peeked_attributes = Some(a.clone());
-        }
-        Ok((n, a))
     }
 }

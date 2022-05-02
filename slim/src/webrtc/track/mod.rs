@@ -8,7 +8,6 @@ use interceptor::{RTCPReader, RTPReader};
 use std::sync::Arc;
 
 pub(crate) const RTP_OUTBOUND_MTU: usize = 1200;
-pub(crate) const RTP_PAYLOAD_TYPE_BITMASK: u8 = 0x7F;
 
 #[derive(Clone)]
 pub(crate) struct TrackStream {
