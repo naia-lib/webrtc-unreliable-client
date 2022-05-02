@@ -173,31 +173,6 @@ impl PeerConnectionInternal {
             .fetch_add(opened_dc_count, Ordering::SeqCst);
     }
 
-    /// add_rtp_transceiver appends t into rtp_transceivers
-    /// and fires onNegotiationNeeded;
-    /// caller of this method should hold `self.mu` lock
-    pub(super) async fn add_rtp_transceiver(&self, t: Arc<RTCRtpTransceiver>) {
-        {
-            let mut rtp_transceivers = self.rtp_transceivers.lock().await;
-            rtp_transceivers.push(t);
-        }
-        RTCPeerConnection::do_negotiation_needed(NegotiationNeededParams {
-            on_negotiation_needed_handler: Arc::clone(&self.on_negotiation_needed_handler),
-            is_closed: Arc::clone(&self.is_closed),
-            ops: Arc::clone(&self.ops),
-            negotiation_needed_state: Arc::clone(&self.negotiation_needed_state),
-            is_negotiation_needed: Arc::clone(&self.is_negotiation_needed),
-            signaling_state: Arc::clone(&self.signaling_state),
-            check_negotiation_needed_params: CheckNegotiationNeededParams {
-                sctp_transport: Arc::clone(&self.sctp_transport),
-                rtp_transceivers: Arc::clone(&self.rtp_transceivers),
-                current_local_description: Arc::clone(&self.current_local_description),
-                current_remote_description: Arc::clone(&self.current_remote_description),
-            },
-        })
-        .await;
-    }
-
     pub(super) async fn remote_description(self: &Arc<Self>) -> Option<RTCSessionDescription> {
         let pending_remote_description = self.pending_remote_description.lock().await;
         if pending_remote_description.is_some() {
@@ -263,7 +238,6 @@ impl PeerConnectionInternal {
     /// This is used for the initial call for CreateOffer
     pub(super) async fn generate_unmatched_sdp(
         &self,
-        local_transceivers: Vec<Arc<RTCRtpTransceiver>>,
         use_identity: bool,
         sdp_semantics: RTCSdpSemantics,
     ) -> Result<SessionDescription> {
@@ -292,18 +266,6 @@ impl PeerConnectionInternal {
                 });
             }
         } else {
-            {
-                for t in &local_transceivers {
-                    if let Some(sender) = t.sender().await {
-                        sender.set_negotiated();
-                    }
-                    media_sections.push(MediaSection {
-                        id: t.mid().await,
-                        transceivers: vec![Arc::clone(t)],
-                        ..Default::default()
-                    });
-                }
-            }
 
             if self
                 .sctp_transport

@@ -72,23 +72,6 @@ impl SrtpWriterFuture {
         Ok(())
     }
 
-    pub async fn close(&self) -> Result<()> {
-        if self.closed.load(Ordering::SeqCst) {
-            return Ok(());
-        }
-        self.closed.store(true, Ordering::SeqCst);
-
-        let stream = {
-            let mut stream = self.rtcp_read_stream.lock().await;
-            stream.take()
-        };
-        if let Some(rtcp_read_stream) = stream {
-            Ok(rtcp_read_stream.close().await?)
-        } else {
-            Ok(())
-        }
-    }
-
     pub async fn read(&self, b: &mut [u8]) -> Result<usize> {
         {
             let stream = {

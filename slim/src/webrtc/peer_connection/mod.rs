@@ -47,12 +47,7 @@ use crate::webrtc::peer_connection::sdp::*;
 use crate::webrtc::peer_connection::signaling_state::{
     check_next_signaling_state, RTCSignalingState, StateChangeOp,
 };
-use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
-use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
-use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
-use crate::webrtc::rtp_transceiver::{
-    find_by_mid, satisfy_type_and_direction, RTCRtpTransceiver,
-};
+use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -71,7 +66,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use ::sdp::description::session::{ATTR_KEY_ICELITE, ATTR_KEY_MSID};
+use ::sdp::description::session::ATTR_KEY_ICELITE;
 use interceptor::registry::Registry;
 use tokio::sync::Mutex;
 
@@ -350,79 +345,6 @@ impl RTCPeerConnection {
                 return true;
             }
 
-            let transceivers = params.rtp_transceivers.lock().await;
-            for t in &*transceivers {
-                // https://www.w3.org/TR/webrtc/#dfn-update-the-negotiation-needed-flag
-                // Step 5.1
-                // if t.stopping && !t.stopped {
-                // 	return true
-                // }
-                let m = get_by_mid(t.mid().await.as_str(), local_desc);
-                // Step 5.2
-                if !t.stopped.load(Ordering::SeqCst) && m.is_none() {
-                    return true;
-                }
-                if !t.stopped.load(Ordering::SeqCst) {
-                    if let Some(m) = m {
-                        // Step 5.3.1
-                        if t.direction() == RTCRtpTransceiverDirection::Sendrecv
-                            || t.direction() == RTCRtpTransceiverDirection::Sendonly
-                        {
-                            if let (Some(desc_msid), Some(sender)) =
-                                (m.attribute(ATTR_KEY_MSID).and_then(|o| o), t.sender().await)
-                            {
-                                if let Some(track) = &sender.track().await {
-                                    if desc_msid != track.stream_id().to_owned() + " " + track.id()
-                                    {
-                                        return true;
-                                    }
-                                }
-                            } else {
-                                return true;
-                            }
-                        }
-                        match local_desc.sdp_type {
-                            RTCSdpType::Offer => {
-                                // Step 5.3.2
-                                let current_remote_description =
-                                    params.current_remote_description.lock().await;
-                                if let Some(remote_desc) = &*current_remote_description {
-                                    if let Some(rm) =
-                                        get_by_mid(t.mid().await.as_str(), remote_desc)
-                                    {
-                                        if get_peer_direction(m) != t.direction()
-                                            && get_peer_direction(rm) != t.direction().reverse()
-                                        {
-                                            return true;
-                                        }
-                                    } else {
-                                        return true;
-                                    }
-                                }
-                            }
-                            RTCSdpType::Answer => {
-                                // Step 5.3.3
-                                if m.attribute(t.direction().to_string().as_str()).is_none() {
-                                    return true;
-                                }
-                            }
-                            _ => {}
-                        };
-                    }
-                }
-                // Step 5.4
-                if t.stopped.load(Ordering::SeqCst) && !t.mid().await.is_empty() {
-                    let current_remote_description = params.current_remote_description.lock().await;
-                    if let Some(remote_desc) = &*current_remote_description {
-                        if get_by_mid(t.mid().await.as_str(), local_desc).is_some()
-                            || get_by_mid(t.mid().await.as_str(), remote_desc).is_some()
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            // Step 6
             false
         } else {
             true
@@ -544,7 +466,6 @@ impl RTCPeerConnection {
             let mut d = if current_remote_description_is_none {
                 self.internal
                     .generate_unmatched_sdp(
-                        current_transceivers,
                         use_identity,
                         self.configuration.sdp_semantics,
                     )
@@ -968,95 +889,7 @@ impl RTCPeerConnection {
 
         if let Some(parsed) = &desc.parsed {
 
-            let mut local_transceivers = self.get_transceivers().await;
-            let remote_description = self.remote_description().await;
-            let detected_plan_b = description_is_plan_b(remote_description.as_ref())?;
             let we_offer = desc.sdp_type == RTCSdpType::Answer;
-
-            if !we_offer && !detected_plan_b {
-                if let Some(remote_desc) = remote_description {
-                    if let Some(parsed) = &remote_desc.parsed {
-                        for media in &parsed.media_descriptions {
-                            if let Some(mid_value) = get_mid_value(media) {
-                                if mid_value.is_empty() {
-                                    return Err(Error::ErrPeerConnRemoteDescriptionWithoutMidValue);
-                                }
-
-                                if media.media_name.media == MEDIA_SECTION_APPLICATION {
-                                    continue;
-                                }
-
-                                let kind = RTPCodecType::from(media.media_name.media.as_str());
-                                let direction = get_peer_direction(media);
-                                if kind == RTPCodecType::Unspecified
-                                    || direction == RTCRtpTransceiverDirection::Unspecified
-                                {
-                                    continue;
-                                }
-
-                                let t = if let Some(t) =
-                                    find_by_mid(mid_value, &mut local_transceivers).await
-                                {
-                                    if direction == RTCRtpTransceiverDirection::Inactive {
-                                        t.stop().await?;
-                                    }
-                                    Some(t)
-                                } else {
-                                    satisfy_type_and_direction(
-                                        kind,
-                                        direction,
-                                        &mut local_transceivers,
-                                    )
-                                    .await
-                                };
-
-                                if let Some(t) = t {
-                                    if direction == RTCRtpTransceiverDirection::Recvonly {
-                                        if t.direction() == RTCRtpTransceiverDirection::Sendrecv {
-                                            t.set_direction(RTCRtpTransceiverDirection::Sendonly);
-                                        }
-                                    } else if direction == RTCRtpTransceiverDirection::Sendrecv
-                                        && t.direction() == RTCRtpTransceiverDirection::Sendonly
-                                    {
-                                        t.set_direction(RTCRtpTransceiverDirection::Sendrecv);
-                                    }
-
-                                    if t.mid().await.is_empty() {
-                                        t.set_mid(mid_value.to_owned()).await?;
-                                    }
-                                } else {
-                                    let receiver = Arc::new(RTCRtpReceiver::new(
-                                        kind,
-                                        Arc::clone(&self.interceptor),
-                                    ));
-
-                                    let local_direction =
-                                        if direction == RTCRtpTransceiverDirection::Recvonly {
-                                            RTCRtpTransceiverDirection::Sendonly
-                                        } else {
-                                            RTCRtpTransceiverDirection::Recvonly
-                                        };
-
-                                    let t = RTCRtpTransceiver::new(
-                                        Some(receiver),
-                                        None,
-                                        local_direction,
-                                        kind,
-                                        vec![],
-                                    )
-                                    .await;
-
-                                    self.internal.add_rtp_transceiver(Arc::clone(&t)).await;
-
-                                    if t.mid().await.is_empty() {
-                                        t.set_mid(mid_value.to_owned()).await?;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
 
             let (remote_ufrag, remote_pwd, candidates) = extract_ice_details(parsed).await?;
 
@@ -1164,12 +997,6 @@ impl RTCPeerConnection {
             .ice_connection_state
             .load(Ordering::SeqCst)
             .into()
-    }
-
-    /// get_transceivers returns the RtpTransceiver that are currently attached to this PeerConnection
-    pub(crate) async fn get_transceivers(&self) -> Vec<Arc<RTCRtpTransceiver>> {
-        let rtp_transceivers = self.internal.rtp_transceivers.lock().await;
-        rtp_transceivers.clone()
     }
 
     /// create_data_channel creates a new DataChannel object with the given label
@@ -1281,17 +1108,6 @@ impl RTCPeerConnection {
 
         if let Err(err) = self.interceptor.close().await {
             close_errs.push(Error::new(format!("interceptor: {}", err)));
-        }
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #4)
-        {
-            let mut rtp_transceivers = self.internal.rtp_transceivers.lock().await;
-            for t in &*rtp_transceivers {
-                if let Err(err) = t.stop().await {
-                    close_errs.push(Error::new(format!("rtp_transceivers: {}", err)));
-                }
-            }
-            rtp_transceivers.clear();
         }
 
         // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #5)
