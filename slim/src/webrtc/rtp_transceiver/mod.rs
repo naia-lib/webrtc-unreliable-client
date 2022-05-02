@@ -4,7 +4,6 @@ use crate::webrtc::rtp_transceiver::rtp_codec::*;
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
 use crate::webrtc::rtp_transceiver::rtp_sender::RTCRtpSender;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
-use crate::webrtc::track::track_local::TrackLocal;
 
 use interceptor::{
     stream_info::{RTPHeaderExtension, StreamInfo},
@@ -186,16 +185,6 @@ impl RTCRtpTransceiver {
         sender.clone()
     }
 
-    /// set_sender_track sets the RTPSender and Track to current transceiver
-    pub async fn set_sender_track(
-        self: &Arc<Self>,
-        sender: Option<Arc<RTCRtpSender>>,
-        track: Option<Arc<dyn TrackLocal + Send + Sync>>,
-    ) -> Result<()> {
-        let _ = self.set_sender(sender).await;
-        self.set_sending_track(track).await
-    }
-
     pub async fn set_sender(self: &Arc<Self>, s: Option<Arc<RTCRtpSender>>) {
         if let Some(sender) = &s {
             sender.set_rtp_transceiver(Some(Arc::downgrade(self))).await;
@@ -288,45 +277,6 @@ impl RTCRtpTransceiver {
 
         self.set_direction(RTCRtpTransceiverDirection::Inactive);
 
-        Ok(())
-    }
-
-    pub(crate) async fn set_sending_track(
-        &self,
-        track: Option<Arc<dyn TrackLocal + Send + Sync>>,
-    ) -> Result<()> {
-        let track_is_none = track.is_none();
-        {
-            let mut s = self.sender.lock().await;
-            if let Some(sender) = &*s {
-                sender.replace_track(track).await?;
-            }
-            if track_is_none {
-                *s = None;
-            }
-        }
-
-        let direction = self.direction();
-        if !track_is_none && direction == RTCRtpTransceiverDirection::Recvonly {
-            self.set_direction(RTCRtpTransceiverDirection::Sendrecv);
-        } else if !track_is_none && direction == RTCRtpTransceiverDirection::Inactive {
-            self.set_direction(RTCRtpTransceiverDirection::Sendonly);
-        } else if track_is_none && direction == RTCRtpTransceiverDirection::Sendrecv {
-            self.set_direction(RTCRtpTransceiverDirection::Recvonly);
-        } else if !track_is_none
-            && (direction == RTCRtpTransceiverDirection::Sendonly
-                || direction == RTCRtpTransceiverDirection::Sendrecv)
-        {
-            // Handle the case where a sendonly transceiver was added by a negotiation
-            // initiated by remote peer. For example a remote peer added a transceiver
-            // with direction recvonly.
-            //} else if !track_is_none && self.direction == RTPTransceiverDirection::Sendrecv {
-            // Similar to above, but for sendrecv transceiver.
-        } else if track_is_none && direction == RTCRtpTransceiverDirection::Sendonly {
-            self.set_direction(RTCRtpTransceiverDirection::Inactive);
-        } else {
-            return Err(Error::ErrRTPTransceiverSetSendingInvalidState);
-        }
         Ok(())
     }
 }

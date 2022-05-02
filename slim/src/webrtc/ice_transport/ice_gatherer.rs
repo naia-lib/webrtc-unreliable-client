@@ -264,12 +264,6 @@ impl RTCIceGatherer {
         Ok(rtc_ice_candidates_from_ice_candidates(&ice_candidates))
     }
 
-    /// on_gathering_complete sets an event handler which fires any time the ICEGatherer changes
-    pub async fn on_gathering_complete(&self, f: OnGatheringCompleteHdlrFn) {
-        let mut on_gathering_complete_handler = self.on_gathering_complete_handler.lock().await;
-        *on_gathering_complete_handler = Some(f);
-    }
-
     /// State indicates the current state of the ICE gatherer.
     pub fn state(&self) -> RTCIceGathererState {
         self.state.load(Ordering::SeqCst).into()

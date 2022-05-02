@@ -13,7 +13,6 @@ pub(crate) struct TrackStream {
     pub(crate) rtp_read_stream: Option<Arc<srtp::stream::Stream>>,
     pub(crate) rtp_interceptor: Option<Arc<dyn RTPReader + Send + Sync>>,
     pub(crate) rtcp_read_stream: Option<Arc<srtp::stream::Stream>>,
-    pub(crate) rtcp_interceptor: Option<Arc<dyn RTCPReader + Send + Sync>>,
 }
 
 /// TrackStreams maintains a mapping of RTP/RTCP streams to a specific track

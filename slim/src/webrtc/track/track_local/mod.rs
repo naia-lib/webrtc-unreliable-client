@@ -31,8 +31,6 @@ pub trait TrackLocalWriter: fmt::Debug {
 #[derive(Default, Debug, Clone)]
 pub struct TrackLocalContext {
     pub(crate) id: String,
-    pub(crate) ssrc: SSRC,
-    pub(crate) write_stream: Option<Arc<dyn TrackLocalWriter + Send + Sync>>,
 }
 
 impl TrackLocalContext {

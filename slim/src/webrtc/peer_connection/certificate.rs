@@ -12,7 +12,6 @@ use std::time::{Duration, SystemTime};
 /// Certificate represents a x509Cert used to authenticate WebRTC communications.
 pub struct RTCCertificate {
     pub(crate) certificate: dtls::crypto::Certificate,
-    pub(crate) x509_cert: rcgen::Certificate,
     pub(crate) expires: SystemTime,
 }
 
@@ -87,7 +86,6 @@ impl RTCCertificate {
                 certificate: vec![rustls::Certificate(certificate)],
                 private_key,
             },
-            x509_cert,
             expires,
         })
     }

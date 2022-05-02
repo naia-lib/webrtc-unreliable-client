@@ -80,11 +80,6 @@ impl TrackRemote {
         }
     }
 
-    pub fn tid(&self) -> usize {
-        self.tid
-    }
-
-
     pub async fn set_id(&self, s: String) {
         let mut id = self.id.lock().await;
         *id = s;

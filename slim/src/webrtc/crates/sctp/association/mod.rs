@@ -212,16 +212,8 @@ pub struct Config {
 /// association is Closed its TCB SHOULD be removed.
 pub struct Association {
     name: String,
-    state: Arc<AtomicU8>,
-    max_message_size: Arc<AtomicU32>,
-    inflight_queue_length: Arc<AtomicUsize>,
-    will_send_shutdown: Arc<AtomicBool>,
-    awake_write_loop_ch: Arc<mpsc::Sender<()>>,
-    close_loop_ch_rx: Mutex<broadcast::Receiver<()>>,
     accept_ch_rx: Mutex<mpsc::Receiver<Arc<Stream>>>,
     net_conn: Arc<dyn Conn + Send + Sync>,
-    bytes_received: Arc<AtomicUsize>,
-    bytes_sent: Arc<AtomicUsize>,
 
     pub(crate) association_internal: Arc<Mutex<AssociationInternal>>,
 }
@@ -375,16 +367,8 @@ impl Association {
         Ok((
             Association {
                 name,
-                state,
-                max_message_size,
-                inflight_queue_length,
-                will_send_shutdown,
-                awake_write_loop_ch,
-                close_loop_ch_rx: Mutex::new(close_loop_ch_rx),
                 accept_ch_rx: Mutex::new(accept_ch_rx),
                 net_conn,
-                bytes_received,
-                bytes_sent,
                 association_internal,
             },
             handshake_completed_ch_rx,

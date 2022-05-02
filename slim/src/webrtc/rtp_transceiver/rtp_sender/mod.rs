@@ -25,52 +25,6 @@ pub(crate) struct RTPSenderInternal {
     pub(crate) rtcp_interceptor: Mutex<Option<Arc<dyn RTCPReader + Send + Sync>>>,
 }
 
-impl RTPSenderInternal {
-    /// read reads incoming RTCP for this RTPReceiver
-    async fn read(&self, b: &mut [u8]) -> Result<(usize, Attributes)> {
-        let mut send_called_rx = self.send_called_rx.lock().await;
-
-        tokio::select! {
-            _ = send_called_rx.recv() =>{
-                let rtcp_interceptor = {
-                    let rtcp_interceptor = self.rtcp_interceptor.lock().await;
-                    rtcp_interceptor.clone()
-                };
-                if let Some(rtcp_interceptor) = rtcp_interceptor{
-                    let a = Attributes::new();
-                    tokio::select! {
-                        _ = self.stop_called_rx.notified() => {
-                            Err(Error::ErrClosedPipe)
-                        }
-                        result = rtcp_interceptor.read(b, &a) => {
-                            Ok(result?)
-                        }
-                    }
-                }else{
-                    Err(Error::ErrInterceptorNotBind)
-                }
-            }
-            _ = self.stop_called_rx.notified() =>{
-                Err(Error::ErrClosedPipe)
-            }
-        }
-    }
-
-    /// read_rtcp is a convenience method that wraps Read and unmarshals for you.
-    async fn read_rtcp(
-        &self,
-        receive_mtu: usize,
-    ) -> Result<(Vec<Box<dyn rtcp::packet::Packet + Send + Sync>>, Attributes)> {
-        let mut b = vec![0u8; receive_mtu];
-        let (n, attributes) = self.read(&mut b).await?;
-
-        let mut buf = &b[..n];
-        let pkts = rtcp::packet::unmarshal(&mut buf)?;
-
-        Ok((pkts, attributes))
-    }
-}
-
 /// RTPSender allows an application to control how a given Track is encoded and transmitted to a remote peer
 pub struct RTCRtpSender {
     pub(crate) track: Mutex<Option<Arc<dyn TrackLocal + Send + Sync>>>,
@@ -205,10 +159,6 @@ impl RTCRtpSender {
             let track = self.track.lock().await;
             let context = TrackLocalContext {
                 id: self.id.clone(),
-                ssrc: parameters.encodings[0].ssrc,
-                write_stream: Some(
-                    Arc::clone(&write_stream) as Arc<dyn TrackLocalWriter + Send + Sync>
-                ),
             };
 
             let codec = if let Some(_) = &*track {
