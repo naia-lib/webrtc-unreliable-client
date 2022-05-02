@@ -209,7 +209,7 @@ pub enum Error {
     #[error("{0}")]
     Mdns(#[from] mdns::Error),
     #[error("{0}")]
-    Turn(#[from] turn::Error),
+    Turn(#[from] crate::webrtc::turn::Error),
 
     #[error("{0}")]
     Other(String),

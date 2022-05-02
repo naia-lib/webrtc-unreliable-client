@@ -55,7 +55,7 @@ pub struct CandidateBase {
     //CandidateHost
     pub(crate) network: String,
     //CandidateRelay
-    pub(crate) relay_client: Option<Arc<turn::client::Client>>,
+    pub(crate) relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
 }
 
 impl Default for CandidateBase {

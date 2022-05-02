@@ -782,7 +782,7 @@ impl Agent {
                         return Ok(());
                     };
 
-                let cfg = turn::client::ClientConfig {
+                let cfg = crate::webrtc::turn::client::ClientConfig {
                     stun_serv_addr: String::new(),
                     turn_serv_addr: turn_server_addr.clone(),
                     username: url.username,
@@ -793,7 +793,7 @@ impl Agent {
                     conn: loc_conn,
                     vnet: Some(Arc::clone(&net2)),
                 };
-                let client = match turn::client::Client::new(cfg).await {
+                let client = match crate::webrtc::turn::client::Client::new(cfg).await {
                     Ok(client) => Arc::new(client),
                     Err(err) => {
                         log::warn!(

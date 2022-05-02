@@ -15,7 +15,6 @@ maintenance = { status = "actively-developed" }
 sdp = { version = "0.5.1", path = "../../Forks/sdp" }
 mdns = { package = "webrtc-mdns", version = "0.4.2", path = "../../Forks/mdns" }
 stun = { version = "0.4.2", path = "../../Forks/stun" }
-turn = { version = "0.5.4", path = "../../Forks/turn" }
 
 tokio = { version = "1.15.0", features = ["full"] }
 log = "0.4.14"
@@ -56,6 +55,8 @@ hmac = "0.10.1"
 elliptic-curve = { version = "0.11.12", features = ["default", "ecdh"] }
 bincode = "1.3.3"
 uuid = { version = "0.8.2", features = ["v4"] }
+md-5 = "0.10.0"
+base64 = "0.13.0"
 
 [target.'cfg(not(windows))'.dependencies]
 nix = "0.23"

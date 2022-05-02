@@ -6,6 +6,7 @@ pub use crates::sctp;
 pub use crates::util;
 pub use crates::dtls;
 pub use crates::ice;
+pub use crates::turn;
 
 pub mod api;
 pub mod data_channel;

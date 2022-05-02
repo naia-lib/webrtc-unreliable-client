@@ -13,7 +13,7 @@ pub struct CandidateRelayConfig {
 
     pub rel_addr: String,
     pub rel_port: u16,
-    pub relay_client: Option<Arc<turn::client::Client>>,
+    pub relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
 }
 
 impl CandidateRelayConfig {
