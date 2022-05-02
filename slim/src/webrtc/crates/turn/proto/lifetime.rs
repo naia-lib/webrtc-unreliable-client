@@ -1,16 +1,9 @@
-#[cfg(test)]
-mod lifetime_test;
 
 use std::fmt;
 use std::time::Duration;
 use stun::attributes::*;
 use stun::checks::*;
 use stun::message::*;
-
-// DEFAULT_LIFETIME in RFC 5766 is 10 minutes.
-//
-// RFC 5766 Section 2.2
-pub const DEFAULT_LIFETIME: Duration = Duration::from_secs(10 * 60);
 
 // Lifetime represents LIFETIME attribute.
 //

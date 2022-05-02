@@ -16,12 +16,6 @@ pub struct ConnConfig {
     pub relay_addr_generator: Box<dyn RelayAddressGenerator + Send + Sync>,
 }
 
-impl ConnConfig {
-    pub fn validate(&self) -> Result<()> {
-        self.relay_addr_generator.validate()
-    }
-}
-
 // ServerConfig configures the Pion TURN Server
 pub struct ServerConfig {
     // conn_configs are a list of all the turn listeners
@@ -36,17 +30,4 @@ pub struct ServerConfig {
 
     // channel_bind_timeout sets the lifetime of channel binding. Defaults to 10 minutes.
     pub channel_bind_timeout: Duration,
-}
-
-impl ServerConfig {
-    pub fn validate(&self) -> Result<()> {
-        if self.conn_configs.is_empty() {
-            return Err(Error::ErrNoAvailableConns);
-        }
-
-        for cc in &self.conn_configs {
-            cc.validate()?;
-        }
-        Ok(())
-    }
 }

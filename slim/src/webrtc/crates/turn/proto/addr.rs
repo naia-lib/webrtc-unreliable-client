@@ -27,26 +27,6 @@ impl fmt::Display for Addr {
     }
 }
 
-impl Addr {
-    // Network implements net.Addr.
-    pub fn network(&self) -> String {
-        "turn".to_owned()
-    }
-
-    // sets addr.
-    pub fn from_socket_addr(n: &SocketAddr) -> Self {
-        let ip = n.ip();
-        let port = n.port();
-
-        Addr { ip, port }
-    }
-
-    // EqualIP returns true if a and b have equal IP addresses.
-    pub fn equal_ip(&self, other: &Addr) -> bool {
-        self.ip == other.ip
-    }
-}
-
 // FiveTuple represents 5-TUPLE value.
 #[derive(PartialEq, Eq, Default)]
 pub struct FiveTuple {

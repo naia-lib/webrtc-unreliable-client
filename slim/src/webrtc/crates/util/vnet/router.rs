@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod router_test;
-
 use crate::webrtc::util::error::*;
 use crate::webrtc::util::vnet::chunk::*;
 use crate::webrtc::util::vnet::chunk_queue::*;

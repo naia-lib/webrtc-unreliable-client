@@ -44,12 +44,6 @@ impl ChannelData {
         self.raw.extend_from_slice(&vec![0; n - self.raw.len()]);
     }
 
-    // Reset resets Length, Data and Raw length.
-    pub fn reset(&mut self) {
-        self.raw.clear();
-        self.data.clear();
-    }
-
     // Encode encodes ChannelData Message to Raw.
     pub fn encode(&mut self) {
         self.raw.clear();
