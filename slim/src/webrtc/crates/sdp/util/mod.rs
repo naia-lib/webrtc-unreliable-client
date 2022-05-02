@@ -1,12 +1,8 @@
-#[cfg(test)]
-mod util_test;
 
 use super::error::{Error, Result};
 
 use std::collections::HashMap;
 use std::fmt;
-
-pub const ATTRIBUTE_KEY: &str = "a=";
 
 /// ConnectionRole indicates which of the end points should initiate the connection establishment
 #[derive(Debug, Copy, Clone, PartialEq)]

@@ -28,11 +28,6 @@ pub type Realm = TextAttribute;
 // RFC 5389 Section 15.8
 pub type Nonce = TextAttribute;
 
-// Software is SOFTWARE attribute.
-//
-// RFC 5389 Section 15.10
-pub type Software = TextAttribute;
-
 // TextAttribute is helper for adding and getting text attributes.
 #[derive(Clone, Default)]
 pub struct TextAttribute {

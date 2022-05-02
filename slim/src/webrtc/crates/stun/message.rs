@@ -1,13 +1,9 @@
-#[cfg(test)]
-mod message_test;
 
 use crate::webrtc::stun::agent::*;
 use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::error::*;
 
-use rand::Rng;
 use std::fmt;
-use std::io::{Read, Write};
 
 // MAGIC_COOKIE is fixed value that aids in distinguishing STUN packets
 // from packets of other protocols when STUN is multiplexed with those
@@ -122,29 +118,6 @@ impl Message {
         }
     }
 
-    // marshal_binary implements the encoding.BinaryMarshaler interface.
-    pub fn marshal_binary(&self) -> Result<Vec<u8>> {
-        // We can't return m.Raw, allocation is expected by implicit interface
-        // contract induced by other implementations.
-        Ok(self.raw.clone())
-    }
-
-    // unmarshal_binary implements the encoding.BinaryUnmarshaler interface.
-    pub fn unmarshal_binary(&mut self, data: &[u8]) -> Result<()> {
-        // We can't retain data, copy is expected by interface contract.
-        self.raw.clear();
-        self.raw.extend_from_slice(data);
-        self.decode()
-    }
-
-    // NewTransactionID sets m.TransactionID to random value from crypto/rand
-    // and returns error if any.
-    pub fn new_transaction_id(&mut self) -> Result<()> {
-        rand::thread_rng().fill(&mut self.transaction_id.0);
-        self.write_transaction_id();
-        Ok(())
-    }
-
     // Reset resets Message, attributes and underlying buffer length.
     pub fn reset(&mut self) {
         self.raw.clear();
@@ -239,15 +212,6 @@ impl Message {
         // transaction ID
     }
 
-    // WriteAttributes encodes all m.Attributes to m.
-    pub fn write_attributes(&mut self) {
-        let attributes: Vec<RawAttribute> = self.attributes.0.drain(..).collect();
-        for a in &attributes {
-            self.add(a.typ, &a.value);
-        }
-        self.attributes = Attributes(attributes);
-    }
-
     // WriteType writes m.Type to m.Raw.
     pub fn write_type(&mut self) {
         self.grow(2, false);
@@ -258,14 +222,6 @@ impl Message {
     pub fn set_type(&mut self, t: MessageType) {
         self.typ = t;
         self.write_type();
-    }
-
-    // Encode re-encodes message into m.Raw.
-    pub fn encode(&mut self) {
-        self.raw.clear();
-        self.write_header();
-        self.length = 0;
-        self.write_attributes();
     }
 
     // Decode decodes m.Raw into m.
@@ -345,43 +301,6 @@ impl Message {
         Ok(())
     }
 
-    // WriteTo implements WriterTo via calling Write(m.Raw) on w and returning
-    // call result.
-    pub fn write_to<W: Write>(&self, writer: &mut W) -> Result<usize> {
-        let n = writer.write(&self.raw)?;
-        Ok(n)
-    }
-
-    // ReadFrom implements ReaderFrom. Reads message from r into m.Raw,
-    // Decodes it and return error if any. If m.Raw is too small, will return
-    // ErrUnexpectedEOF, ErrUnexpectedHeaderEOF or *DecodeErr.
-    //
-    // Can return *DecodeErr while decoding too.
-    pub fn read_from<R: Read>(&mut self, reader: &mut R) -> Result<usize> {
-        let mut t_buf = vec![0; DEFAULT_RAW_CAPACITY];
-        let n = reader.read(&mut t_buf)?;
-        self.raw = t_buf[..n].to_vec();
-        self.decode()?;
-        Ok(n)
-    }
-
-    // Write decodes message and return error if any.
-    //
-    // Any error is unrecoverable, but message could be partially decoded.
-    pub fn write(&mut self, t_buf: &[u8]) -> Result<usize> {
-        self.raw.clear();
-        self.raw.extend_from_slice(t_buf);
-        self.decode()?;
-        Ok(t_buf.len())
-    }
-
-    // CloneTo clones m to b securing any further m mutations.
-    pub fn clone_to(&self, b: &mut Message) -> Result<()> {
-        b.raw.clear();
-        b.raw.extend_from_slice(&self.raw);
-        b.decode()
-    }
-
     // Contains return true if message contain t attribute.
     pub fn contains(&self, t: AttrType) -> bool {
         for a in &self.attributes.0 {
@@ -424,22 +343,6 @@ impl Message {
         self.write_header();
         for s in setters {
             s.add_to(self)?;
-        }
-        Ok(())
-    }
-
-    // Check applies checkers to message in batch, returning on first error.
-    pub fn check<C: Checker>(&self, checkers: &[C]) -> Result<()> {
-        for c in checkers {
-            c.check(self)?;
-        }
-        Ok(())
-    }
-
-    // Parse applies getters to message in batch, returning on first error.
-    pub fn parse<G: Getter>(&self, getters: &mut [G]) -> Result<()> {
-        for c in getters {
-            c.get_from(self)?;
         }
         Ok(())
     }
@@ -528,11 +431,6 @@ pub const BINDING_REQUEST: MessageType = MessageType {
 pub const BINDING_SUCCESS: MessageType = MessageType {
     method: METHOD_BINDING,
     class: CLASS_SUCCESS_RESPONSE,
-};
-// Binding error response message type.
-pub const BINDING_ERROR: MessageType = MessageType {
-    method: METHOD_BINDING,
-    class: CLASS_ERROR_RESPONSE,
 };
 
 impl fmt::Display for MessageType {

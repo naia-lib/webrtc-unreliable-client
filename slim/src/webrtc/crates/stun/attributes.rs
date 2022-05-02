@@ -74,15 +74,6 @@ impl fmt::Display for AttrType {
 }
 
 impl AttrType {
-    /// required returns true if type is from comprehension-required range (0x0000-0x7FFF).
-    pub fn required(&self) -> bool {
-        self.0 <= 0x7FFF
-    }
-
-    /// optional returns true if type is from comprehension-optional range (0x8000-0xFFFF).
-    pub fn optional(&self) -> bool {
-        self.0 >= 0x8000
-    }
 
     /// value returns uint16 representation of attribute type.
     pub fn value(&self) -> u16 {
@@ -122,27 +113,11 @@ pub const ATTR_REQUESTED_TRANSPORT: AttrType = AttrType(0x0019); // REQUESTED-TR
 pub const ATTR_DONT_FRAGMENT: AttrType = AttrType(0x001A); // DONT-FRAGMENT
 pub const ATTR_RESERVATION_TOKEN: AttrType = AttrType(0x0022); // RESERVATION-TOKEN
 
-/// Attributes from RFC 5780 NAT Behavior Discovery
-pub const ATTR_CHANGE_REQUEST: AttrType = AttrType(0x0003); // CHANGE-REQUEST
-pub const ATTR_PADDING: AttrType = AttrType(0x0026); // PADDING
-pub const ATTR_RESPONSE_PORT: AttrType = AttrType(0x0027); // RESPONSE-PORT
-pub const ATTR_CACHE_TIMEOUT: AttrType = AttrType(0x8027); // CACHE-TIMEOUT
-pub const ATTR_RESPONSE_ORIGIN: AttrType = AttrType(0x802b); // RESPONSE-ORIGIN
-pub const ATTR_OTHER_ADDRESS: AttrType = AttrType(0x802C); // OTHER-ADDRESS
-
-/// Attributes from RFC 3489, removed by RFC 5389,
-///  but still used by RFC5389-implementing software like Vovida.org, reTURNServer, etc.
-pub const ATTR_SOURCE_ADDRESS: AttrType = AttrType(0x0004); // SOURCE-ADDRESS
-pub const ATTR_CHANGED_ADDRESS: AttrType = AttrType(0x0005); // CHANGED-ADDRESS
-
 /// Attributes from RFC 6062 TURN Extensions for TCP Allocations.
 pub const ATTR_CONNECTION_ID: AttrType = AttrType(0x002a); // CONNECTION-ID
 
 /// Attributes from RFC 6156 TURN IPv6.
 pub const ATTR_REQUESTED_ADDRESS_FAMILY: AttrType = AttrType(0x0017); // REQUESTED-ADDRESS-FAMILY
-
-/// Attributes from An Origin Attribute for the STUN Protocol.
-pub const ATTR_ORIGIN: AttrType = AttrType(0x802F);
 
 /// Attributes from RFC 8489 STUN.
 pub const ATTR_MESSAGE_INTEGRITY_SHA256: AttrType = AttrType(0x001C); // MESSAGE-INTEGRITY-SHA256

@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod extmap_test;
 
 use super::direction::*;
 use super::error::{Error, Result};
@@ -8,19 +6,6 @@ use crate::webrtc::sdp::description::common::*;
 use std::fmt;
 use std::io;
 use url::Url;
-
-/// Default ext values
-pub const DEF_EXT_MAP_VALUE_ABS_SEND_TIME: usize = 1;
-pub const DEF_EXT_MAP_VALUE_TRANSPORT_CC: usize = 2;
-pub const DEF_EXT_MAP_VALUE_SDES_MID: usize = 3;
-pub const DEF_EXT_MAP_VALUE_SDES_RTP_STREAM_ID: usize = 4;
-
-pub const ABS_SEND_TIME_URI: &str = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
-pub const TRANSPORT_CC_URI: &str =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
-pub const SDES_MID_URI: &str = "urn:ietf:params:rtp-hdrext:sdes:mid";
-pub const SDES_RTP_STREAM_ID_URI: &str = "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
-pub const AUDIO_LEVEL_URI: &str = "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
 
 /// ExtMap represents the activation of a single RTP header extension
 #[derive(Debug, Clone, Default)]

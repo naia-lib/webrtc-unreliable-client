@@ -1,8 +1,5 @@
-#[cfg(test)]
-mod fingerprint_test;
 
 use crate::webrtc::stun::attributes::ATTR_FINGERPRINT;
-use crate::webrtc::stun::checks::*;
 use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;
 
@@ -47,18 +44,5 @@ impl Setter for FingerprintAttr {
         m.length = l;
         m.add(ATTR_FINGERPRINT, &b);
         Ok(())
-    }
-}
-
-impl FingerprintAttr {
-    // Check reads fingerprint value from m and checks it, returning error if any.
-    // Can return *AttrLengthErr, ErrAttributeNotFound, and *CRCMismatch.
-    pub fn check(&self, m: &Message) -> Result<()> {
-        let b = m.get(ATTR_FINGERPRINT)?;
-        check_size(ATTR_FINGERPRINT, b.len(), FINGERPRINT_SIZE)?;
-        let val = u32::from_be_bytes([b[0], b[1], b[2], b[3]]);
-        let attr_start = m.raw.len() - (FINGERPRINT_SIZE + ATTRIBUTE_HEADER_SIZE);
-        let expected = fingerprint_value(&m.raw[..attr_start]);
-        check_fingerprint(val, expected)
     }
 }

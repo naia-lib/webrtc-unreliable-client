@@ -11,30 +11,11 @@ use super::common::*;
 use super::media::*;
 
 /// Constants for SDP attributes used in JSEP
-pub const ATTR_KEY_CANDIDATE: &str = "candidate";
-pub const ATTR_KEY_END_OF_CANDIDATES: &str = "end-of-candidates";
 pub const ATTR_KEY_IDENTITY: &str = "identity";
 pub const ATTR_KEY_GROUP: &str = "group";
-pub const ATTR_KEY_SSRC: &str = "ssrc";
-pub const ATTR_KEY_SSRCGROUP: &str = "ssrc-group";
-pub const ATTR_KEY_MSID: &str = "msid";
-pub const ATTR_KEY_MSID_SEMANTIC: &str = "msid-semantic";
 pub const ATTR_KEY_CONNECTION_SETUP: &str = "setup";
 pub const ATTR_KEY_MID: &str = "mid";
 pub const ATTR_KEY_ICELITE: &str = "ice-lite";
-pub const ATTR_KEY_RTCPMUX: &str = "rtcp-mux";
-pub const ATTR_KEY_RTCPRSIZE: &str = "rtcp-rsize";
-pub const ATTR_KEY_INACTIVE: &str = "inactive";
-pub const ATTR_KEY_RECV_ONLY: &str = "recvonly";
-pub const ATTR_KEY_SEND_ONLY: &str = "sendonly";
-pub const ATTR_KEY_SEND_RECV: &str = "sendrecv";
-pub const ATTR_KEY_EXT_MAP: &str = "extmap";
-
-/// Constants for semantic tokens used in JSEP
-pub const SEMANTIC_TOKEN_LIP_SYNCHRONIZATION: &str = "LS";
-pub const SEMANTIC_TOKEN_FLOW_IDENTIFICATION: &str = "FID";
-pub const SEMANTIC_TOKEN_FORWARD_ERROR_CORRECTION: &str = "FEC";
-pub const SEMANTIC_TOKEN_WEBRTC_MEDIA_STREAMS: &str = "WMS";
 
 /// Version describes the value provided by the "v=" field which gives
 /// the version of the Session Description Protocol.

@@ -105,10 +105,6 @@ pub const CODE_STALE_NONCE: ErrorCode = ErrorCode(438);
 pub const CODE_ROLE_CONFLICT: ErrorCode = ErrorCode(487);
 pub const CODE_SERVER_ERROR: ErrorCode = ErrorCode(500);
 
-// DEPRECATED constants.
-// DEPRECATED, use CODE_UNAUTHORIZED.
-pub const CODE_UNAUTHORISED: ErrorCode = CODE_UNAUTHORIZED;
-
 // Error codes from RFC 5766.
 //
 // RFC 5766 Section 15

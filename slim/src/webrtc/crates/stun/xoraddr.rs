@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod xoraddr_test;
 
 use crate::webrtc::stun::addr::*;
 use crate::webrtc::stun::attributes::*;
@@ -8,10 +6,7 @@ use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;
 
 use std::fmt;
-use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-
-const WORD_SIZE: usize = mem::size_of::<usize>();
 
 //var supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "amd64" // nolint:gochecknoglobals
 

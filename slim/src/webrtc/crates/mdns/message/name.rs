@@ -191,47 +191,4 @@ impl Name {
         }
         Ok(new_off)
     }
-
-    pub(crate) fn skip(msg: &[u8], off: usize) -> Result<usize> {
-        // new_off is the offset where the next record will start. Pointers lead
-        // to data that belongs to other names and thus doesn't count towards to
-        // the usage of this name.
-        let mut new_off = off;
-
-        loop {
-            if new_off >= msg.len() {
-                return Err(Error::ErrBaseLen);
-            }
-            let c = msg[new_off];
-            new_off += 1;
-            match c & 0xC0 {
-                0x00 => {
-                    if c == 0x00 {
-                        // A zero length signals the end of the name.
-                        break;
-                    }
-                    // literal string
-                    new_off += c as usize;
-                    if new_off > msg.len() {
-                        return Err(Error::ErrCalcLen);
-                    }
-                }
-                0xC0 => {
-                    // Pointer to somewhere else in msg.
-
-                    // Pointers are two bytes.
-                    new_off += 1;
-
-                    // Don't follow the pointer as the data here has ended.
-                    break;
-                }
-                _ => {
-                    // Prefixes 0x80 and 0x40 are reserved.
-                    return Err(Error::ErrReserved);
-                }
-            }
-        }
-
-        Ok(new_off)
-    }
 }
