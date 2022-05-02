@@ -830,7 +830,6 @@ impl PeerConnectionInternal {
                                 media_sections.push(MediaSection {
                                     id: mid_value.to_owned(),
                                     transceivers: media_transceivers,
-                                    rid_map: get_rids(media),
                                     ..Default::default()
                                 });
                             } else {

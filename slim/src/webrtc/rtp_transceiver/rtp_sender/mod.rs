@@ -220,19 +220,7 @@ impl RTCRtpSender {
             }
         };
 
-        let codecs = {
-            let tr = self.rtp_transceiver.lock().await;
-            if let Some(t) = &*tr {
-                if let Some(t) = t.upgrade() {
-                    t.get_codecs().await
-                } else {
-                    vec![]
-                }
-            } else {
-                vec![]
-            }
-        };
-        send_parameters.rtp_parameters.codecs = codecs;
+        send_parameters.rtp_parameters.codecs = vec![];
 
         send_parameters
     }

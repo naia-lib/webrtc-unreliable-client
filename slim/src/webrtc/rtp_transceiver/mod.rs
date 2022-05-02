@@ -187,11 +187,6 @@ impl RTCRtpTransceiver {
         return Err(Error::ErrRTPTransceiverCodecUnsupported);
     }
 
-    /// Codecs returns list of supported codecs
-    pub(crate) async fn get_codecs(&self) -> Vec<RTCRtpCodecParameters> {
-        vec![]
-    }
-
     /// sender returns the RTPTransceiver's RTPSender if it has one
     pub async fn sender(&self) -> Option<Arc<RTCRtpSender>> {
         let sender = self.sender.lock().await;

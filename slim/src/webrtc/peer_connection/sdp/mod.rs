@@ -5,7 +5,7 @@ use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpParameters, RTPCodecType};
+use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
 use crate::webrtc::rtp_transceiver::SSRC;
@@ -24,7 +24,6 @@ use sdp::util::ConnectionRole;
 use std::collections::HashMap;
 use std::convert::From;
 use std::sync::Arc;
-use url::Url;
 
 /// TrackDetails represents any media source that can be represented in a SDP
 /// This isn't keyed by SSRC because it also needs to support rid based sources
@@ -381,14 +380,6 @@ pub(crate) async fn populate_local_candidates(
     }
 }
 
-pub(crate) struct AddTransceiverSdpParams {
-    is_plan_b: bool,
-    should_add_candidates: bool,
-    mid_value: String,
-    dtls_role: ConnectionRole,
-    ice_gathering_state: RTCIceGatheringState,
-}
-
 pub(crate) async fn add_transceiver_sdp(
     mut d: SessionDescription,
     media_section: &MediaSection,
@@ -437,7 +428,6 @@ pub(crate) struct MediaSection {
     pub(crate) id: String,
     pub(crate) transceivers: Vec<Arc<RTCRtpTransceiver>>,
     pub(crate) data: bool,
-    pub(crate) rid_map: HashMap<String, String>,
 }
 
 pub(crate) struct PopulateSdpParams {
@@ -490,13 +480,7 @@ pub(crate) async fn populate_sdp(
             d = add_data_media_section(d, &media_dtls_fingerprints, candidates, params).await?;
             true
         } else {
-            let params = AddTransceiverSdpParams {
-                is_plan_b: params.is_plan_b,
-                should_add_candidates,
-                mid_value: m.id.clone(),
-                dtls_role: params.connection_role,
-                ice_gathering_state: params.ice_gathering_state,
-            };
+
             let (d1, should_add_id) = add_transceiver_sdp(
                 d,
                 m,
