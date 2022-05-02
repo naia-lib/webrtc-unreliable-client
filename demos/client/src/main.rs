@@ -7,6 +7,7 @@ use webrtc_unreliable_client::{Socket, ServerAddr, AddrCell};
 #[tokio::main]
 async fn main() -> Result<()> {
     // setup logging
+
     // env_logger::Builder::new()
     //     .filter(None, log::LevelFilter::Trace)
     //     .init();
