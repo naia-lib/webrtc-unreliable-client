@@ -20,6 +20,7 @@ use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
 use tokio::sync::{Mutex, Notify};
 
 use data_channel_state::RTCDataChannelState;
+use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 
 use crate::webrtc::error::{Error, OnErrorHdlrFn, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -157,7 +158,7 @@ impl RTCDataChannel {
                 self.id.store(
                     sctp_transport
                         .generate_and_set_data_channel_id(
-                            sctp_transport.dtls_transport.role().await,
+                            DTLSRole::Client
                         )
                         .await?,
                     Ordering::SeqCst,

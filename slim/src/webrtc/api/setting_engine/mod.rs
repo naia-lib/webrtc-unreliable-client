@@ -1,5 +1,4 @@
 
-use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
 use ice::agent::agent_config::InterfaceFilterFn;
 use ice::mdns::MulticastDnsMode;
@@ -8,7 +7,6 @@ use ice::udp_network::UDPNetwork;
 
 use std::sync::Arc;
 use tokio::time::Duration;
-use util::vnet::net::*;
 
 #[derive(Default, Clone)]
 pub struct Detach {
@@ -54,19 +52,13 @@ pub struct SettingEngine {
     pub(crate) timeout: Timeout,
     pub(crate) candidates: Candidates,
     pub(crate) replay_protection: ReplayProtection,
-    pub(crate) sdp_media_level_fingerprints: bool,
-    pub(crate) answering_dtls_role: DTLSRole,
-    pub(crate) vnet: Option<Arc<Net>>,
-    //BufferFactory                             :func(packetType packetio.BufferPacketType, ssrc uint32) io.ReadWriteCloser,
-    //iceTCPMux                                 :ice.TCPMux,?
-    //iceProxyDialer                            :proxy.Dialer,?
+
     pub(crate) udp_network: UDPNetwork,
 }
 
 impl SettingEngine {
     pub fn new() -> Self {
-        let mut setting_engine = Self::default();
-        setting_engine.answering_dtls_role = DTLSRole::Client;
+        let setting_engine = Self::default();
         setting_engine
     }
 }

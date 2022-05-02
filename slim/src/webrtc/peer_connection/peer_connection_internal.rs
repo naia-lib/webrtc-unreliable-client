@@ -286,7 +286,6 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            media_description_fingerprint: self.setting_engine.sdp_media_level_fingerprints,
             is_icelite: self.setting_engine.candidates.ice_lite,
             connection_role: DEFAULT_DTLS_ROLE_OFFER.to_connection_role(),
             ice_gathering_state: self.ice_gathering_state(),
@@ -360,7 +359,6 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            media_description_fingerprint: self.setting_engine.sdp_media_level_fingerprints,
             is_icelite: self.setting_engine.candidates.ice_lite,
             connection_role,
             ice_gathering_state: self.ice_gathering_state(),

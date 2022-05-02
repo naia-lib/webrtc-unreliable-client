@@ -174,7 +174,6 @@ pub(crate) struct MediaSection {
 }
 
 pub(crate) struct PopulateSdpParams {
-    pub(crate) media_description_fingerprint: bool,
     pub(crate) is_icelite: bool,
     pub(crate) connection_role: ConnectionRole,
     pub(crate) ice_gathering_state: RTCIceGatheringState,
@@ -189,11 +188,7 @@ pub(crate) async fn populate_sdp(
     media_sections: &[MediaSection],
     params: PopulateSdpParams,
 ) -> Result<SessionDescription> {
-    let media_dtls_fingerprints = if params.media_description_fingerprint {
-        dtls_fingerprints.to_vec()
-    } else {
-        vec![]
-    };
+    let media_dtls_fingerprints = vec![];
 
     let mut bundle_value = "BUNDLE".to_owned();
     let mut bundle_count = 0;
@@ -225,13 +220,11 @@ pub(crate) async fn populate_sdp(
         }
     }
 
-    if !params.media_description_fingerprint {
-        for fingerprint in dtls_fingerprints {
-            d = d.with_fingerprint(
-                fingerprint.algorithm.clone(),
-                fingerprint.value.to_uppercase(),
-            );
-        }
+    for fingerprint in dtls_fingerprints {
+        d = d.with_fingerprint(
+            fingerprint.algorithm.clone(),
+            fingerprint.value.to_uppercase(),
+        );
     }
 
     if params.is_icelite {

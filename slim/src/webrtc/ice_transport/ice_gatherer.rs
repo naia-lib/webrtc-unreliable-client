@@ -118,7 +118,7 @@ impl RTCIceGatherer {
             interface_filter: self.setting_engine.candidates.interface_filter.clone(),
             nat_1to1_ips: self.setting_engine.candidates.nat_1to1_ips.clone(),
             nat_1to1_ip_candidate_type: nat_1to1_cand_type,
-            net: self.setting_engine.vnet.clone(),
+            net: None,
             multicast_dns_mode: mdns_mode,
             multicast_dns_host_name: self
                 .setting_engine

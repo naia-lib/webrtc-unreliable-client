@@ -16,7 +16,6 @@ use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::error::{flatten_errs, Error, Result};
-use crate::webrtc::ice_transport::ice_role::RTCIceRole;
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::mux::mux_func::match_dtls;
@@ -118,32 +117,6 @@ impl RTCDtlsTransport {
         remote_certificate.clone()
     }
 
-    pub(crate) async fn role(&self) -> DTLSRole {
-        // If remote has an explicit role use the inverse
-        {
-            let remote_parameters = self.remote_parameters.lock().await;
-            match remote_parameters.role {
-                DTLSRole::Client => return DTLSRole::Server,
-                DTLSRole::Server => return DTLSRole::Client,
-                _ => {}
-            };
-        }
-
-        // If SettingEngine has an explicit role
-        match self.setting_engine.answering_dtls_role {
-            DTLSRole::Server => return DTLSRole::Server,
-            DTLSRole::Client => return DTLSRole::Client,
-            _ => {}
-        };
-
-        // Remote was auto and no explicit role was configured via SettingEngine
-        if self.ice_transport.role().await == RTCIceRole::Controlling {
-            return DTLSRole::Server;
-        }
-
-        DEFAULT_DTLS_ROLE_ANSWER
-    }
-
     async fn prepare_transport(
         &self,
         remote_parameters: DTLSParameters,
@@ -167,7 +140,7 @@ impl RTCDtlsTransport {
         self.state_change(RTCDtlsTransportState::Connecting).await;
 
         Ok((
-            self.role().await,
+            DTLSRole::Client,
             dtls::config::Config {
                 certificates: vec![certificate],
                 srtp_protection_profiles: vec![],
