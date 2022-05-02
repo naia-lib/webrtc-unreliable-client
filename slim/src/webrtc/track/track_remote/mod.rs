@@ -1,7 +1,6 @@
-use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
-use crate::webrtc::rtp_transceiver::SSRC;
+use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters};
 
-use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize};
 use tokio::sync::Mutex;
 
 lazy_static! {
@@ -37,46 +36,5 @@ impl std::fmt::Debug for TrackRemote {
             .field("params", &self.params)
             .field("rid", &self.rid)
             .finish()
-    }
-}
-
-impl TrackRemote {
-    pub(crate) fn new(
-        kind: RTPCodecType,
-        ssrc: SSRC,
-        rid: String,
-    ) -> Self {
-        TrackRemote {
-            id: Default::default(),
-            stream_id: Default::default(),
-            payload_type: Default::default(),
-            kind: AtomicU8::new(kind as u8),
-            ssrc: AtomicU32::new(ssrc),
-            codec: Default::default(),
-            params: Default::default(),
-            rid,
-        }
-    }
-
-    pub async fn set_id(&self, s: String) {
-        let mut id = self.id.lock().await;
-        *id = s;
-    }
-
-    pub async fn set_stream_id(&self, s: String) {
-        let mut stream_id = self.stream_id.lock().await;
-        *stream_id = s;
-    }
-
-    /// rid gets the RTP Stream ID of this Track
-    /// With Simulcast you will have multiple tracks with the same ID, but different RID values.
-    /// In many cases a TrackRemote will not have an RID, so it is important to assert it is non-zero
-    pub fn rid(&self) -> &str {
-        self.rid.as_str()
-    }
-
-    /// ssrc gets the SSRC of the track
-    pub fn ssrc(&self) -> SSRC {
-        self.ssrc.load(Ordering::SeqCst)
     }
 }

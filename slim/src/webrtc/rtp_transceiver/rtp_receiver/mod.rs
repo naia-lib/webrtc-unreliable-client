@@ -1,21 +1,15 @@
 
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
-use crate::webrtc::error::{flatten_errs, Error, Result};
-use crate::webrtc::peer_connection::sdp::TrackDetails;
+use crate::webrtc::error::{flatten_errs, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{
-    RTCRtpCodecCapability, RTCRtpCodecParameters,
+    RTCRtpCodecParameters,
     RTPCodecType,
 };
-use crate::webrtc::rtp_transceiver::{
-    create_stream_info, RTCRtpDecodingParameters, RTCRtpReceiveParameters, SSRC,
-};
-use crate::webrtc::track::track_remote::TrackRemote;
-use crate::webrtc::track::{TrackStream, TrackStreams};
+use crate::webrtc::track::TrackStreams;
 
-use interceptor::{Attributes, Interceptor};
+use interceptor::Interceptor;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex, Notify, RwLock};
-use crate::webrtc::RECEIVE_MTU;
 
 pub struct RTPReceiverInternal {
     // removing these seems to cause a compiler panic
@@ -82,38 +76,12 @@ impl RTCRtpReceiver {
         }
     }
 
-    pub fn kind(&self) -> RTPCodecType {
-        self.kind
-    }
-
     pub(crate) async fn set_transceiver_codecs(
         &self,
         codecs: Option<Arc<Mutex<Vec<RTCRtpCodecParameters>>>>,
     ) {
         let mut transceiver_codecs = self.internal.transceiver_codecs.lock().await;
         *transceiver_codecs = codecs;
-    }
-
-    /// track returns the RtpTransceiver TrackRemote
-    pub async fn track(&self) -> Option<Arc<TrackRemote>> {
-        let tracks = self.internal.tracks.read().await;
-        if tracks.len() != 1 {
-            None
-        } else {
-            tracks.first().map(|t| Arc::clone(&t.track))
-        }
-    }
-
-    /// tracks returns the RtpTransceiver traclockks
-    /// A RTPReceiver to support Simulcast may now have multiple tracks
-    pub async fn tracks(&self) -> Vec<Arc<TrackRemote>> {
-        let tracks = self.internal.tracks.read().await;
-        tracks.iter().map(|t| Arc::clone(&t.track)).collect()
-    }
-
-    pub(crate) async fn have_received(&self) -> bool {
-        let received_tx = self.received_tx.lock().await;
-        received_tx.is_none()
     }
 
     /// Stop irreversibly stops the RTPReceiver
@@ -170,40 +138,5 @@ impl RTCRtpReceiver {
         }
 
         flatten_errs(errs)
-    }
-
-    /// receiveForRtx starts a routine that processes the repair stream
-    /// These packets aren't exposed to the user yet, but we need to process them for
-    /// TWCC
-    pub(crate) async fn receive_for_rtx(
-        &self,
-        ssrc: SSRC,
-        rsid: String,
-        repair_stream: TrackStream,
-    ) -> Result<()> {
-        let mut tracks = self.internal.tracks.write().await;
-        let l = tracks.len();
-        for t in &mut *tracks {
-            if (ssrc != 0 && l == 1) || t.track.rid() == rsid {
-                t.repair_stream = repair_stream;
-
-                let track = t.clone();
-                tokio::spawn(async move {
-                    let a = Attributes::new();
-                    let mut b = vec![0u8; RECEIVE_MTU];
-                    while let Some(repair_rtp_interceptor) = &track.repair_stream.rtp_interceptor {
-                        //TODO: cancel repair_rtp_interceptor.read gracefully
-                        //println!("repair_rtp_interceptor read begin with ssrc={}", ssrc);
-                        if repair_rtp_interceptor.read(&mut b, &a).await.is_err() {
-                            break;
-                        }
-                    }
-                });
-
-                return Ok(());
-            }
-        }
-
-        Err(Error::ErrRTPReceiverForRIDTrackStreamNotFound)
     }
 }

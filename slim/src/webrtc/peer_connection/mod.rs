@@ -53,7 +53,6 @@ use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiver
 use crate::webrtc::rtp_transceiver::{
     find_by_mid, satisfy_type_and_direction, RTCRtpTransceiver,
 };
-use crate::webrtc::rtp_transceiver::RTCRtpTransceiverInit;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -70,16 +69,12 @@ use rand::{thread_rng, Rng};
 use rcgen::KeyPair;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use ::sdp::description::session::{ATTR_KEY_ICELITE, ATTR_KEY_MSID};
 use interceptor::registry::Registry;
 use tokio::sync::Mutex;
-
-/// SIMULCAST_MAX_PROBE_ROUTINES is how many active routines can be used to probe
-/// If the total amount of incoming SSRCes exceeds this new requests will be ignored
-pub(crate) const SIMULCAST_MAX_PROBE_ROUTINES: u64 = 25;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";
 
@@ -914,11 +909,6 @@ impl RTCPeerConnection {
             return Err(Error::ErrConnectionClosed);
         }
 
-        let have_local_description = {
-            let current_local_description = self.internal.current_local_description.lock().await;
-            current_local_description.is_some()
-        };
-
         // JSEP 5.4
         if desc.sdp.is_empty() {
             match desc.sdp_type {
@@ -944,7 +934,6 @@ impl RTCPeerConnection {
                 self.start_rtp_senders().await?;
 
                 let pci = Arc::clone(&self.internal);
-                let sdp_semantics = self.configuration.sdp_semantics;
                 let remote_desc = Arc::new(remote_desc);
                 self.internal
                     .ops
@@ -1123,7 +1112,6 @@ impl RTCPeerConnection {
             //log::trace!("start_transports: parsed={:?}", parsed);
 
             let pci = Arc::clone(&self.internal);
-            let sdp_semantics = self.configuration.sdp_semantics;
             let dtls_role = DTLSRole::from(parsed);
             let remote_desc = Arc::new(desc);
             self.internal

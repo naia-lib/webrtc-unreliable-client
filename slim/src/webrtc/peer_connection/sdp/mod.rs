@@ -14,14 +14,12 @@ pub mod sdp_type;
 pub mod session_description;
 
 use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
-use crate::webrtc::SDP_ATTRIBUTE_RID;
 use ice::candidate::candidate_base::unmarshal_candidate;
 use ice::candidate::Candidate;
 use sdp::description::common::{Address, ConnectionInformation};
 use sdp::description::media::{MediaDescription, MediaName, RangedPort};
 use sdp::description::session::*;
 use sdp::util::ConnectionRole;
-use std::collections::HashMap;
 use std::convert::From;
 use std::sync::Arc;
 

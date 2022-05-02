@@ -8,8 +8,6 @@ use bytes::Bytes;
 use dtls::config::ClientAuthType;
 use dtls::conn::DTLSConn;
 use dtls::extension::extension_use_srtp::SrtpProtectionProfile;
-use interceptor::stream_info::StreamInfo;
-use interceptor::{Interceptor, RTCPReader, RTPReader};
 use sha2::{Digest, Sha256};
 use srtp::protection_profile::ProtectionProfile;
 use srtp::session::Session;

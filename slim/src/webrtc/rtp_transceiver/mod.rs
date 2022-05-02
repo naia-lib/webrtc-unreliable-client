@@ -98,13 +98,6 @@ pub struct RTCRtpSendParameters {
     pub encodings: Vec<RTCRtpEncodingParameters>,
 }
 
-/// RTPTransceiverInit dictionary is used when calling the WebRTC function addTransceiver() to provide configuration options for the new transceiver.
-pub struct RTCRtpTransceiverInit {
-    pub direction: RTCRtpTransceiverDirection,
-    pub send_encodings: Vec<RTCRtpEncodingParameters>,
-    // Streams       []*Track
-}
-
 pub(crate) fn create_stream_info(
     id: String,
     ssrc: SSRC,

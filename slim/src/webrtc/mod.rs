@@ -21,5 +21,3 @@ pub(crate) const UNSPECIFIED_STR: &str = "Unspecified";
 
 /// Equal to UDP MTU
 pub(crate) const RECEIVE_MTU: usize = 1460;
-
-pub(crate) const SDP_ATTRIBUTE_RID: &str = "rid";
