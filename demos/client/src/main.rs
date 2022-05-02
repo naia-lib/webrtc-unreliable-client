@@ -7,9 +7,14 @@ use webrtc_unreliable_client::{Socket, ServerAddr, AddrCell};
 #[tokio::main]
 async fn main() -> Result<()> {
     // setup logging
-    env_logger::Builder::new()
-        .filter(None, log::LevelFilter::Trace)
-        .init();
+    // env_logger::Builder::new()
+    //     .filter(None, log::LevelFilter::Trace)
+    //     .init();
+
+    simple_logger::SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        .init()
+        .expect("A logger was already initialized");
 
     log::info!("Client Demo started");
 

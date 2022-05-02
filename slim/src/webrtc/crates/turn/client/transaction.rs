@@ -1,6 +1,6 @@
 use crate::webrtc::turn::error::*;
 
-use stun::message::*;
+use crate::webrtc::stun::message::*;
 
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};

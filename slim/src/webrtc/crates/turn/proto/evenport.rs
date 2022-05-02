@@ -2,9 +2,9 @@
 mod evenport_test;
 
 use std::fmt;
-use stun::attributes::*;
-use stun::checks::*;
-use stun::message::*;
+use crate::webrtc::stun::attributes::*;
+use crate::webrtc::stun::checks::*;
+use crate::webrtc::stun::message::*;
 
 // EvenPort represents EVEN-PORT attribute.
 //
@@ -36,7 +36,7 @@ const FIRST_BIT_SET: u8 = 0b10000000; //FIXME? (1 << 8) - 1;
 
 impl Setter for EvenPort {
     // AddTo adds EVEN-PORT to message.
-    fn add_to(&self, m: &mut Message) -> Result<(), stun::Error> {
+    fn add_to(&self, m: &mut Message) -> Result<(), crate::webrtc::stun::Error> {
         let mut v = vec![0; EVEN_PORT_SIZE];
         if self.reserve_port {
             // Set first bit to 1.
@@ -49,7 +49,7 @@ impl Setter for EvenPort {
 
 impl Getter for EvenPort {
     // GetFrom decodes EVEN-PORT from message.
-    fn get_from(&mut self, m: &Message) -> Result<(), stun::Error> {
+    fn get_from(&mut self, m: &Message) -> Result<(), crate::webrtc::stun::Error> {
         let v = m.get(ATTR_EVEN_PORT)?;
 
         check_size(ATTR_EVEN_PORT, v.len(), EVEN_PORT_SIZE)?;

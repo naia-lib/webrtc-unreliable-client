@@ -28,7 +28,7 @@ use agent_internal::*;
 use mdns::conn::*;
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddr};
-use stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, xoraddr::*};
+use crate::webrtc::stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, xoraddr::*};
 use crate::webrtc::util::{vnet::net::*, Buffer};
 
 use crate::webrtc::ice::agent::agent_gather::GatherCandidatesInternalParams;

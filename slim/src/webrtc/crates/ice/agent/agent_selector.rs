@@ -4,7 +4,7 @@ use crate::webrtc::ice::control::*;
 use crate::webrtc::ice::priority::*;
 use crate::webrtc::ice::use_candidate::*;
 
-use stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, textattrs::*};
+use crate::webrtc::stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, textattrs::*};
 
 use async_trait::async_trait;
 use std::net::SocketAddr;

@@ -8,6 +8,7 @@ pub use crates::dtls;
 pub use crates::ice;
 pub use crates::turn;
 pub use crates::sdp;
+pub use crates::stun;
 
 pub mod api;
 pub mod data_channel;

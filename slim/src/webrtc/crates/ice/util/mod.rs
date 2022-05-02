@@ -8,7 +8,7 @@ use crate::webrtc::ice::network_type::*;
 use std::collections::HashSet;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
-use stun::{agent::*, attributes::*, integrity::*, message::*, textattrs::*, xoraddr::*};
+use crate::webrtc::stun::{agent::*, attributes::*, integrity::*, message::*, textattrs::*, xoraddr::*};
 use tokio::time::Duration;
 use crate::webrtc::util::{vnet::net::*, Conn};
 

@@ -2,9 +2,9 @@
 mod channnum_test;
 
 use std::fmt;
-use stun::attributes::*;
-use stun::checks::*;
-use stun::message::*;
+use crate::webrtc::stun::attributes::*;
+use crate::webrtc::stun::checks::*;
+use crate::webrtc::stun::message::*;
 
 // 16 bits of uint + 16 bits of RFFU = 0.
 const CHANNEL_NUMBER_SIZE: usize = 4;
@@ -33,7 +33,7 @@ impl fmt::Display for ChannelNumber {
 
 impl Setter for ChannelNumber {
     // AddTo adds CHANNEL-NUMBER to message.
-    fn add_to(&self, m: &mut Message) -> Result<(), stun::Error> {
+    fn add_to(&self, m: &mut Message) -> Result<(), crate::webrtc::stun::Error> {
         let mut v = vec![0; CHANNEL_NUMBER_SIZE];
         v[..2].copy_from_slice(&self.0.to_be_bytes());
         // v[2:4] are zeroes (RFFU = 0)
@@ -44,7 +44,7 @@ impl Setter for ChannelNumber {
 
 impl Getter for ChannelNumber {
     // GetFrom decodes CHANNEL-NUMBER from message.
-    fn get_from(&mut self, m: &Message) -> Result<(), stun::Error> {
+    fn get_from(&mut self, m: &Message) -> Result<(), crate::webrtc::stun::Error> {
         let v = m.get(ATTR_CHANNEL_NUMBER)?;
 
         check_size(ATTR_CHANNEL_NUMBER, v.len(), CHANNEL_NUMBER_SIZE)?;

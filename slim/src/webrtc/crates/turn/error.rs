@@ -161,7 +161,7 @@ pub enum Error {
     #[error("{0}")]
     Util(#[from] crate::webrtc::util::Error),
     #[error("{0}")]
-    Stun(#[from] stun::Error),
+    Stun(#[from] crate::webrtc::stun::Error),
     #[error("{0}")]
     Other(String),
 }

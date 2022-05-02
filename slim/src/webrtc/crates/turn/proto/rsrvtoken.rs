@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod rsrvtoken_test;
 
-use stun::attributes::*;
-use stun::checks::*;
-use stun::message::*;
+use crate::webrtc::stun::attributes::*;
+use crate::webrtc::stun::checks::*;
+use crate::webrtc::stun::message::*;
 
 // ReservationToken represents RESERVATION-TOKEN attribute.
 //
@@ -22,7 +22,7 @@ const RESERVATION_TOKEN_SIZE: usize = 8; // 8 bytes
 
 impl Setter for ReservationToken {
     // AddTo adds RESERVATION-TOKEN to message.
-    fn add_to(&self, m: &mut Message) -> Result<(), stun::Error> {
+    fn add_to(&self, m: &mut Message) -> Result<(), crate::webrtc::stun::Error> {
         check_size(ATTR_RESERVATION_TOKEN, self.0.len(), RESERVATION_TOKEN_SIZE)?;
         m.add(ATTR_RESERVATION_TOKEN, &self.0);
         Ok(())
@@ -31,7 +31,7 @@ impl Setter for ReservationToken {
 
 impl Getter for ReservationToken {
     // GetFrom decodes RESERVATION-TOKEN from message.
-    fn get_from(&mut self, m: &Message) -> Result<(), stun::Error> {
+    fn get_from(&mut self, m: &Message) -> Result<(), crate::webrtc::stun::Error> {
         let v = m.get(ATTR_RESERVATION_TOKEN)?;
         check_size(ATTR_RESERVATION_TOKEN, v.len(), RESERVATION_TOKEN_SIZE)?;
         self.0 = v;

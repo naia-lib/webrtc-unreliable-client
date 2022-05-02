@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod data_test;
 
-use stun::attributes::*;
-use stun::message::*;
+use crate::webrtc::stun::attributes::*;
+use crate::webrtc::stun::message::*;
 
 // Data represents DATA attribute.
 //
@@ -18,7 +18,7 @@ pub struct Data(pub Vec<u8>);
 
 impl Setter for Data {
     // AddTo adds DATA to message.
-    fn add_to(&self, m: &mut Message) -> Result<(), stun::Error> {
+    fn add_to(&self, m: &mut Message) -> Result<(), crate::webrtc::stun::Error> {
         m.add(ATTR_DATA, &self.0);
         Ok(())
     }
@@ -26,7 +26,7 @@ impl Setter for Data {
 
 impl Getter for Data {
     // GetFrom decodes DATA from message.
-    fn get_from(&mut self, m: &Message) -> Result<(), stun::Error> {
+    fn get_from(&mut self, m: &Message) -> Result<(), crate::webrtc::stun::Error> {
         self.0 = m.get(ATTR_DATA)?;
         Ok(())
     }

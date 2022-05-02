@@ -203,7 +203,7 @@ pub enum Error {
     #[error("{0}")]
     Util(#[from] crate::webrtc::util::Error),
     #[error("{0}")]
-    Stun(#[from] stun::Error),
+    Stun(#[from] crate::webrtc::stun::Error),
     #[error("{0}")]
     ParseUrl(#[from] url::ParseError),
     #[error("{0}")]

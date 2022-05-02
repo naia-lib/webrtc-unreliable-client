@@ -3,9 +3,9 @@ mod peeraddr_test;
 
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr};
-use stun::attributes::*;
-use stun::message::*;
-use stun::xoraddr::*;
+use crate::webrtc::stun::attributes::*;
+use crate::webrtc::stun::message::*;
+use crate::webrtc::stun::xoraddr::*;
 
 // PeerAddress implements XOR-PEER-ADDRESS attribute.
 //
@@ -40,7 +40,7 @@ impl fmt::Display for PeerAddress {
 
 impl Setter for PeerAddress {
     // AddTo adds XOR-PEER-ADDRESS to message.
-    fn add_to(&self, m: &mut Message) -> Result<(), stun::Error> {
+    fn add_to(&self, m: &mut Message) -> Result<(), crate::webrtc::stun::Error> {
         let a = XorMappedAddress {
             ip: self.ip,
             port: self.port,
@@ -51,7 +51,7 @@ impl Setter for PeerAddress {
 
 impl Getter for PeerAddress {
     // GetFrom decodes XOR-PEER-ADDRESS from message.
-    fn get_from(&mut self, m: &Message) -> Result<(), stun::Error> {
+    fn get_from(&mut self, m: &Message) -> Result<(), crate::webrtc::stun::Error> {
         let mut a = XorMappedAddress::default();
         a.get_from_as(m, ATTR_XOR_PEER_ADDRESS)?;
         self.ip = a.ip;

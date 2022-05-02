@@ -13,7 +13,6 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 mdns = { package = "webrtc-mdns", version = "0.4.2", path = "../../Forks/mdns" }
-stun = { version = "0.4.2", path = "../../Forks/stun" }
 
 tokio = { version = "1.15.0", features = ["full"] }
 log = "0.4.14"

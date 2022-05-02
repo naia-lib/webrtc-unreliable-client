@@ -1161,7 +1161,7 @@ impl AgentInternal {
         src_addr: SocketAddr,
         addr: SocketAddr,
     ) {
-        if stun::message::is_message(buf) {
+        if crate::webrtc::stun::message::is_message(buf) {
             let mut m = Message {
                 raw: vec![],
                 ..Message::default()
