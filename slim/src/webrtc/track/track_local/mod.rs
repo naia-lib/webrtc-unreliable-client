@@ -31,23 +31,11 @@ pub trait TrackLocalWriter: fmt::Debug {
 #[derive(Default, Debug, Clone)]
 pub struct TrackLocalContext {
     pub(crate) id: String,
-    pub(crate) params: RTCRtpParameters,
     pub(crate) ssrc: SSRC,
     pub(crate) write_stream: Option<Arc<dyn TrackLocalWriter + Send + Sync>>,
 }
 
 impl TrackLocalContext {
-    /// codec_parameters returns the negotiated RTPCodecParameters. These are the codecs supported by both
-    /// PeerConnections and the SSRC/PayloadTypes
-    pub fn codec_parameters(&self) -> &[RTCRtpCodecParameters] {
-        &self.params.codecs
-    }
-
-    /// header_extensions returns the negotiated RTPHeaderExtensionParameters. These are the header extensions supported by
-    /// both PeerConnections and the SSRC/PayloadTypes
-    pub fn header_extensions(&self) -> &[RTCRtpHeaderExtensionParameters] {
-        &self.params.header_extensions
-    }
 
     /// ssrc requires the negotiated SSRC of this track
     /// This track may have multiple if RTX is enabled

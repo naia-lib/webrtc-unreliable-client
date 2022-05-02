@@ -96,7 +96,6 @@ pub struct RTCRtpReceiveParameters {
 /// RTPSendParameters contains the RTP stack settings used by receivers
 #[derive(Debug)]
 pub struct RTCRtpSendParameters {
-    pub rtp_parameters: RTCRtpParameters,
     pub encodings: Vec<RTCRtpEncodingParameters>,
 }
 
@@ -179,12 +178,6 @@ impl RTCRtpTransceiver {
         t.set_sender(sender).await;
 
         t
-    }
-
-    /// set_codec_preferences sets preferred list of supported codecs
-    /// if codecs is empty or nil we reset to default from MediaEngine
-    pub async fn set_codec_preferences(&self, _codecs: Vec<RTCRtpCodecParameters>) -> Result<()> {
-        return Err(Error::ErrRTPTransceiverCodecUnsupported);
     }
 
     /// sender returns the RTPTransceiver's RTPSender if it has one

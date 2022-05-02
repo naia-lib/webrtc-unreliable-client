@@ -1,7 +1,7 @@
 
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
-use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters};
+use crate::webrtc::rtp_transceiver::rtp_codec::RTCRtpCodecParameters;
 use crate::webrtc::rtp_transceiver::srtp_writer_future::SrtpWriterFuture;
 use crate::webrtc::rtp_transceiver::{
     create_stream_info, PayloadType, RTCRtpEncodingParameters, RTCRtpSendParameters,
@@ -206,12 +206,8 @@ impl RTCRtpSender {
     /// transmission of media on the sender's track.
     pub async fn get_parameters(&self) -> RTCRtpSendParameters {
 
-        let mut send_parameters = {
+        let send_parameters = {
             RTCRtpSendParameters {
-                rtp_parameters: RTCRtpParameters {
-                    header_extensions: vec![],
-                    codecs: vec![],
-                },
                 encodings: vec![RTCRtpEncodingParameters {
                     ssrc: self.ssrc,
                     payload_type: self.payload_type,
@@ -219,8 +215,6 @@ impl RTCRtpSender {
                 }],
             }
         };
-
-        send_parameters.rtp_parameters.codecs = vec![];
 
         send_parameters
     }
@@ -282,12 +276,8 @@ impl RTCRtpSender {
         let write_stream = Arc::new(InterceptorToTrackLocalWriter::new());
         let (context, stream_info) = {
             let track = self.track.lock().await;
-            let mut context = TrackLocalContext {
+            let context = TrackLocalContext {
                 id: self.id.clone(),
-                params: RTCRtpParameters {
-                    header_extensions: vec![],
-                    codecs: vec![],
-                },
                 ssrc: parameters.encodings[0].ssrc,
                 write_stream: Some(
                     Arc::clone(&write_stream) as Arc<dyn TrackLocalWriter + Send + Sync>
@@ -301,13 +291,13 @@ impl RTCRtpSender {
             };
             let payload_type = codec.payload_type;
             let capability = codec.capability.clone();
-            context.params.codecs = vec![codec];
+
             let stream_info = create_stream_info(
                 self.id.clone(),
                 parameters.encodings[0].ssrc,
                 payload_type,
                 capability,
-                &parameters.rtp_parameters.header_extensions,
+                &vec![],
             );
 
             (context, stream_info)

@@ -79,10 +79,7 @@ pub struct RTCRtpCodecParameters {
 /// RTPParameters is a list of negotiated codecs and header extensions
 /// <https://w3c.github.io/webrtc-pc/#dictionary-rtcrtpparameters-members>
 #[derive(Default, Debug, Clone)]
-pub struct RTCRtpParameters {
-    pub header_extensions: Vec<RTCRtpHeaderExtensionParameters>,
-    pub codecs: Vec<RTCRtpCodecParameters>,
-}
+pub struct RTCRtpParameters;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum CodecMatch {

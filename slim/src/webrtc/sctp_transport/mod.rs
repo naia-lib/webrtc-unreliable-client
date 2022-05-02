@@ -67,6 +67,8 @@ pub struct RTCSctpTransport {
 
     // max_message_size represents the maximum size of data that can be passed to
     // DataChannel's send() method.
+
+    // removing this causes compile panic, last checked
     #[allow(dead_code)]
     max_message_size: usize,
 

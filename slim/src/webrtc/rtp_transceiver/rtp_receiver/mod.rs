@@ -1,11 +1,10 @@
 
-use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{flatten_errs, Error, Result};
 use crate::webrtc::peer_connection::sdp::TrackDetails;
 use crate::webrtc::rtp_transceiver::rtp_codec::{
     RTCRtpCodecCapability, RTCRtpCodecParameters,
-    RTCRtpParameters, RTPCodecType,
+    RTPCodecType,
 };
 use crate::webrtc::rtp_transceiver::{
     create_stream_info, RTCRtpDecodingParameters, RTCRtpReceiveParameters, SSRC,
@@ -13,22 +12,23 @@ use crate::webrtc::rtp_transceiver::{
 use crate::webrtc::track::track_remote::TrackRemote;
 use crate::webrtc::track::{TrackStream, TrackStreams};
 
-use interceptor::stream_info::RTPHeaderExtension;
 use interceptor::{Attributes, Interceptor};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex, Notify, RwLock};
 
 pub struct RTPReceiverInternal {
-    pub(crate) kind: RTPCodecType,
+    // removing these seems to cause a compiler panic
+    #[allow(dead_code)]
+    kind: bool,
+    #[allow(dead_code)]
+    transport: bool,
+    #[allow(dead_code)]
+    media_engine: bool,
+
     tracks: RwLock<Vec<TrackStreams>>,
     closed_rx: Arc<Notify>,
     received_rx: Mutex<mpsc::Receiver<()>>,
-
     transceiver_codecs: Mutex<Option<Arc<Mutex<Vec<RTCRtpCodecParameters>>>>>,
-    #[allow(dead_code)]
-    transport: Arc<RTCDtlsTransport>,
-
-    media_engine: Arc<MediaEngine>,
     interceptor: Arc<dyn Interceptor + Send + Sync>,
 }
 
@@ -176,20 +176,6 @@ impl RTPReceiverInternal {
             Err(Error::ErrRTPReceiverWithSSRCTrackStreamNotFound)
         }
     }
-
-    async fn get_parameters(&self) -> RTCRtpParameters {
-        let mut parameters = RTCRtpParameters {
-            header_extensions: vec![],
-            codecs: vec![],
-        };
-
-        let transceiver_codecs = self.transceiver_codecs.lock().await;
-        if let Some(_) = &*transceiver_codecs {
-            parameters.codecs = vec![];
-        }
-
-        parameters
-    }
 }
 
 /// RTPReceiver allows an application to inspect the receipt of a TrackRemote
@@ -230,16 +216,14 @@ impl RTCRtpReceiver {
             received_tx: Mutex::new(Some(received_tx)),
 
             internal: Arc::new(RTPReceiverInternal {
-                kind,
+                kind: true,
+                transport: true,
+                media_engine: true,
 
                 tracks: RwLock::new(vec![]),
-                transport,
-                media_engine: Arc::new(MediaEngine),
                 interceptor,
-
                 closed_rx,
                 received_rx: Mutex::new(received_rx),
-
                 transceiver_codecs: Mutex::new(None),
             }),
         }
@@ -261,38 +245,6 @@ impl RTCRtpReceiver {
     /// if one has not yet been configured
     pub fn transport(&self) -> Arc<RTCDtlsTransport> {
         Arc::clone(&self.transport)
-    }
-
-    /// get_parameters describes the current configuration for the encoding and
-    /// transmission of media on the receiver's track.
-    pub async fn get_parameters(&self) -> RTCRtpParameters {
-        self.internal.get_parameters().await
-    }
-
-    /// SetRTPParameters applies provided RTPParameters the RTPReceiver's tracks.
-    /// This method is part of the ORTC API. It is not
-    /// meant to be used together with the basic WebRTC API.
-    /// The amount of provided codecs must match the number of tracks on the receiver.
-    pub async fn set_rtp_parameters(&self, params: RTCRtpParameters) {
-        let mut header_extensions = vec![];
-        for h in &params.header_extensions {
-            header_extensions.push(RTPHeaderExtension {
-                id: h.id,
-                uri: h.uri.clone(),
-            });
-        }
-
-        let mut tracks = self.internal.tracks.write().await;
-        for (idx, codec) in params.codecs.iter().enumerate() {
-            let t = &mut tracks[idx];
-            if let Some(stream_info) = &mut t.stream.stream_info {
-                stream_info.rtp_header_extensions = header_extensions.clone();
-            }
-
-            let current_track = &t.track;
-            current_track.set_codec(codec.clone()).await;
-            current_track.set_params(params.clone()).await;
-        }
     }
 
     /// track returns the RtpTransceiver TrackRemote
@@ -324,19 +276,9 @@ impl RTCRtpReceiver {
             received_tx.take()
         };
 
-        let (global_params, interceptor, _media_engine) = {
-            (
-                self.internal.get_parameters().await,
-                Arc::clone(&self.internal.interceptor),
-                Arc::new(MediaEngine),
-            )
-        };
+        let interceptor= Arc::clone(&self.internal.interceptor);
 
-        let codec = if let Some(codec) = global_params.codecs.first() {
-            codec.capability.clone()
-        } else {
-            RTCRtpCodecCapability::default()
-        };
+        let codec = RTCRtpCodecCapability::default();
 
         for encoding in &parameters.encodings {
             let (stream_info, rtp_read_stream, rtp_interceptor, rtcp_read_stream, rtcp_interceptor) =
@@ -346,7 +288,7 @@ impl RTCRtpReceiver {
                         encoding.ssrc,
                         0,
                         codec.clone(),
-                        &global_params.header_extensions,
+                        &vec![],
                     );
                     let (rtp_read_stream, rtp_interceptor, rtcp_read_stream, rtcp_interceptor) =
                         self.transport
@@ -401,7 +343,7 @@ impl RTCRtpReceiver {
                     rtx_ssrc,
                     0,
                     codec.clone(),
-                    &global_params.header_extensions,
+                    &vec![],
                 );
                 let (rtp_read_stream, rtp_interceptor, rtcp_read_stream, rtcp_interceptor) = self
                     .transport
