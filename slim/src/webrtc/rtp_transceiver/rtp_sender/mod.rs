@@ -1,17 +1,13 @@
 
 use crate::webrtc::error::{Error, Result};
-use crate::webrtc::rtp_transceiver::rtp_codec::RTCRtpCodecParameters;
 use crate::webrtc::rtp_transceiver::srtp_writer_future::SrtpWriterFuture;
-use crate::webrtc::rtp_transceiver::{
-    create_stream_info, PayloadType, RTCRtpEncodingParameters, RTCRtpSendParameters,
-    RTCRtpTransceiver, SSRC,
-};
+use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
 use crate::webrtc::track::track_local::{
-    InterceptorToTrackLocalWriter, TrackLocal, TrackLocalContext,
+    TrackLocal, TrackLocalContext,
 };
 
 use interceptor::stream_info::StreamInfo;
-use interceptor::{Interceptor, RTPWriter};
+use interceptor::Interceptor;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc, Mutex, Notify};
@@ -29,9 +25,6 @@ pub struct RTCRtpSender {
     pub(crate) stream_info: Mutex<StreamInfo>,
 
     pub(crate) context: Mutex<TrackLocalContext>,
-
-    pub(crate) payload_type: PayloadType,
-    pub(crate) ssrc: SSRC,
 
     /// a transceiver sender since we can just check the
     /// transceiver negotiation status
@@ -58,10 +51,6 @@ impl std::fmt::Debug for RTCRtpSender {
 
 impl RTCRtpSender {
 
-    pub(crate) fn is_negotiated(&self) -> bool {
-        self.negotiated.load(Ordering::SeqCst)
-    }
-
     pub(crate) fn set_negotiated(&self) {
         self.negotiated.store(true, Ordering::SeqCst);
     }
@@ -72,23 +61,6 @@ impl RTCRtpSender {
     ) {
         let mut tr = self.rtp_transceiver.lock().await;
         *tr = rtp_transceiver;
-    }
-
-    /// get_parameters describes the current configuration for the encoding and
-    /// transmission of media on the sender's track.
-    pub async fn get_parameters(&self) -> RTCRtpSendParameters {
-
-        let send_parameters = {
-            RTCRtpSendParameters {
-                encodings: vec![RTCRtpEncodingParameters {
-                    ssrc: self.ssrc,
-                    payload_type: self.payload_type,
-                    ..Default::default()
-                }],
-            }
-        };
-
-        send_parameters
     }
 
     /// track returns the RTCRtpTransceiver track, or nil
@@ -134,65 +106,6 @@ impl RTCRtpSender {
             let mut t = self.track.lock().await;
             *t = track;
             return Ok(());
-        }
-
-        Ok(())
-    }
-
-    /// send Attempts to set the parameters controlling the sending of media.
-    pub async fn send(&self, parameters: &RTCRtpSendParameters) -> Result<()> {
-        if self.has_sent().await {
-            return Err(Error::ErrRTPSenderSendAlreadyCalled);
-        }
-
-        let write_stream = Arc::new(InterceptorToTrackLocalWriter::new());
-        let (context, stream_info) = {
-            let track = self.track.lock().await;
-            let context = TrackLocalContext {
-                id: self.id.clone(),
-            };
-
-            let codec = if let Some(_) = &*track {
-                return Err(Error::new("unsupported codec".to_string()));
-            } else {
-                RTCRtpCodecParameters::default()
-            };
-            let payload_type = codec.payload_type;
-            let capability = codec.capability.clone();
-
-            let stream_info = create_stream_info(
-                self.id.clone(),
-                parameters.encodings[0].ssrc,
-                payload_type,
-                capability,
-                &vec![],
-            );
-
-            (context, stream_info)
-        };
-
-        let srtp_rtp_writer = Arc::clone(&self.srtp_stream) as Arc<dyn RTPWriter + Send + Sync>;
-        let rtp_interceptor = self
-            .interceptor
-            .bind_local_stream(&stream_info, srtp_rtp_writer)
-            .await;
-        {
-            let mut interceptor_rtp_writer = write_stream.interceptor_rtp_writer.lock().await;
-            *interceptor_rtp_writer = Some(rtp_interceptor);
-        }
-
-        {
-            let mut ctx = self.context.lock().await;
-            *ctx = context;
-        }
-        {
-            let mut si = self.stream_info.lock().await;
-            *si = stream_info;
-        }
-
-        {
-            let mut send_called_tx = self.send_called_tx.lock().await;
-            send_called_tx.take();
         }
 
         Ok(())

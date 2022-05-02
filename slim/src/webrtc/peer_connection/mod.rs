@@ -921,7 +921,6 @@ impl RTCPeerConnection {
         let remote_description = self.remote_description().await;
         if we_answer {
             if let Some(remote_desc) = remote_description {
-                self.start_rtp_senders().await?;
 
                 let pci = Arc::clone(&self.internal);
                 let remote_desc = Arc::new(remote_desc);
@@ -1092,14 +1091,6 @@ impl RTCPeerConnection {
                 RTCIceRole::Controlled
             };
 
-            // Start the networking in a new routine since it will block until
-            // the connection is actually established.
-            if we_offer {
-                self.start_rtp_senders().await?;
-            }
-
-            //log::trace!("start_transports: parsed={:?}", parsed);
-
             let pci = Arc::clone(&self.internal);
             let dtls_role = DTLSRole::from(parsed);
             let remote_desc = Arc::new(desc);
@@ -1128,20 +1119,6 @@ impl RTCPeerConnection {
                     })
                 })))
                 .await?;
-        }
-
-        Ok(())
-    }
-
-    /// start_rtp_senders starts all outbound RTP streams
-    pub(crate) async fn start_rtp_senders(&self) -> Result<()> {
-        let current_transceivers = self.internal.rtp_transceivers.lock().await;
-        for transceiver in &*current_transceivers {
-            if let Some(sender) = transceiver.sender().await {
-                if sender.is_negotiated() && !sender.has_sent().await {
-                    sender.send(&sender.get_parameters().await).await?;
-                }
-            }
         }
 
         Ok(())

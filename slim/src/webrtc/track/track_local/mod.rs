@@ -79,14 +79,6 @@ pub(crate) struct InterceptorToTrackLocalWriter {
     pub(crate) interceptor_rtp_writer: Mutex<Option<Arc<dyn RTPWriter + Send + Sync>>>,
 }
 
-impl InterceptorToTrackLocalWriter {
-    pub(crate) fn new() -> Self {
-        InterceptorToTrackLocalWriter {
-            interceptor_rtp_writer: Mutex::new(None),
-        }
-    }
-}
-
 impl std::fmt::Debug for InterceptorToTrackLocalWriter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("InterceptorToTrackLocalWriter").finish()
