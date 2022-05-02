@@ -17,11 +17,6 @@ use tokio::time::Instant;
 /// copy needed fields explicitly.
 pub type Handler = Option<Arc<mpsc::UnboundedSender<Event>>>;
 
-/// noop_handler just discards any event.
-pub fn noop_handler() -> Handler {
-    None
-}
-
 /// Agent is low-level abstraction over transaction list that
 /// handles concurrency (all calls are goroutine-safe) and
 /// time outs (via Collect call).
@@ -181,7 +176,6 @@ impl Agent {
         }
         self.transactions = HashMap::new();
         self.closed = true;
-        self.handler = noop_handler();
 
         Ok(())
     }

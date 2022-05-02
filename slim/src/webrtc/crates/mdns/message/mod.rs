@@ -12,7 +12,6 @@ pub mod resource;
 use crate::webrtc::mdns::error::*;
 use header::*;
 use packer::*;
-use parser::*;
 use question::*;
 use resource::*;
 
@@ -113,10 +112,6 @@ impl DnsType {
         *self = DnsType::from(t);
         Ok(o)
     }
-
-    pub(crate) fn skip(msg: &[u8], off: usize) -> Result<usize> {
-        skip_uint16(msg, off)
-    }
 }
 
 // A Class is a type of network.
@@ -156,10 +151,6 @@ impl DnsClass {
         let (c, o) = unpack_uint16(msg, off)?;
         *self = DnsClass(c);
         Ok(o)
-    }
-
-    pub(crate) fn skip(msg: &[u8], off: usize) -> Result<usize> {
-        skip_uint16(msg, off)
     }
 }
 
@@ -216,23 +207,11 @@ impl fmt::Display for RCode {
 
 // Internal constants.
 
-// PACK_STARTING_CAP is the default initial buffer size allocated during
-// packing.
-//
-// The starting capacity doesn't matter too much, but most DNS responses
-// Will be <= 512 bytes as it is the limit for DNS over UDP.
-const PACK_STARTING_CAP: usize = 512;
-
 // UINT16LEN is the length (in bytes) of a uint16.
 const UINT16LEN: usize = 2;
 
 // UINT32LEN is the length (in bytes) of a uint32.
 const UINT32LEN: usize = 4;
-
-// HEADER_LEN is the length (in bytes) of a DNS header.
-//
-// A header is comprised of 6 uint16s and no padding.
-const HEADER_LEN: usize = 6 * UINT16LEN;
 
 const HEADER_BIT_QR: u16 = 1 << 15; // query/response (response=1)
 const HEADER_BIT_AA: u16 = 1 << 10; // authoritative
@@ -276,16 +255,6 @@ impl fmt::Display for Message {
 }
 
 impl Message {
-    // Unpack parses a full Message.
-    pub fn unpack(&mut self, msg: &[u8]) -> Result<()> {
-        let mut p = Parser::default();
-        self.header = p.start(msg)?;
-        self.questions = p.all_questions()?;
-        self.answers = p.all_answers()?;
-        self.authorities = p.all_authorities()?;
-        self.additionals = p.all_additionals()?;
-        Ok(())
-    }
 
     // Pack packs a full Message.
     pub fn pack(&mut self) -> Result<Vec<u8>> {

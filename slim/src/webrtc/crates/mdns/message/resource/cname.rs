@@ -1,5 +1,4 @@
 use super::*;
-use crate::webrtc::mdns::message::name::*;
 
 // A cnameresource is a cname Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

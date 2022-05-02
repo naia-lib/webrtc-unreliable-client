@@ -33,13 +33,6 @@ pub(crate) fn unpack_uint16(msg: &[u8], off: usize) -> Result<(u16, usize)> {
     ))
 }
 
-pub(crate) fn skip_uint16(msg: &[u8], off: usize) -> Result<usize> {
-    if off + UINT16LEN > msg.len() {
-        return Err(Error::ErrBaseLen);
-    }
-    Ok(off + UINT16LEN)
-}
-
 // pack_uint32 appends the wire format of field to msg.
 pub(crate) fn pack_uint32(mut msg: Vec<u8>, field: u32) -> Vec<u8> {
     msg.extend_from_slice(&field.to_be_bytes());
@@ -55,13 +48,6 @@ pub(crate) fn unpack_uint32(msg: &[u8], off: usize) -> Result<(u32, usize)> {
         | (msg[off + 2] as u32) << 8
         | (msg[off + 3] as u32);
     Ok((v, off + UINT32LEN))
-}
-
-pub(crate) fn skip_uint32(msg: &[u8], off: usize) -> Result<usize> {
-    if off + UINT32LEN > msg.len() {
-        return Err(Error::ErrBaseLen);
-    }
-    Ok(off + UINT32LEN)
 }
 
 // pack_text appends the wire format of field to msg.

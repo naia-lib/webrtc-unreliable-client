@@ -14,26 +14,10 @@ use super::packer::*;
 use super::*;
 use crate::webrtc::mdns::error::*;
 
-use a::*;
-use aaaa::*;
-use cname::*;
-use mx::*;
-use ns::*;
-use opt::*;
-use ptr::*;
-use soa::*;
-use srv::*;
-use txt::*;
-
 use std::collections::HashMap;
 use std::fmt;
 
 // EDNS(0) wire constants.
-
-const EDNS0_VERSION: u32 = 0;
-const EDNS0_DNSSEC_OK: u32 = 0x00008000;
-const EDNS_VERSION_MASK: u32 = 0x00ff0000;
-const EDNS0_DNSSEC_OK_MASK: u32 = 0x00ff8000;
 
 // A Resource is a DNS resource record.
 #[derive(Default, Debug)]
@@ -77,27 +61,6 @@ impl Resource {
             self.header.fix_len(&mut msg, len_off, pre_len)?;
         }
         Ok(msg)
-    }
-
-    pub fn unpack(&mut self, msg: &[u8], mut off: usize) -> Result<usize> {
-        off = self.header.unpack(msg, off, 0)?;
-        let (rb, off) =
-            unpack_resource_body(self.header.typ, msg, off, self.header.length as usize)?;
-        self.body = Some(rb);
-        Ok(off)
-    }
-
-    pub(crate) fn skip(msg: &[u8], off: usize) -> Result<usize> {
-        let mut new_off = Name::skip(msg, off)?;
-        new_off = DnsType::skip(msg, new_off)?;
-        new_off = DnsClass::skip(msg, new_off)?;
-        new_off = skip_uint32(msg, new_off)?;
-        let (length, mut new_off) = unpack_uint16(msg, new_off)?;
-        new_off += length as usize;
-        if new_off > msg.len() {
-            return Err(Error::ErrResourceLen);
-        }
-        Ok(new_off)
     }
 }
 
@@ -190,44 +153,6 @@ impl ResourceHeader {
 
         Ok(())
     }
-
-    // set_edns0 configures h for EDNS(0).
-    //
-    // The provided ext_rcode must be an extedned RCode.
-    pub fn set_edns0(
-        &mut self,
-        udp_payload_len: u16,
-        ext_rcode: u32,
-        dnssec_ok: bool,
-    ) -> Result<()> {
-        self.name = Name {
-            data: ".".to_owned(),
-        }; // RFC 6891 section 6.1.2
-        self.typ = DnsType::Opt;
-        self.class = DnsClass(udp_payload_len);
-        self.ttl = (ext_rcode >> 4) << 24;
-        if dnssec_ok {
-            self.ttl |= EDNS0_DNSSEC_OK;
-        }
-        Ok(())
-    }
-
-    // dnssec_allowed reports whether the DNSSEC OK bit is set.
-    pub fn dnssec_allowed(&self) -> bool {
-        self.ttl & EDNS0_DNSSEC_OK_MASK == EDNS0_DNSSEC_OK // RFC 6891 section 6.1.3
-    }
-
-    // extended_rcode returns an extended RCode.
-    //
-    // The provided rcode must be the RCode in DNS message header.
-    pub fn extended_rcode(&self, rcode: RCode) -> RCode {
-        if self.ttl & EDNS_VERSION_MASK == EDNS0_VERSION {
-            // RFC 6891 section 6.1.3
-            let ttl = ((self.ttl >> 24) << 4) as u8 | rcode as u8;
-            return RCode::from(ttl);
-        }
-        rcode
-    }
 }
 
 // A ResourceBody is a DNS resource record minus the header.
@@ -245,29 +170,4 @@ pub trait ResourceBody: fmt::Display + fmt::Debug {
     ) -> Result<Vec<u8>>;
 
     fn unpack(&mut self, msg: &[u8], off: usize, length: usize) -> Result<usize>;
-}
-
-pub fn unpack_resource_body(
-    typ: DnsType,
-    msg: &[u8],
-    mut off: usize,
-    length: usize,
-) -> Result<(Box<dyn ResourceBody>, usize)> {
-    let mut rb: Box<dyn ResourceBody> = match typ {
-        DnsType::A => Box::new(AResource::default()),
-        DnsType::Ns => Box::new(NsResource::default()),
-        DnsType::Cname => Box::new(CnameResource::default()),
-        DnsType::Soa => Box::new(SoaResource::default()),
-        DnsType::Ptr => Box::new(PtrResource::default()),
-        DnsType::Mx => Box::new(MxResource::default()),
-        DnsType::Txt => Box::new(TxtResource::default()),
-        DnsType::Aaaa => Box::new(AaaaResource::default()),
-        DnsType::Srv => Box::new(SrvResource::default()),
-        DnsType::Opt => Box::new(OptResource::default()),
-        _ => return Err(Error::ErrNilResourceBody),
-    };
-
-    off = rb.unpack(msg, off, length)?;
-
-    Ok((rb, off))
 }

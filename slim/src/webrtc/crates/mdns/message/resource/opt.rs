@@ -1,7 +1,6 @@
 use super::*;
 use crate::webrtc::mdns::error::Result;
 use crate::webrtc::mdns::error::*;
-use crate::webrtc::mdns::message::packer::*;
 
 // An OPTResource is an OPT pseudo Resource record.
 //

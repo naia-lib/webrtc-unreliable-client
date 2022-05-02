@@ -1,7 +1,5 @@
 use super::*;
 use crate::webrtc::mdns::error::Result;
-use crate::webrtc::mdns::message::name::*;
-use crate::webrtc::mdns::message::packer::*;
 
 // An SOAResource is an SOA Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

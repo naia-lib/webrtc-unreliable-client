@@ -1,7 +1,5 @@
 use super::*;
 use crate::webrtc::mdns::error::Result;
-use crate::webrtc::mdns::message::name::*;
-use crate::webrtc::mdns::message::packer::*;
 
 // An SRVResource is an SRV Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

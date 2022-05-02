@@ -1,6 +1,5 @@
 use super::*;
 use crate::webrtc::mdns::error::*;
-use crate::webrtc::mdns::message::packer::*;
 
 // A TXTResource is a txt Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

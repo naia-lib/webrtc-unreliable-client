@@ -1,5 +1,4 @@
 use super::*;
-use crate::webrtc::mdns::message::packer::*;
 
 // An AAAAResource is an aaaa Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

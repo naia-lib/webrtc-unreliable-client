@@ -1,6 +1,5 @@
 use super::*;
 use crate::webrtc::mdns::error::Result;
-use crate::webrtc::mdns::message::name::*;
 
 // A PTRResource is a PTR Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

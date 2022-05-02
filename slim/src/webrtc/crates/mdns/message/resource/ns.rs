@@ -1,6 +1,5 @@
 use super::*;
 use crate::webrtc::mdns::error::Result;
-use crate::webrtc::mdns::message::name::*;
 
 // An NSResource is an NS Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]

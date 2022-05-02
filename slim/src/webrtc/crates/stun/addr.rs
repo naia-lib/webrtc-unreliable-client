@@ -111,18 +111,3 @@ impl MappedAddress {
         Ok(())
     }
 }
-
-/// AlternateServer represents ALTERNATE-SERVER attribute.
-///
-/// RFC 5389 Section 15.11
-pub type AlternateServer = MappedAddress;
-
-/// ResponseOrigin represents RESPONSE-ORIGIN attribute.
-///
-/// RFC 5780 Section 7.3
-pub type ResponseOrigin = MappedAddress;
-
-/// OtherAddress represents OTHER-ADDRESS attribute.
-///
-/// RFC 5780 Section 7.4
-pub type OtherAddress = MappedAddress;
