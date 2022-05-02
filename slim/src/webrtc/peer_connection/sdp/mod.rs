@@ -10,8 +10,8 @@ pub mod sdp_type;
 pub mod session_description;
 
 use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
-use ice::candidate::candidate_base::unmarshal_candidate;
-use ice::candidate::Candidate;
+use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
+use crate::webrtc::ice::candidate::Candidate;
 use sdp::description::common::{Address, ConnectionInformation};
 use sdp::description::media::{MediaDescription, MediaName, RangedPort};
 use sdp::description::session::*;

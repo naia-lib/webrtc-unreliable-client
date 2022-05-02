@@ -1,12 +1,12 @@
 use std::fmt;
 use std::sync::Arc;
 
-use ice::candidate::candidate_base::CandidateBaseConfig;
-use ice::candidate::candidate_host::CandidateHostConfig;
-use ice::candidate::candidate_peer_reflexive::CandidatePeerReflexiveConfig;
-use ice::candidate::candidate_relay::CandidateRelayConfig;
-use ice::candidate::candidate_server_reflexive::CandidateServerReflexiveConfig;
-use ice::candidate::Candidate;
+use crate::webrtc::ice::candidate::candidate_base::CandidateBaseConfig;
+use crate::webrtc::ice::candidate::candidate_host::CandidateHostConfig;
+use crate::webrtc::ice::candidate::candidate_peer_reflexive::CandidatePeerReflexiveConfig;
+use crate::webrtc::ice::candidate::candidate_relay::CandidateRelayConfig;
+use crate::webrtc::ice::candidate::candidate_server_reflexive::CandidateServerReflexiveConfig;
+use crate::webrtc::ice::candidate::Candidate;
 use serde::{Deserialize, Serialize};
 
 use crate::webrtc::error::{Error, Result};

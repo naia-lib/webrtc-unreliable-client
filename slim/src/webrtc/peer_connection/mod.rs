@@ -51,8 +51,8 @@ use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCap
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
 
-use ice::candidate::candidate_base::unmarshal_candidate;
-use ice::candidate::Candidate;
+use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
+use crate::webrtc::ice::candidate::Candidate;
 use ::sdp::description::session::*;
 use ::sdp::util::ConnectionRole;
 use peer_connection_internal::*;

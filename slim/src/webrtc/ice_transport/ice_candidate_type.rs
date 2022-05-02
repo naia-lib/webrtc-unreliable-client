@@ -1,4 +1,4 @@
-use ice::candidate::CandidateType;
+use crate::webrtc::ice::candidate::CandidateType;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 

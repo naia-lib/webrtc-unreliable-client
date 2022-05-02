@@ -3,8 +3,8 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
-use ice::candidate::Candidate;
-use ice::state::ConnectionState;
+use crate::webrtc::ice::candidate::Candidate;
+use crate::webrtc::ice::state::ConnectionState;
 use tokio::sync::{mpsc, Mutex};
 use crate::webrtc::util::Conn;
 

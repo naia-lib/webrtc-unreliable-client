@@ -1,8 +1,8 @@
 
 use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
-use ice::agent::agent_config::InterfaceFilterFn;
-use ice::mdns::MulticastDnsMode;
-use ice::network_type::NetworkType;
+use crate::webrtc::ice::agent::agent_config::InterfaceFilterFn;
+use crate::webrtc::ice::mdns::MulticastDnsMode;
+use crate::webrtc::ice::network_type::NetworkType;
 
 use std::sync::Arc;
 

@@ -12,8 +12,8 @@ pub struct RTCIceServer {
 }
 
 impl RTCIceServer {
-    pub(crate) fn parse_url(&self, url_str: &str) -> Result<ice::url::Url> {
-        Ok(ice::url::Url::parse_url(url_str)?)
+    pub(crate) fn parse_url(&self, url_str: &str) -> Result<crate::webrtc::ice::url::Url> {
+        Ok(crate::webrtc::ice::url::Url::parse_url(url_str)?)
     }
 
     pub(crate) fn validate(&self) -> Result<()> {
@@ -21,12 +21,12 @@ impl RTCIceServer {
         Ok(())
     }
 
-    pub(crate) fn urls(&self) -> Result<Vec<ice::url::Url>> {
+    pub(crate) fn urls(&self) -> Result<Vec<crate::webrtc::ice::url::Url>> {
         let mut urls = vec![];
 
         for url_str in &self.urls {
             let mut url = self.parse_url(url_str)?;
-            if url.scheme == ice::url::SchemeType::Turn || url.scheme == ice::url::SchemeType::Turns
+            if url.scheme == crate::webrtc::ice::url::SchemeType::Turn || url.scheme == crate::webrtc::ice::url::SchemeType::Turns
             {
                 // https://www.w3.org/TR/webrtc/#set-the-configuration (step #11.3.2)
                 if self.username.is_empty() || self.credential.is_empty() {
@@ -157,7 +157,7 @@ mod test {
                 credential: String::new(),
                 credential_type: RTCIceCredentialType::Oauth,
             },
-            ice::Error::ErrStunQuery,
+            crate::webrtc::ice::Error::ErrStunQuery,
         )];
 
         for (ice_server, expected_err) in tests {

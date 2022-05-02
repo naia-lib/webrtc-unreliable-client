@@ -348,7 +348,7 @@ pub enum Error {
     #[error("{0}")]
     Util(#[from] crate::webrtc::util::Error),
     #[error("{0}")]
-    Ice(#[from] ice::Error),
+    Ice(#[from] crate::webrtc::ice::Error),
     #[error("{0}")]
     Dtls(#[from] crate::webrtc::dtls::Error),
     #[error("{0}")]
@@ -384,8 +384,8 @@ impl<T> From<MpscSendError<T>> for Error {
     }
 }
 
-impl PartialEq<ice::Error> for Error {
-    fn eq(&self, other: &ice::Error) -> bool {
+impl PartialEq<crate::webrtc::ice::Error> for Error {
+    fn eq(&self, other: &crate::webrtc::ice::Error) -> bool {
         if let Error::Ice(e) = self {
             return e == other;
         }

@@ -7,15 +7,15 @@ use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 use crate::webrtc::ice_transport::ice_server::RTCIceServer;
 use crate::webrtc::peer_connection::policy::ice_transport_policy::RTCIceTransportPolicy;
 
-use ice::agent::Agent;
-use ice::candidate::{Candidate, CandidateType};
-use ice::url::Url;
+use crate::webrtc::ice::agent::Agent;
+use crate::webrtc::ice::candidate::{Candidate, CandidateType};
+use crate::webrtc::ice::url::Url;
 
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
-use ice::udp_network::UDPNetwork;
+use crate::webrtc::ice::udp_network::UDPNetwork;
 use tokio::sync::Mutex;
 
 /// ICEGatherOptions provides options relating to the gathering of ICE candidates.
@@ -51,7 +51,7 @@ pub struct RTCIceGatherer {
     pub(crate) setting_engine: Arc<SettingEngine>,
 
     pub(crate) state: Arc<AtomicU8>, //ICEGathererState,
-    pub(crate) agent: Mutex<Option<Arc<ice::agent::Agent>>>,
+    pub(crate) agent: Mutex<Option<Arc<crate::webrtc::ice::agent::Agent>>>,
 
     pub(crate) on_local_candidate_handler: Arc<Mutex<Option<OnLocalCandidateHdlrFn>>>,
     pub(crate) on_state_change_handler: Arc<Mutex<Option<OnICEGathererStateChangeHdlrFn>>>,
@@ -85,9 +85,9 @@ impl RTCIceGatherer {
 
         let mut candidate_types = vec![];
         if self.setting_engine.candidates.ice_lite {
-            candidate_types.push(ice::candidate::CandidateType::Host);
+            candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Host);
         } else if self.gather_policy == RTCIceTransportPolicy::Relay {
-            candidate_types.push(ice::candidate::CandidateType::Relay);
+            candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Relay);
         }
 
         let nat_1to1_cand_type = match self.setting_engine.candidates.nat_1to1_ip_candidate_type {
@@ -97,14 +97,14 @@ impl RTCIceGatherer {
         };
 
         let mut mdns_mode = self.setting_engine.candidates.multicast_dns_mode;
-        if mdns_mode != ice::mdns::MulticastDnsMode::Disabled
-            && mdns_mode != ice::mdns::MulticastDnsMode::QueryAndGather
+        if mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::Disabled
+            && mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::QueryAndGather
         {
             // If enum is in state we don't recognized default to MulticastDNSModeQueryOnly
-            mdns_mode = ice::mdns::MulticastDnsMode::QueryOnly;
+            mdns_mode = crate::webrtc::ice::mdns::MulticastDnsMode::QueryOnly;
         }
 
-        let mut config = ice::agent::agent_config::AgentConfig {
+        let mut config = crate::webrtc::ice::agent::agent_config::AgentConfig {
             udp_network: UDPNetwork::Ephemeral(Default::default()),
             lite: self.setting_engine.candidates.ice_lite,
             urls: self.validated_servers.clone(),
@@ -135,7 +135,7 @@ impl RTCIceGatherer {
 
         let requested_network_types = if self.setting_engine.candidates.ice_network_types.is_empty()
         {
-            ice::network_type::supported_network_types()
+            crate::webrtc::ice::network_type::supported_network_types()
         } else {
             self.setting_engine.candidates.ice_network_types.clone()
         };
@@ -144,7 +144,7 @@ impl RTCIceGatherer {
 
         {
             let mut agent = self.agent.lock().await;
-            *agent = Some(Arc::new(ice::agent::Agent::new(config).await?));
+            *agent = Some(Arc::new(crate::webrtc::ice::agent::Agent::new(config).await?));
         }
 
         Ok(())
@@ -348,7 +348,7 @@ mod test {
     #[tokio::test]
     async fn test_ice_gather_mdns_candidate_gathering() -> Result<()> {
         let mut s = SettingEngine::default();
-        s.set_ice_multicast_dns_mode(ice::mdns::MulticastDnsMode::QueryAndGather);
+        s.set_ice_multicast_dns_mode(crate::webrtc::ice::mdns::MulticastDnsMode::QueryAndGather);
 
         let gatherer = APIBuilder::new()
             .with_setting_engine(s)
