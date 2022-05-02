@@ -53,7 +53,7 @@ use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiver
 use crate::webrtc::rtp_transceiver::{
     find_by_mid, satisfy_type_and_direction, RTCRtpTransceiver,
 };
-use crate::webrtc::rtp_transceiver::{RTCRtpTransceiverInit, SSRC};
+use crate::webrtc::rtp_transceiver::RTCRtpTransceiverInit;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -68,7 +68,6 @@ use interceptor::{Attributes, Interceptor, RTCPWriter};
 use peer_connection_internal::*;
 use rand::{thread_rng, Rng};
 use rcgen::KeyPair;
-use srtp::stream::Stream;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
@@ -1070,7 +1069,6 @@ impl RTCPeerConnection {
                                     }
                                 } else {
                                     let receiver = Arc::new(RTCRtpReceiver::new(
-                                        self.internal.setting_engine.get_receive_mtu(),
                                         kind,
                                         Arc::clone(&self.internal.dtls_transport),
                                         Arc::clone(&self.interceptor),

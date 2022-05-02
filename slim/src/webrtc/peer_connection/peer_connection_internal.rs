@@ -189,7 +189,6 @@ impl PeerConnectionInternal {
                         .ok_or(Error::ErrInterceptorNotBind)?;
 
                     let receiver = Arc::new(RTCRtpReceiver::new(
-                        self.setting_engine.get_receive_mtu(),
                         receiver.kind(),
                         Arc::clone(&self.dtls_transport),
                         interceptor,
@@ -214,7 +213,7 @@ impl PeerConnectionInternal {
     fn undeclared_media_processor(self: &Arc<Self>) {
         let dtls_transport = Arc::clone(&self.dtls_transport);
         let is_closed = Arc::clone(&self.is_closed);
-        let pci = Arc::clone(self);
+
         tokio::spawn(async move {
             let simulcast_routine_count = Arc::new(AtomicU64::new(0));
             loop {
@@ -251,21 +250,13 @@ impl PeerConnectionInternal {
 
                 let dtls_transport2 = Arc::clone(&dtls_transport);
                 let simulcast_routine_count2 = Arc::clone(&simulcast_routine_count);
-                let pci2 = Arc::clone(&pci);
+
                 tokio::spawn(async move {
                     let ssrc = stream.get_ssrc();
 
                     dtls_transport2
                         .store_simulcast_stream(ssrc, Arc::clone(&stream))
                         .await;
-
-                    if let Err(err) = pci2.handle_incoming_ssrc(stream, ssrc).await {
-                        log::error!(
-                            "Incoming unhandled RTP ssrc({}), on_track will not be fired. {}",
-                            ssrc,
-                            err
-                        );
-                    }
 
                     simulcast_routine_count2.fetch_sub(1, Ordering::SeqCst);
                 });
@@ -350,7 +341,6 @@ impl PeerConnectionInternal {
                         continue;
                     }
                     PeerConnectionInternal::start_receiver(
-                        self.setting_engine.get_receive_mtu(),
                         incoming_track,
                         receiver,
                         Arc::clone(&self.on_track_handler),
@@ -389,7 +379,6 @@ impl PeerConnectionInternal {
                 };
                 if let Some(receiver) = t.receiver().await {
                     PeerConnectionInternal::start_receiver(
-                        self.setting_engine.get_receive_mtu(),
                         incoming,
                         receiver,
                         Arc::clone(&self.on_track_handler),
@@ -468,7 +457,6 @@ impl PeerConnectionInternal {
                     .upgrade()
                     .ok_or(Error::ErrInterceptorNotBind)?;
                 let receiver = Arc::new(RTCRtpReceiver::new(
-                    self.setting_engine.get_receive_mtu(),
                     kind,
                     Arc::clone(&self.dtls_transport),
                     interceptor,
@@ -859,16 +847,7 @@ impl PeerConnectionInternal {
         }
     }
 
-    async fn handle_incoming_ssrc(
-        self: &Arc<Self>,
-        _rtp_stream: Arc<Stream>,
-        _ssrc: SSRC,
-    ) -> Result<()> {
-        Ok(())
-    }
-
     async fn start_receiver(
-        _receive_mtu: usize,
         incoming: &TrackDetails,
         receiver: Arc<RTCRtpReceiver>,
         on_track_handler: Arc<Mutex<Option<OnTrackHdlrFn>>>,

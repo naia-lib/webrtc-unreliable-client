@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use util::{Buffer, Conn};
+use crate::webrtc::RECEIVE_MTU;
 
 /// mux multiplexes packets on a single socket (RFC7983)
 
@@ -23,7 +24,6 @@ const MAX_BUFFER_SIZE: usize = 1000 * 1000; // 1MB
 /// a single structure
 pub struct Config {
     pub conn: Arc<dyn Conn + Send + Sync>,
-    pub buffer_size: usize,
 }
 
 /// Mux allows multiplexing
@@ -32,7 +32,6 @@ pub struct Mux {
     id: Arc<AtomicUsize>,
     next_conn: Arc<dyn Conn + Send + Sync>,
     endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
-    buffer_size: usize,
     closed_ch_tx: Option<mpsc::Sender<()>>,
 }
 
@@ -43,15 +42,13 @@ impl Mux {
             id: Arc::new(AtomicUsize::new(0)),
             next_conn: Arc::clone(&config.conn),
             endpoints: Arc::new(Mutex::new(HashMap::new())),
-            buffer_size: config.buffer_size,
             closed_ch_tx: Some(closed_ch_tx),
         };
 
-        let buffer_size = m.buffer_size;
         let next_conn = Arc::clone(&m.next_conn);
         let endpoints = Arc::clone(&m.endpoints);
         tokio::spawn(async move {
-            Mux::read_loop(buffer_size, next_conn, closed_ch_rx, endpoints).await;
+            Mux::read_loop(next_conn, closed_ch_rx, endpoints).await;
         });
 
         m
@@ -86,12 +83,11 @@ impl Mux {
     }
 
     async fn read_loop(
-        buffer_size: usize,
         next_conn: Arc<dyn Conn + Send + Sync>,
         mut closed_ch_rx: mpsc::Receiver<()>,
         endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
     ) {
-        let mut buf = vec![0u8; buffer_size];
+        let mut buf = vec![0u8; RECEIVE_MTU];
         let mut n = 0usize;
         loop {
             tokio::select! {

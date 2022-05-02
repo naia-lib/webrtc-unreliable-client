@@ -20,9 +20,6 @@ use crate::webrtc::mux::endpoint::Endpoint;
 use crate::webrtc::mux::mux_func::MatchFunc;
 use crate::webrtc::mux::{Config, Mux};
 
-#[cfg(test)]
-mod ice_transport_test;
-
 pub mod ice_candidate;
 pub mod ice_candidate_pair;
 pub mod ice_candidate_type;
@@ -180,7 +177,6 @@ impl RTCIceTransport {
 
             let config = Config {
                 conn: Arc::clone(&conn),
-                buffer_size: self.gatherer.setting_engine.get_receive_mtu(),
             };
 
             {

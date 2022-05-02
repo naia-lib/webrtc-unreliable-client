@@ -9,7 +9,6 @@ use ice::mdns::MulticastDnsMode;
 use ice::network_type::NetworkType;
 use ice::udp_network::UDPNetwork;
 
-use crate::webrtc::RECEIVE_MTU;
 use std::sync::Arc;
 use tokio::time::Duration;
 use util::vnet::net::*;
@@ -69,7 +68,6 @@ pub struct SettingEngine {
     //iceProxyDialer                            :proxy.Dialer,?
     pub(crate) udp_network: UDPNetwork,
     pub(crate) srtp_protection_profiles: Vec<SrtpProtectionProfile>,
-    pub(crate) receive_mtu: usize,
 }
 
 impl SettingEngine {
@@ -77,14 +75,5 @@ impl SettingEngine {
         let mut setting_engine = Self::default();
         setting_engine.answering_dtls_role = DTLSRole::Client;
         setting_engine
-    }
-
-    /// get_receive_mtu returns the configured MTU. If SettingEngine's MTU is configured to 0 it returns the default
-    pub(crate) fn get_receive_mtu(&self) -> usize {
-        if self.receive_mtu != 0 {
-            self.receive_mtu
-        } else {
-            RECEIVE_MTU
-        }
     }
 }

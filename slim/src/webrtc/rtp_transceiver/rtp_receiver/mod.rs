@@ -15,6 +15,7 @@ use crate::webrtc::track::{TrackStream, TrackStreams};
 use interceptor::{Attributes, Interceptor};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex, Notify, RwLock};
+use crate::webrtc::RECEIVE_MTU;
 
 pub struct RTPReceiverInternal {
     // removing these seems to cause a compiler panic
@@ -36,7 +37,6 @@ pub struct RTPReceiverInternal {
 
 /// RTPReceiver allows an application to inspect the receipt of a TrackRemote
 pub struct RTCRtpReceiver {
-    receive_mtu: usize,
     kind: RTPCodecType,
     transport: Arc<RTCDtlsTransport>,
     closed_tx: Arc<Notify>,
@@ -55,7 +55,6 @@ impl std::fmt::Debug for RTCRtpReceiver {
 
 impl RTCRtpReceiver {
     pub fn new(
-        receive_mtu: usize,
         kind: RTPCodecType,
         transport: Arc<RTCDtlsTransport>,
         interceptor: Arc<dyn Interceptor + Send + Sync>,
@@ -64,7 +63,6 @@ impl RTCRtpReceiver {
         let (received_tx, _) = mpsc::channel(1);
 
         RTCRtpReceiver {
-            receive_mtu,
             kind,
             transport: Arc::clone(&transport),
             closed_tx,
@@ -310,11 +308,10 @@ impl RTCRtpReceiver {
             if (ssrc != 0 && l == 1) || t.track.rid() == rsid {
                 t.repair_stream = repair_stream;
 
-                let receive_mtu = self.receive_mtu;
                 let track = t.clone();
                 tokio::spawn(async move {
                     let a = Attributes::new();
-                    let mut b = vec![0u8; receive_mtu];
+                    let mut b = vec![0u8; RECEIVE_MTU];
                     while let Some(repair_rtp_interceptor) = &track.repair_stream.rtp_interceptor {
                         //TODO: cancel repair_rtp_interceptor.read gracefully
                         //println!("repair_rtp_interceptor read begin with ssrc={}", ssrc);
