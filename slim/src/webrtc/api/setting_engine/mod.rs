@@ -7,11 +7,6 @@ use ice::network_type::NetworkType;
 use std::sync::Arc;
 
 #[derive(Default, Clone)]
-pub struct Detach {
-    pub data_channels: bool,
-}
-
-#[derive(Default, Clone)]
 pub struct Candidates {
     pub ice_lite: bool,
     pub ice_network_types: Vec<NetworkType>,

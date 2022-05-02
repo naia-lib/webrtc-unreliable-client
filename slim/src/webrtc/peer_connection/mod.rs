@@ -55,7 +55,7 @@ use ice::candidate::candidate_base::unmarshal_candidate;
 use ice::candidate::Candidate;
 use ::sdp::description::session::*;
 use ::sdp::util::ConnectionRole;
-use interceptor::Interceptor;
+use crate::webrtc::interceptor::Interceptor;
 use peer_connection_internal::*;
 use rand::{thread_rng, Rng};
 use rcgen::KeyPair;
@@ -65,7 +65,7 @@ use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use ::sdp::description::session::ATTR_KEY_ICELITE;
-use interceptor::registry::Registry;
+use crate::webrtc::interceptor::registry::Registry;
 use tokio::sync::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";

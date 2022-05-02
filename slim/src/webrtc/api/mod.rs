@@ -11,7 +11,7 @@ use setting_engine::*;
 
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-use interceptor::registry::Registry;
+use crate::webrtc::interceptor::registry::Registry;
 
 use rcgen::KeyPair;
 use std::sync::Arc;
