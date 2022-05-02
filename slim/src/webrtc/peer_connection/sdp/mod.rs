@@ -169,49 +169,6 @@ pub(crate) async fn populate_local_candidates(
     }
 }
 
-pub(crate) async fn add_transceiver_sdp(
-    mut d: SessionDescription,
-    media_section: &MediaSection,
-) -> Result<(SessionDescription, bool)> {
-    if media_section.transceivers.is_empty() {
-        return Err(Error::ErrSDPZeroTransceivers);
-    }
-
-    let transceivers = &media_section.transceivers;
-    // Use the first transceiver to generate the section attributes
-    let t = &transceivers[0];
-
-    // If we are sender and we have no codecs throw an error early
-    if t.sender().await.is_some() {
-        return Err(Error::ErrSenderWithNoCodecs);
-    }
-
-    // Explicitly reject track if we don't have the codec
-    d = d.with_media(MediaDescription {
-        media_name: sdp::description::media::MediaName {
-            media: t.kind.to_string(),
-            port: RangedPort {
-                value: 0,
-                range: None,
-            },
-            protos: vec![
-                "UDP".to_owned(),
-                "TLS".to_owned(),
-                "RTP".to_owned(),
-                "SAVPF".to_owned(),
-            ],
-            formats: vec!["0".to_owned()],
-        },
-        media_title: None,
-        connection_information: None,
-        bandwidth: vec![],
-        encryption_key: None,
-        attributes: vec![],
-    });
-    return Ok((d, false));
-
-}
-
 #[derive(Default)]
 pub(crate) struct MediaSection {
     pub(crate) id: String,
@@ -269,14 +226,7 @@ pub(crate) async fn populate_sdp(
             d = add_data_media_section(d, &media_dtls_fingerprints, candidates, params).await?;
             true
         } else {
-
-            let (d1, should_add_id) = add_transceiver_sdp(
-                d,
-                m,
-            )
-            .await?;
-            d = d1;
-            should_add_id
+            false
         };
 
         if should_add_id {
