@@ -444,25 +444,6 @@ impl RTCPeerConnection {
         }
     }
 
-    async fn do_track(
-        on_track_handler: Arc<Mutex<Option<OnTrackHdlrFn>>>,
-        t: Option<Arc<TrackRemote>>,
-        r: Option<Arc<RTCRtpReceiver>>,
-    ) {
-        log::debug!("got new track: {:?}", t);
-
-        if t.is_some() {
-            tokio::spawn(async move {
-                let mut handler = on_track_handler.lock().await;
-                if let Some(f) = &mut *handler {
-                    f(t, r).await;
-                } else {
-                    log::warn!("on_track unset, unable to handle incoming media streams");
-                }
-            });
-        }
-    }
-
     async fn do_ice_connection_state_change(
         on_ice_connection_state_change_handler: &Arc<
             Mutex<Option<OnICEConnectionStateChangeHdlrFn>>,
@@ -972,7 +953,7 @@ impl RTCPeerConnection {
                         let rd = Arc::clone(&remote_desc);
                         Box::pin(async move {
                             let _ = pc
-                                .start_rtp(have_local_description, rd, sdp_semantics)
+                                .start_rtp(rd)
                                 .await;
                             false
                         })
@@ -1164,7 +1145,7 @@ impl RTCPeerConnection {
                             .await;
 
                         if we_offer {
-                            let _ = pc.start_rtp(false, rd, sdp_semantics).await;
+                            let _ = pc.start_rtp(rd).await;
                         }
                         false
                     })

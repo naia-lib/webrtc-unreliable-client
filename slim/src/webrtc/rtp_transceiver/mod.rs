@@ -200,12 +200,6 @@ impl RTCRtpTransceiver {
         }
     }
 
-    /// receiver returns the RTPTransceiver's RTPReceiver if it has one
-    pub async fn receiver(&self) -> Option<Arc<RTCRtpReceiver>> {
-        let receiver = self.receiver.lock().await;
-        receiver.clone()
-    }
-
     pub(crate) async fn set_receiver(&self, r: Option<Arc<RTCRtpReceiver>>) {
         if let Some(receiver) = &r {
             receiver
@@ -238,11 +232,6 @@ impl RTCRtpTransceiver {
     pub async fn mid(&self) -> String {
         let mid = self.mid.lock().await;
         mid.clone()
-    }
-
-    /// kind returns RTPTransceiver's kind.
-    pub fn kind(&self) -> RTPCodecType {
-        self.kind
     }
 
     /// direction returns the RTPTransceiver's current direction
