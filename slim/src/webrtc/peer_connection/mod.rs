@@ -552,11 +552,9 @@ impl RTCPeerConnection {
             } else {
                 self.internal
                     .generate_matched_sdp(
-                        current_transceivers,
                         use_identity,
                         true, /*includeUnmatched */
                         DEFAULT_DTLS_ROLE_OFFER.to_connection_role(),
-                        self.configuration.sdp_semantics,
                     )
                     .await?
             };

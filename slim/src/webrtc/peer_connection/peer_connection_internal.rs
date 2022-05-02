@@ -347,11 +347,9 @@ impl PeerConnectionInternal {
     /// this is used everytime we have a remote_description
     pub(super) async fn generate_matched_sdp(
         &self,
-        mut local_transceivers: Vec<Arc<RTCRtpTransceiver>>,
         use_identity: bool,
         include_unmatched: bool,
         connection_role: ConnectionRole,
-        sdp_semantics: RTCSdpSemantics,
     ) -> Result<SessionDescription> {
         let d = SessionDescription::new_jsep_session_description(use_identity);
 
@@ -370,29 +368,15 @@ impl PeerConnectionInternal {
 
         let detected_plan_b = description_is_plan_b(remote_description.as_ref())?;
         let mut media_sections = vec![];
-        let mut already_have_application_media_section = false;
 
         // If we are offering also include unmatched local transceivers
         if include_unmatched {
-            if !detected_plan_b {
-                for t in &local_transceivers {
-                    if let Some(sender) = t.sender().await {
-                        sender.set_negotiated();
-                    }
-                    media_sections.push(MediaSection {
-                        id: t.mid().await,
-                        transceivers: vec![Arc::clone(t)],
-                        ..Default::default()
-                    });
-                }
-            }
 
             if self
                 .sctp_transport
                 .data_channels_requested
                 .load(Ordering::SeqCst)
                 != 0
-                && !already_have_application_media_section
             {
                 if detected_plan_b {
                     media_sections.push(MediaSection {
@@ -408,10 +392,6 @@ impl PeerConnectionInternal {
                     });
                 }
             }
-        }
-
-        if sdp_semantics == RTCSdpSemantics::UnifiedPlanWithFallback && detected_plan_b {
-            log::info!("Plan-B Offer detected; responding with Plan-B Answer");
         }
 
         let dtls_fingerprints = if let Some(cert) = self.dtls_transport.certificates.first() {
