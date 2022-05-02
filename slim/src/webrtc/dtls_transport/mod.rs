@@ -27,10 +27,6 @@ use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::mux::endpoint::Endpoint;
 use crate::webrtc::mux::mux_func::{match_dtls, match_srtcp, match_srtp};
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
-use crate::webrtc::rtp_transceiver::SSRC;
-
-#[cfg(test)]
-mod dtls_transport_test;
 
 pub mod dtls_fingerprint;
 pub mod dtls_parameters;
@@ -72,7 +68,7 @@ pub struct RTCDtlsTransport {
     pub(crate) srtp_endpoint: Mutex<Option<Arc<Endpoint>>>,
     pub(crate) srtcp_endpoint: Mutex<Option<Arc<Endpoint>>>,
 
-    pub(crate) simulcast_streams: Mutex<HashMap<SSRC, Arc<Stream>>>,
+    pub(crate) simulcast_streams: Mutex<HashMap<u32, Arc<Stream>>>,
 }
 
 impl RTCDtlsTransport {
