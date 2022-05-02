@@ -22,17 +22,6 @@ pub struct ReportBuilder {
 }
 
 impl ReportBuilder {
-    /// with_interval sets send interval for the interceptor.
-    pub fn with_interval(mut self, interval: Duration) -> ReportBuilder {
-        self.interval = Some(interval);
-        self
-    }
-
-    /// with_now_fn sets an alternative for the time.Now function.
-    pub fn with_now_fn(mut self, now: FnTimeGen) -> ReportBuilder {
-        self.now = Some(now);
-        self
-    }
 
     fn build_rr(&self) -> ReceiverReport {
         let (close_tx, close_rx) = mpsc::channel(1);

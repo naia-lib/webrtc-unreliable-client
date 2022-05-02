@@ -17,14 +17,6 @@ pub struct ReceiverBuilder {
     interval: Option<Duration>,
 }
 
-impl ReceiverBuilder {
-    /// with_interval sets send interval for the interceptor.
-    pub fn with_interval(mut self, interval: Duration) -> ReceiverBuilder {
-        self.interval = Some(interval);
-        self
-    }
-}
-
 impl InterceptorBuilder for ReceiverBuilder {
     fn build(&self, _id: &str) -> Result<Arc<dyn Interceptor + Send + Sync>> {
         let (close_tx, close_rx) = mpsc::channel(1);
@@ -50,7 +42,6 @@ impl InterceptorBuilder for ReceiverBuilder {
 }
 
 struct Packet {
-    hdr: rtp::header::Header,
     sequence_number: u16,
     arrival_time: i64,
     ssrc: u32,
@@ -77,10 +68,6 @@ pub struct Receiver {
 }
 
 impl Receiver {
-    /// builder returns a new ReceiverBuilder.
-    pub fn builder() -> ReceiverBuilder {
-        ReceiverBuilder::default()
-    }
 
     async fn is_closed(&self) -> bool {
         let close_tx = self.close_tx.lock().await;

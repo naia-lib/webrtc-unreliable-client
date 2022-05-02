@@ -23,15 +23,6 @@ pub struct ResponderBuilder {
     log2_size: Option<u8>,
 }
 
-impl ResponderBuilder {
-    /// with_log2_size sets the size of the interceptor.
-    /// Size must be one of: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
-    pub fn with_log2_size(mut self, log2_size: u8) -> ResponderBuilder {
-        self.log2_size = Some(log2_size);
-        self
-    }
-}
-
 impl InterceptorBuilder for ResponderBuilder {
     fn build(&self, _id: &str) -> Result<Arc<dyn Interceptor + Send + Sync>> {
         Ok(Arc::new(Responder {
@@ -117,13 +108,6 @@ impl RTCPReader for ResponderRtcpReader {
 /// Responder responds to nack feedback messages
 pub struct Responder {
     internal: Arc<ResponderInternal>,
-}
-
-impl Responder {
-    /// builder returns a new ResponderBuilder.
-    pub fn builder() -> ResponderBuilder {
-        ResponderBuilder::default()
-    }
 }
 
 #[async_trait]

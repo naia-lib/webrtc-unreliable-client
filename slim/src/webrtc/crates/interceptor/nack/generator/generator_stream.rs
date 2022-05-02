@@ -62,19 +62,6 @@ impl GeneratorStreamInternal {
         self.set_received(seq);
     }
 
-    fn get(&self, seq: u16) -> bool {
-        let diff = self.end.wrapping_sub(seq);
-        if diff >= UINT16SIZE_HALF {
-            return false;
-        }
-
-        if diff >= self.size {
-            return false;
-        }
-
-        self.get_received(seq)
-    }
-
     fn missing_seq_numbers(&self, skip_last_n: u16) -> Vec<u16> {
         let until = self.end.wrapping_sub(skip_last_n);
         let diff = until.wrapping_sub(self.last_consecutive);

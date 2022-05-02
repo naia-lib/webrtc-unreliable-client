@@ -41,7 +41,6 @@ impl RTPReader for ReceiverStream {
             let _ = self
                 .packet_chan_tx
                 .send(Packet {
-                    hdr: p.header,
                     sequence_number: tcc_ext.transport_sequence,
                     arrival_time: SystemTime::now()
                         .duration_since(self.start_time)

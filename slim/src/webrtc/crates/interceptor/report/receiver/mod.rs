@@ -64,13 +64,6 @@ pub struct ReceiverReport {
 }
 
 impl ReceiverReport {
-    /// builder returns a new ReportBuilder.
-    pub fn builder() -> ReportBuilder {
-        ReportBuilder {
-            is_rr: true,
-            ..Default::default()
-        }
-    }
 
     async fn is_closed(&self) -> bool {
         let close_tx = self.close_tx.lock().await;

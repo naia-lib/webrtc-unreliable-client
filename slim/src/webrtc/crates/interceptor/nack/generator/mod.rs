@@ -27,28 +27,6 @@ pub struct GeneratorBuilder {
     interval: Option<Duration>,
 }
 
-impl GeneratorBuilder {
-    /// with_size sets the size of the interceptor.
-    /// Size must be one of: 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
-    pub fn with_log2_size_minus_6(mut self, log2_size_minus_6: u8) -> GeneratorBuilder {
-        self.log2_size_minus_6 = Some(log2_size_minus_6);
-        self
-    }
-
-    /// with_skip_last_n sets the number of packets (n-1 packets before the last received packets) to ignore when generating
-    /// nack requests.
-    pub fn with_skip_last_n(mut self, skip_last_n: u16) -> GeneratorBuilder {
-        self.skip_last_n = Some(skip_last_n);
-        self
-    }
-
-    /// with_interval sets the nack send interval for the interceptor
-    pub fn with_interval(mut self, interval: Duration) -> GeneratorBuilder {
-        self.interval = Some(interval);
-        self
-    }
-}
-
 impl InterceptorBuilder for GeneratorBuilder {
     fn build(&self, _id: &str) -> Result<Arc<dyn Interceptor + Send + Sync>> {
         let (close_tx, close_rx) = mpsc::channel(1);
@@ -98,10 +76,6 @@ pub struct Generator {
 }
 
 impl Generator {
-    /// builder returns a new GeneratorBuilder.
-    pub fn builder() -> GeneratorBuilder {
-        GeneratorBuilder::default()
-    }
 
     async fn is_closed(&self) -> bool {
         let close_tx = self.close_tx.lock().await;

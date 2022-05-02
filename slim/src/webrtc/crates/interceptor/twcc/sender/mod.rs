@@ -19,14 +19,6 @@ pub struct SenderBuilder {
     init_sequence_nr: u32,
 }
 
-impl SenderBuilder {
-    /// with_init_sequence_nr sets the init sequence number of the interceptor.
-    pub fn with_init_sequence_nr(mut self, init_sequence_nr: u32) -> SenderBuilder {
-        self.init_sequence_nr = init_sequence_nr;
-        self
-    }
-}
-
 impl InterceptorBuilder for SenderBuilder {
     /// build constructs a new SenderInterceptor
     fn build(&self, _id: &str) -> Result<Arc<dyn Interceptor + Send + Sync>> {
@@ -41,13 +33,6 @@ impl InterceptorBuilder for SenderBuilder {
 pub struct Sender {
     next_sequence_nr: Arc<AtomicU32>,
     streams: Mutex<HashMap<u32, Arc<SenderStream>>>,
-}
-
-impl Sender {
-    /// builder returns a new SenderBuilder.
-    pub fn builder() -> SenderBuilder {
-        SenderBuilder::default()
-    }
 }
 
 #[async_trait]

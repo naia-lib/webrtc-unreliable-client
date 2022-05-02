@@ -16,11 +16,6 @@ impl Registry {
         Registry { builders: vec![] }
     }
 
-    /// add adds a new InterceptorBuilder to the registry.
-    pub fn add(&mut self, builder: Box<dyn InterceptorBuilder + Send + Sync>) {
-        self.builders.push(builder);
-    }
-
     /// build constructs a single Interceptor from a InterceptorRegistry
     pub fn build(&self, id: &str) -> Result<Arc<dyn Interceptor + Send + Sync>> {
         if self.builders.is_empty() {
