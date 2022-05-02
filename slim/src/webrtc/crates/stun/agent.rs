@@ -3,15 +3,7 @@ use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;
 
 use rand::Rng;
-use std::sync::Arc;
-use tokio::sync::mpsc;
 use tokio::time::Instant;
-
-/// Handler handles state changes of transaction.
-/// Handler is called on transaction state change.
-/// Usage of e is valid only during call, user must
-/// copy needed fields explicitly.
-pub type Handler = Option<Arc<mpsc::UnboundedSender<Event>>>;
 
 #[derive(Debug, Clone)]
 pub enum EventType {
