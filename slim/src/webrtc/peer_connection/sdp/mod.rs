@@ -12,10 +12,10 @@ pub mod session_description;
 use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
 use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
 use crate::webrtc::ice::candidate::Candidate;
-use sdp::description::common::{Address, ConnectionInformation};
-use sdp::description::media::{MediaDescription, MediaName, RangedPort};
-use sdp::description::session::*;
-use sdp::util::ConnectionRole;
+use crate::webrtc::sdp::description::common::{Address, ConnectionInformation};
+use crate::webrtc::sdp::description::media::{MediaDescription, MediaName, RangedPort};
+use crate::webrtc::sdp::description::session::*;
+use crate::webrtc::sdp::util::ConnectionRole;
 use std::convert::From;
 use std::sync::Arc;
 

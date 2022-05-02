@@ -53,8 +53,8 @@ use crate::webrtc::sctp_transport::RTCSctpTransport;
 
 use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
 use crate::webrtc::ice::candidate::Candidate;
-use ::sdp::description::session::*;
-use ::sdp::util::ConnectionRole;
+use crate::webrtc::sdp::description::session::*;
+use crate::webrtc::sdp::util::ConnectionRole;
 use peer_connection_internal::*;
 use rand::{thread_rng, Rng};
 use rcgen::KeyPair;
@@ -63,7 +63,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use ::sdp::description::session::ATTR_KEY_ICELITE;
+use crate::webrtc::sdp::description::session::ATTR_KEY_ICELITE;
 use tokio::sync::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";

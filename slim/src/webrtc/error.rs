@@ -356,7 +356,7 @@ pub enum Error {
     #[error("{0}")]
     Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("{0}")]
-    Sdp(#[from] sdp::Error),
+    Sdp(#[from] crate::webrtc::sdp::Error),
 
     #[error("utf-8 error: {0}")]
     Utf8(#[from] FromUtf8Error),

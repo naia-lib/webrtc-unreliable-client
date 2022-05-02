@@ -1,5 +1,5 @@
-use sdp::description::session::SessionDescription;
-use sdp::util::ConnectionRole;
+use crate::webrtc::sdp::description::session::SessionDescription;
+use crate::webrtc::sdp::util::ConnectionRole;
 
 use serde::{Deserialize, Serialize};
 use std::fmt;

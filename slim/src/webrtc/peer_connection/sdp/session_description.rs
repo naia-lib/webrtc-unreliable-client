@@ -2,7 +2,7 @@ use crate::webrtc::error::Result;
 
 use super::sdp_type::RTCSdpType;
 
-use sdp::description::session::SessionDescription;
+use crate::webrtc::sdp::description::session::SessionDescription;
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 

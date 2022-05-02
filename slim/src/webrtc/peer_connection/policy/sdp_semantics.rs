@@ -73,8 +73,8 @@ mod test {
     use crate::track::track_local::track_local_static_sample::TrackLocalStaticSample;
     use crate::track::track_local::TrackLocal;
 
-    use sdp::description::media::MediaDescription;
-    use sdp::description::session::{SessionDescription, ATTR_KEY_SSRC};
+    use crate::webrtc::sdp::description::media::MediaDescription;
+    use crate::webrtc::sdp::description::session::{SessionDescription, ATTR_KEY_SSRC};
     use std::collections::HashSet;
     use std::sync::Arc;
 
