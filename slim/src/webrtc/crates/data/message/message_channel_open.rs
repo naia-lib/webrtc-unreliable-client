@@ -1,7 +1,7 @@
 use super::*;
 use crate::webrtc::data::error::Error;
 
-type Result<T> = std::result::Result<T, util::Error>;
+type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
 const CHANNEL_TYPE_RELIABLE: u8 = 0x00;
 const CHANNEL_TYPE_RELIABLE_UNORDERED: u8 = 0x80;

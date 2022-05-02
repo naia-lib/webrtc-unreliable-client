@@ -1,6 +1,6 @@
 use super::*;
 
-type Result<T> = std::result::Result<T, util::Error>;
+type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
 /// The data-part of an data-channel ACK message without the message type.
 ///

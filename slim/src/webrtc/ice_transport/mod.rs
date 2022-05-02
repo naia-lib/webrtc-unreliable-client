@@ -6,7 +6,7 @@ use std::sync::Arc;
 use ice::candidate::Candidate;
 use ice::state::ConnectionState;
 use tokio::sync::{mpsc, Mutex};
-use util::Conn;
+use crate::webrtc::util::Conn;
 
 use ice_candidate::RTCIceCandidate;
 use ice_candidate_pair::RTCIceCandidatePair;

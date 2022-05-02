@@ -346,7 +346,7 @@ pub enum Error {
     ErrRTPTooShort,
 
     #[error("{0}")]
-    Util(#[from] util::Error),
+    Util(#[from] crate::webrtc::util::Error),
     #[error("{0}")]
     Ice(#[from] ice::Error),
     #[error("{0}")]

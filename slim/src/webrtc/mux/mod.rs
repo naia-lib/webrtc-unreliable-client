@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
-use util::{Buffer, Conn};
+use crate::webrtc::util::{Buffer, Conn};
 use crate::webrtc::RECEIVE_MTU;
 
 /// mux multiplexes packets on a single socket (RFC7983)

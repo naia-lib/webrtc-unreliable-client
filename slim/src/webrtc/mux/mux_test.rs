@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use util::conn::conn_pipe::pipe;
+use crate::webrtc::util::conn::conn_pipe::pipe;
 
 const TEST_PIPE_BUFFER_SIZE: usize = 8192;
 
@@ -45,7 +45,7 @@ struct MuxErrorConn {
     data: Vec<Vec<u8>>,
 }
 
-type Result<T> = std::result::Result<T, util::Error>;
+type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
 #[async_trait]
 impl Conn for MuxErrorConn {

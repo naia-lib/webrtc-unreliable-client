@@ -24,7 +24,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
 use std::sync::Arc;
 use tokio::sync::{Mutex, Notify};
-use util::Conn;
+use crate::webrtc::util::Conn;
 
 const SCTP_MAX_CHANNELS: u16 = u16::MAX;
 

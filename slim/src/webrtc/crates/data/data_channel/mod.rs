@@ -9,7 +9,7 @@ use crate::webrtc::data::{
 use crate::webrtc::sctp::{
     association::Association, chunk::chunk_payload_data::PayloadProtocolIdentifier, stream::*,
 };
-use util::marshal::*;
+use crate::webrtc::util::marshal::*;
 
 use bytes::{Buf, Bytes};
 use derive_builder::Builder;

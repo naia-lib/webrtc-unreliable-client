@@ -1,5 +1,5 @@
 use crate::webrtc::mux::mux_func::MatchFunc;
-use util::{Buffer, Conn};
+use crate::webrtc::util::{Buffer, Conn};
 
 use async_trait::async_trait;
 use std::io;
@@ -14,7 +14,7 @@ pub struct Endpoint {
     pub(crate) next_conn: Arc<dyn Conn + Send + Sync>,
 }
 
-type Result<T> = std::result::Result<T, util::Error>;
+type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
 #[async_trait]
 impl Conn for Endpoint {

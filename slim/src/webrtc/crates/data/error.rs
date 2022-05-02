@@ -20,7 +20,7 @@ pub enum Error {
     ErrStreamClosed,
 
     #[error("{0}")]
-    Util(#[from] util::Error),
+    Util(#[from] crate::webrtc::util::Error),
     #[error("{0}")]
     Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("utf-8 error: {0}")]
@@ -31,14 +31,14 @@ pub enum Error {
     new(String),
 }
 
-impl From<Error> for util::Error {
+impl From<Error> for crate::webrtc::util::Error {
     fn from(e: Error) -> Self {
-        util::Error::from_std(e)
+        crate::webrtc::util::Error::from_std(e)
     }
 }
 
-impl PartialEq<util::Error> for Error {
-    fn eq(&self, other: &util::Error) -> bool {
+impl PartialEq<crate::webrtc::util::Error> for Error {
+    fn eq(&self, other: &crate::webrtc::util::Error) -> bool {
         if let Some(down) = other.downcast_ref::<Error>() {
             return self == down;
         }

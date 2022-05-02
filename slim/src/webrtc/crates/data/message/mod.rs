@@ -11,7 +11,7 @@ use message_type::*;
 
 use crate::webrtc::data::error::Error;
 
-use util::marshal::*;
+use crate::webrtc::util::marshal::*;
 
 use bytes::{Buf, BufMut};
 
@@ -32,7 +32,7 @@ impl MarshalSize for Message {
 }
 
 impl Marshal for Message {
-    fn marshal_to(&self, mut buf: &mut [u8]) -> Result<usize, util::Error> {
+    fn marshal_to(&self, mut buf: &mut [u8]) -> Result<usize, crate::webrtc::util::Error> {
         let mut bytes_written = 0;
         let n = self.message_type().marshal_to(buf)?;
         buf = &mut buf[n..];
@@ -46,7 +46,7 @@ impl Marshal for Message {
 }
 
 impl Unmarshal for Message {
-    fn unmarshal<B>(buf: &mut B) -> Result<Self, util::Error>
+    fn unmarshal<B>(buf: &mut B) -> Result<Self, crate::webrtc::util::Error>
     where
         Self: Sized,
         B: Buf,

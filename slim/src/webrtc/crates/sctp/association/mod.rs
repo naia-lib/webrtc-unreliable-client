@@ -50,7 +50,7 @@ use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::{broadcast, mpsc, Mutex};
-use util::Conn;
+use crate::webrtc::util::Conn;
 
 pub(crate) const RECEIVE_MTU: usize = 8192;
 /// MTU for inbound packet (from DTLS)
