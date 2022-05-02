@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -8,10 +8,7 @@ use bytes::Bytes;
 use dtls::config::ClientAuthType;
 use dtls::conn::DTLSConn;
 use dtls::extension::extension_use_srtp::SrtpProtectionProfile;
-use sha2::{Digest, Sha256};
 use srtp::protection_profile::ProtectionProfile;
-use srtp::session::Session;
-use srtp::stream::Stream;
 use tokio::sync::Mutex;
 use util::Conn;
 
@@ -63,12 +60,8 @@ pub struct RTCDtlsTransport {
     pub(crate) on_state_change_handler: Arc<Mutex<Option<OnDTLSTransportStateChangeHdlrFn>>>,
     pub(crate) conn: Mutex<Option<Arc<DTLSConn>>>,
 
-    pub(crate) srtp_session: Mutex<Option<Arc<Session>>>,
-    pub(crate) srtcp_session: Mutex<Option<Arc<Session>>>,
     pub(crate) srtp_endpoint: Mutex<Option<Arc<Endpoint>>>,
     pub(crate) srtcp_endpoint: Mutex<Option<Arc<Endpoint>>>,
-
-    pub(crate) simulcast_streams: Mutex<HashMap<u32, Arc<Stream>>>,
 }
 
 impl RTCDtlsTransport {
@@ -137,104 +130,6 @@ impl RTCDtlsTransport {
     pub async fn get_remote_certificate(&self) -> Bytes {
         let remote_certificate = self.remote_certificate.lock().await;
         remote_certificate.clone()
-    }
-
-    pub(crate) async fn start_srtp(&self) -> Result<()> {
-        let profile = {
-            let srtp_protection_profile = self.srtp_protection_profile.lock().await;
-            *srtp_protection_profile
-        };
-
-        let mut srtp_config = srtp::config::Config {
-            profile,
-            ..Default::default()
-        };
-
-        if self.setting_engine.replay_protection.srtp != 0 {
-            srtp_config.remote_rtp_options = Some(srtp::option::srtp_replay_protection(
-                self.setting_engine.replay_protection.srtp,
-            ));
-        } else if self.setting_engine.disable_srtp_replay_protection {
-            srtp_config.remote_rtp_options = Some(srtp::option::srtp_no_replay_protection());
-        }
-
-        if let Some(conn) = self.conn().await {
-            let conn_state = conn.connection_state().await;
-            srtp_config
-                .extract_session_keys_from_dtls(conn_state, self.role().await == DTLSRole::Client)
-                .await?;
-        } else {
-            return Err(Error::ErrDtlsTransportNotStarted);
-        }
-
-        {
-            let mut srtp_session = self.srtp_session.lock().await;
-            *srtp_session = {
-                let se = self.srtp_endpoint.lock().await;
-                if let Some(srtp_endpoint) = &*se {
-                    Some(Arc::new(
-                        Session::new(
-                            Arc::clone(srtp_endpoint) as Arc<dyn Conn + Send + Sync>,
-                            srtp_config,
-                            true,
-                        )
-                        .await?,
-                    ))
-                } else {
-                    None
-                }
-            };
-        }
-
-        let mut srtcp_config = srtp::config::Config {
-            profile,
-            ..Default::default()
-        };
-        if self.setting_engine.replay_protection.srtcp != 0 {
-            srtcp_config.remote_rtcp_options = Some(srtp::option::srtcp_replay_protection(
-                self.setting_engine.replay_protection.srtcp,
-            ));
-        } else if self.setting_engine.disable_srtcp_replay_protection {
-            srtcp_config.remote_rtcp_options = Some(srtp::option::srtcp_no_replay_protection());
-        }
-
-        if let Some(conn) = self.conn().await {
-            let conn_state = conn.connection_state().await;
-            srtcp_config
-                .extract_session_keys_from_dtls(conn_state, self.role().await == DTLSRole::Client)
-                .await?;
-        } else {
-            return Err(Error::ErrDtlsTransportNotStarted);
-        }
-
-        {
-            let mut srtcp_session = self.srtcp_session.lock().await;
-            *srtcp_session = {
-                let se = self.srtcp_endpoint.lock().await;
-                if let Some(srtcp_endpoint) = &*se {
-                    Some(Arc::new(
-                        Session::new(
-                            Arc::clone(srtcp_endpoint) as Arc<dyn Conn + Send + Sync>,
-                            srtcp_config,
-                            false,
-                        )
-                        .await?,
-                    ))
-                } else {
-                    None
-                }
-            };
-        }
-
-        // {
-        //     let mut srtp_ready_tx = self.srtp_ready_tx.lock().await;
-        //     srtp_ready_tx.take();
-        //     if srtp_ready_tx.is_none() {
-        //         self.srtp_ready_signal.store(true, Ordering::SeqCst);
-        //     }
-        // }
-
-        Ok(())
     }
 
     pub(crate) async fn role(&self) -> DTLSRole {
@@ -377,97 +272,19 @@ impl RTCDtlsTransport {
             };
         }
 
-        if !self
-            .setting_engine
-            .disable_certificate_fingerprint_verification
-        {
-            // Check the fingerprint if a certificate was exchanged
-            let remote_certs = &dtls_conn.connection_state().await.peer_certificates;
-            if remote_certs.is_empty() {
-                if let Err(err) = dtls_conn.close().await {
-                    log::error!("{}", err);
-                }
-
-                self.state_change(RTCDtlsTransportState::Failed).await;
-                return Err(Error::ErrNoRemoteCertificate);
-            }
-
-            {
-                let mut remote_certificate = self.remote_certificate.lock().await;
-                *remote_certificate = Bytes::from(remote_certs[0].clone());
-            }
-
-            if let Err(err) = self.validate_fingerprint(&remote_certs[0]).await {
-                if let Err(close_err) = dtls_conn.close().await {
-                    log::error!("{}", close_err);
-                }
-
-                self.state_change(RTCDtlsTransportState::Failed).await;
-                return Err(err);
-            }
-        }
-
         {
             let mut conn = self.conn.lock().await;
             *conn = Some(Arc::new(dtls_conn));
         }
         self.state_change(RTCDtlsTransportState::Connected).await;
 
-        self.start_srtp().await
+        Ok(())
     }
 
     /// stops and closes the DTLSTransport object.
     pub async fn stop(&self) -> Result<()> {
         // Try closing everything and collect the errors
         let mut close_errs: Vec<Error> = vec![];
-        {
-            let srtp_session = {
-                let mut srtp_session = self.srtp_session.lock().await;
-                srtp_session.take()
-            };
-            if let Some(srtp_session) = srtp_session {
-                match srtp_session.close().await {
-                    Ok(_) => {}
-                    Err(err) => {
-                        close_errs.push(err.into());
-                    }
-                };
-            }
-        }
-
-        {
-            let srtcp_session = {
-                let mut srtcp_session = self.srtcp_session.lock().await;
-                srtcp_session.take()
-            };
-            if let Some(srtcp_session) = srtcp_session {
-                match srtcp_session.close().await {
-                    Ok(_) => {}
-                    Err(err) => {
-                        close_errs.push(err.into());
-                    }
-                };
-            }
-        }
-
-        {
-            let simulcast_streams: Vec<Arc<Stream>> = {
-                let mut simulcast_streams = self.simulcast_streams.lock().await;
-                simulcast_streams.drain().map(|(_, v)| v).collect()
-            };
-            for ss in simulcast_streams {
-                match ss.close().await {
-                    Ok(_) => {}
-                    Err(err) => {
-                        close_errs.push(Error::new(format!(
-                            "simulcast_streams ssrc={}: {}",
-                            ss.get_ssrc(),
-                            err
-                        )));
-                    }
-                };
-            }
-        }
 
         if let Some(conn) = self.conn().await {
             // dtls_transport connection may be closed on sctp close.
@@ -484,27 +301,6 @@ impl RTCDtlsTransport {
         self.state_change(RTCDtlsTransportState::Closed).await;
 
         flatten_errs(close_errs)
-    }
-
-    pub(crate) async fn validate_fingerprint(&self, remote_cert: &[u8]) -> Result<()> {
-        let remote_parameters = self.remote_parameters.lock().await;
-        for fp in &remote_parameters.fingerprints {
-            if fp.algorithm != "sha-256" {
-                return Err(Error::ErrUnsupportedFingerprintAlgorithm);
-            }
-
-            let mut h = Sha256::new();
-            h.update(remote_cert);
-            let hashed = h.finalize();
-            let values: Vec<String> = hashed.iter().map(|x| format! {"{:02x}", x}).collect();
-            let remote_value = values.join(":").to_lowercase();
-
-            if remote_value == fp.value.to_lowercase() {
-                return Ok(());
-            }
-        }
-
-        Err(Error::ErrNoMatchingCertificateFingerprint)
     }
 
     pub(crate) fn ensure_ice_conn(&self) -> Result<()> {

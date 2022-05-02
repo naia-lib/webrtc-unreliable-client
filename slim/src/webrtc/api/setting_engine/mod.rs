@@ -59,9 +59,6 @@ pub struct SettingEngine {
     pub(crate) replay_protection: ReplayProtection,
     pub(crate) sdp_media_level_fingerprints: bool,
     pub(crate) answering_dtls_role: DTLSRole,
-    pub(crate) disable_certificate_fingerprint_verification: bool,
-    pub(crate) disable_srtp_replay_protection: bool,
-    pub(crate) disable_srtcp_replay_protection: bool,
     pub(crate) vnet: Option<Arc<Net>>,
     //BufferFactory                             :func(packetType packetio.BufferPacketType, ssrc uint32) io.ReadWriteCloser,
     //iceTCPMux                                 :ice.TCPMux,?
