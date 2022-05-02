@@ -55,7 +55,6 @@ use ice::candidate::candidate_base::unmarshal_candidate;
 use ice::candidate::Candidate;
 use ::sdp::description::session::*;
 use ::sdp::util::ConnectionRole;
-use crate::webrtc::interceptor::Interceptor;
 use peer_connection_internal::*;
 use rand::{thread_rng, Rng};
 use rcgen::KeyPair;
@@ -65,7 +64,6 @@ use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use ::sdp::description::session::ATTR_KEY_ICELITE;
-use crate::webrtc::interceptor::registry::Registry;
 use tokio::sync::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";
@@ -139,8 +137,6 @@ pub struct RTCPeerConnection {
 
     configuration: RTCConfiguration,
 
-    interceptor: Arc<dyn Interceptor + Send + Sync>,
-
     pub(crate) internal: Arc<PeerConnectionInternal>,
 }
 
@@ -154,14 +150,12 @@ impl RTCPeerConnection {
     pub async fn new() -> Arc<RTCPeerConnection> {
         let api = API {
             setting_engine: Arc::new(SettingEngine::new()),
-            interceptor_registry: Registry::new(),
         };
 
         let mut configuration = RTCConfiguration::default();
 
         RTCPeerConnection::init_configuration(&mut configuration).expect("can't create configuration");
 
-        let interceptor = api.interceptor_registry.build("").expect("can't create interceptor registry");
         let (internal, configuration) =
             PeerConnectionInternal::new(&api, configuration).await.expect("can't create peer connection");
 
@@ -169,7 +163,6 @@ impl RTCPeerConnection {
         // Some variables defined explicitly despite their implicit zero values to
         // allow better readability to understand what is happening.
         Arc::new(RTCPeerConnection {
-            interceptor,
             internal,
             configuration,
             idp_login_url: None,
@@ -1072,10 +1065,6 @@ impl RTCPeerConnection {
         //    Conn if one of the endpoints is closed down. To
         //    continue the chain the Mux has to be closed.
         let mut close_errs = vec![];
-
-        if let Err(err) = self.interceptor.close().await {
-            close_errs.push(Error::new(format!("interceptor: {}", err)));
-        }
 
         // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #5)
         {

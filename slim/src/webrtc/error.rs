@@ -357,8 +357,6 @@ pub enum Error {
     Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("{0}")]
     Sdp(#[from] sdp::Error),
-    #[error("{0}")]
-    Interceptor(#[from] crate::webrtc::interceptor::Error),
 
     #[error("utf-8 error: {0}")]
     Utf8(#[from] FromUtf8Error),
@@ -383,13 +381,6 @@ pub type OnErrorHdlrFn =
 impl<T> From<MpscSendError<T>> for Error {
     fn from(e: MpscSendError<T>) -> Self {
         Error::MpscSend(e.to_string())
-    }
-}
-
-impl From<Error> for crate::webrtc::interceptor::Error {
-    fn from(e: Error) -> Self {
-        // this is a bit lol, but we do preserve the stack trace
-        crate::webrtc::interceptor::Error::Util(util::Error::from_std(e))
     }
 }
 

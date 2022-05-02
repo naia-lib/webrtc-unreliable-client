@@ -11,7 +11,6 @@ use setting_engine::*;
 
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-use crate::webrtc::interceptor::registry::Registry;
 
 use rcgen::KeyPair;
 use std::sync::Arc;
@@ -23,7 +22,6 @@ use std::time::SystemTime;
 /// may be phased out in the future.
 pub struct API {
     pub(crate) setting_engine: Arc<SettingEngine>,
-    pub(crate) interceptor_registry: Registry,
 }
 
 impl API {
