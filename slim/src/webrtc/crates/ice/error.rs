@@ -207,7 +207,7 @@ pub enum Error {
     #[error("{0}")]
     ParseUrl(#[from] url::ParseError),
     #[error("{0}")]
-    Mdns(#[from] mdns::Error),
+    Mdns(#[from] crate::webrtc::mdns::Error),
     #[error("{0}")]
     Turn(#[from] crate::webrtc::turn::Error),
 

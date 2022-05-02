@@ -12,8 +12,7 @@ maintenance = { status = "actively-developed" }
 [features]
 
 [dependencies]
-mdns = { package = "webrtc-mdns", version = "0.4.2", path = "../../Forks/mdns" }
-
+socket2 = { version = "0.4.2", features = ["all"] }
 tokio = { version = "1.15.0", features = ["full"] }
 log = "0.4.14"
 async-trait = "0.1.52"

@@ -25,7 +25,7 @@ use crate::webrtc::ice::url::*;
 use agent_config::*;
 use agent_internal::*;
 
-use mdns::conn::*;
+use crate::webrtc::mdns::conn::*;
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddr};
 use crate::webrtc::stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, xoraddr::*};

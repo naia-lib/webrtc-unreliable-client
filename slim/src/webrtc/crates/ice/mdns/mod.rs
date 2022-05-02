@@ -3,8 +3,8 @@ mod mdns_test;
 
 use crate::webrtc::ice::error::Result;
 
-use mdns::config::*;
-use mdns::conn::*;
+use crate::webrtc::mdns::config::*;
+use crate::webrtc::mdns::conn::*;
 
 use std::net::SocketAddr;
 use std::str::FromStr;
