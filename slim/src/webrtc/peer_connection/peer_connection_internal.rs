@@ -130,76 +130,7 @@ impl PeerConnectionInternal {
         remote_desc: Arc<RTCSessionDescription>,
         sdp_semantics: RTCSdpSemantics,
     ) -> Result<()> {
-        let mut track_details = if let Some(parsed) = &remote_desc.parsed {
-            track_details_from_sdp(parsed)
-        } else {
-            vec![]
-        };
 
-        let current_transceivers = {
-            let current_transceivers = self.rtp_transceivers.lock().await;
-            current_transceivers.clone()
-        };
-
-        if !is_renegotiation {
-            self.undeclared_media_processor();
-        } else {
-            for t in &current_transceivers {
-                if let Some(receiver) = t.receiver().await {
-                    let tracks = receiver.tracks().await;
-                    if tracks.is_empty() {
-                        continue;
-                    }
-
-                    let mut receiver_needs_stopped = false;
-
-                    for t in tracks {
-                        if !t.rid().is_empty() {
-                            if let Some(details) =
-                                track_details_for_rid(&track_details, t.rid().to_owned())
-                            {
-                                t.set_id(details.id.clone()).await;
-                                t.set_stream_id(details.stream_id.clone()).await;
-                                continue;
-                            }
-                        } else if t.ssrc() != 0 {
-                            if let Some(details) = track_details_for_ssrc(&track_details, t.ssrc())
-                            {
-                                t.set_id(details.id.clone()).await;
-                                t.set_stream_id(details.stream_id.clone()).await;
-                                continue;
-                            }
-                        }
-
-                        receiver_needs_stopped = true;
-                    }
-
-                    if !receiver_needs_stopped {
-                        continue;
-                    }
-
-                    if let Err(err) = receiver.stop().await {
-                        log::warn!("Failed to stop RtpReceiver: {}", err);
-                        continue;
-                    }
-
-                    let interceptor = self
-                        .interceptor
-                        .upgrade()
-                        .ok_or(Error::ErrInterceptorNotBind)?;
-
-                    let receiver = Arc::new(RTCRtpReceiver::new(
-                        receiver.kind(),
-                        Arc::clone(&self.dtls_transport),
-                        interceptor,
-                    ));
-                    t.set_receiver(Some(receiver)).await;
-                }
-            }
-        }
-
-        self.start_rtp_receivers(&mut track_details, &current_transceivers, sdp_semantics)
-            .await?;
         if let Some(parsed) = &remote_desc.parsed {
             if have_application_media_section(parsed) {
                 self.start_sctp().await;
