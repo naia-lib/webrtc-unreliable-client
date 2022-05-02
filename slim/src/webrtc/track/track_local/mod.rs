@@ -37,18 +37,6 @@ pub struct TrackLocalContext {
 
 impl TrackLocalContext {
 
-    /// ssrc requires the negotiated SSRC of this track
-    /// This track may have multiple if RTX is enabled
-    pub fn ssrc(&self) -> SSRC {
-        self.ssrc
-    }
-
-    /// write_stream returns the write_stream for this TrackLocal. The implementer writes the outbound
-    /// media packets to it
-    pub fn write_stream(&self) -> Option<Arc<dyn TrackLocalWriter + Send + Sync>> {
-        self.write_stream.clone()
-    }
-
     /// id is a unique identifier that is used for both bind/unbind
     pub fn id(&self) -> String {
         self.id.clone()

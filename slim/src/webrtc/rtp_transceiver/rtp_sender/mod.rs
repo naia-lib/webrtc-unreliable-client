@@ -112,73 +112,6 @@ impl std::fmt::Debug for RTCRtpSender {
 }
 
 impl RTCRtpSender {
-    pub async fn new(
-        receive_mtu: usize,
-        track: Arc<dyn TrackLocal + Send + Sync>,
-        transport: Arc<RTCDtlsTransport>,
-        interceptor: Arc<dyn Interceptor + Send + Sync>,
-    ) -> RTCRtpSender {
-        let id = generate_crypto_random_string(
-            32,
-            b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        );
-        let (send_called_tx, send_called_rx) = mpsc::channel(1);
-        let stop_called_tx = Arc::new(Notify::new());
-        let stop_called_rx = stop_called_tx.clone();
-        let ssrc = rand::random::<u32>();
-        let stop_called_signal = Arc::new(AtomicBool::new(false));
-
-        let internal = Arc::new(RTPSenderInternal {
-            send_called_rx: Mutex::new(send_called_rx),
-            stop_called_rx,
-            stop_called_signal: Arc::clone(&stop_called_signal),
-            rtcp_interceptor: Mutex::new(None),
-        });
-
-        let srtp_stream = Arc::new(SrtpWriterFuture {
-            closed: AtomicBool::new(false),
-            ssrc,
-            rtp_sender: Arc::downgrade(&internal),
-            rtp_transport: Arc::clone(&transport),
-            rtcp_read_stream: Mutex::new(None),
-            rtp_write_session: Mutex::new(None),
-        });
-
-        let srtp_rtcp_reader = Arc::clone(&srtp_stream) as Arc<dyn RTCPReader + Send + Sync>;
-        let rtcp_interceptor = interceptor.bind_rtcp_reader(srtp_rtcp_reader).await;
-        {
-            let mut internal_rtcp_interceptor = internal.rtcp_interceptor.lock().await;
-            *internal_rtcp_interceptor = Some(rtcp_interceptor);
-        }
-
-        RTCRtpSender {
-            track: Mutex::new(Some(track)),
-
-            srtp_stream,
-            stream_info: Mutex::new(StreamInfo::default()),
-
-            context: Mutex::new(TrackLocalContext::default()),
-            transport,
-
-            payload_type: 0,
-            ssrc,
-            receive_mtu,
-
-            negotiated: AtomicBool::new(false),
-
-            interceptor,
-
-            id,
-
-            rtp_transceiver: Mutex::new(None),
-
-            send_called_tx: Mutex::new(Some(send_called_tx)),
-            stop_called_tx,
-            stop_called_signal,
-
-            internal,
-        }
-    }
 
     pub(crate) fn is_negotiated(&self) -> bool {
         self.negotiated.load(Ordering::SeqCst)
@@ -194,12 +127,6 @@ impl RTCRtpSender {
     ) {
         let mut tr = self.rtp_transceiver.lock().await;
         *tr = rtp_transceiver;
-    }
-
-    /// transport returns the currently-configured DTLSTransport
-    /// if one has not yet been configured
-    pub fn transport(&self) -> Arc<RTCDtlsTransport> {
-        Arc::clone(&self.transport)
     }
 
     /// get_parameters describes the current configuration for the encoding and
@@ -350,18 +277,6 @@ impl RTCRtpSender {
         }
 
         self.srtp_stream.close().await
-    }
-
-    /// read reads incoming RTCP for this RTPReceiver
-    pub async fn read(&self, b: &mut [u8]) -> Result<(usize, Attributes)> {
-        self.internal.read(b).await
-    }
-
-    /// read_rtcp is a convenience method that wraps Read and unmarshals for you.
-    pub async fn read_rtcp(
-        &self,
-    ) -> Result<(Vec<Box<dyn rtcp::packet::Packet + Send + Sync>>, Attributes)> {
-        self.internal.read_rtcp(self.receive_mtu).await
     }
 
     /// has_sent tells if data has been ever sent for this instance

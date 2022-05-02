@@ -264,19 +264,6 @@ impl RTCIceGatherer {
         Ok(rtc_ice_candidates_from_ice_candidates(&ice_candidates))
     }
 
-    /// on_local_candidate sets an event handler which fires when a new local ICE candidate is available
-    /// Take note that the handler is gonna be called with a nil pointer when gathering is finished.
-    pub async fn on_local_candidate(&self, f: OnLocalCandidateHdlrFn) {
-        let mut on_local_candidate_handler = self.on_local_candidate_handler.lock().await;
-        *on_local_candidate_handler = Some(f);
-    }
-
-    /// on_state_change sets an event handler which fires any time the ICEGatherer changes
-    pub async fn on_state_change(&self, f: OnICEGathererStateChangeHdlrFn) {
-        let mut on_state_change_handler = self.on_state_change_handler.lock().await;
-        *on_state_change_handler = Some(f);
-    }
-
     /// on_gathering_complete sets an event handler which fires any time the ICEGatherer changes
     pub async fn on_gathering_complete(&self, f: OnGatheringCompleteHdlrFn) {
         let mut on_gathering_complete_handler = self.on_gathering_complete_handler.lock().await;

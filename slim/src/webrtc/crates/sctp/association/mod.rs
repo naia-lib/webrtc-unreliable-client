@@ -227,20 +227,6 @@ pub struct Association {
 }
 
 impl Association {
-    /// server accepts a SCTP stream over a conn
-    pub async fn server(config: Config) -> Result<Self> {
-        let (a, mut handshake_completed_ch_rx) = Association::new(config, false).await?;
-
-        if let Some(err_opt) = handshake_completed_ch_rx.recv().await {
-            if let Some(err) = err_opt {
-                Err(err)
-            } else {
-                Ok(a)
-            }
-        } else {
-            Err(Error::ErrAssociationHandshakeClosed)
-        }
-    }
 
     /// Client opens a SCTP stream over a conn
     pub async fn client(config: Config) -> Result<Self> {
@@ -255,35 +241,6 @@ impl Association {
         } else {
             Err(Error::ErrAssociationHandshakeClosed)
         }
-    }
-
-    /// Shutdown initiates the shutdown sequence. The method blocks until the
-    /// shutdown sequence is completed and the connection is closed, or until the
-    /// passed context is done, in which case the context's error is returned.
-    pub async fn shutdown(&self) -> Result<()> {
-        log::debug!("[{}] closing association..", self.name);
-
-        let state = self.get_state();
-        if state != AssociationState::Established {
-            return Err(Error::ErrShutdownNonEstablished);
-        }
-
-        // Attempt a graceful shutdown.
-        self.set_state(AssociationState::ShutdownPending);
-
-        if self.inflight_queue_length.load(Ordering::SeqCst) == 0 {
-            // No more outstanding, send shutdown.
-            self.will_send_shutdown.store(true, Ordering::SeqCst);
-            let _ = self.awake_write_loop_ch.try_send(());
-            self.set_state(AssociationState::ShutdownSent);
-        }
-
-        {
-            let mut close_loop_ch_rx = self.close_loop_ch_rx.lock().await;
-            let _ = close_loop_ch_rx.recv().await;
-        }
-
-        Ok(())
     }
 
     /// Close ends the SCTP Association and cleans up any state
@@ -543,16 +500,6 @@ impl Association {
         log::debug!("[{}] write_loop exited", name);
     }
 
-    /// bytes_sent returns the number of bytes sent
-    pub fn bytes_sent(&self) -> usize {
-        self.bytes_sent.load(Ordering::SeqCst)
-    }
-
-    /// bytes_received returns the number of bytes received
-    pub fn bytes_received(&self) -> usize {
-        self.bytes_received.load(Ordering::SeqCst)
-    }
-
     /// open_stream opens a stream
     pub async fn open_stream(
         &self,
@@ -567,34 +514,5 @@ impl Association {
     pub async fn accept_stream(&self) -> Option<Arc<Stream>> {
         let mut accept_ch_rx = self.accept_ch_rx.lock().await;
         accept_ch_rx.recv().await
-    }
-
-    /// max_message_size returns the maximum message size you can send.
-    pub fn max_message_size(&self) -> u32 {
-        self.max_message_size.load(Ordering::SeqCst)
-    }
-
-    /// set_max_message_size sets the maximum message size you can send.
-    pub fn set_max_message_size(&self, max_message_size: u32) {
-        self.max_message_size
-            .store(max_message_size, Ordering::SeqCst);
-    }
-
-    /// set_state atomically sets the state of the Association.
-    fn set_state(&self, new_state: AssociationState) {
-        let old_state = AssociationState::from(self.state.swap(new_state as u8, Ordering::SeqCst));
-        if new_state != old_state {
-            log::debug!(
-                "[{}] state change: '{}' => '{}'",
-                self.name,
-                old_state,
-                new_state,
-            );
-        }
-    }
-
-    /// get_state atomically returns the state of the Association.
-    fn get_state(&self) -> AssociationState {
-        self.state.load(Ordering::SeqCst).into()
     }
 }

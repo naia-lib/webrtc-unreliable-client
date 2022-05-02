@@ -184,26 +184,6 @@ impl DataChannel {
         }
     }
 
-    /// MessagesSent returns the number of messages sent
-    pub(crate) fn messages_sent(&self) -> usize {
-        self.messages_sent.load(Ordering::SeqCst)
-    }
-
-    /// MessagesReceived returns the number of messages received
-    pub(crate) fn messages_received(&self) -> usize {
-        self.messages_received.load(Ordering::SeqCst)
-    }
-
-    /// BytesSent returns the number of bytes sent
-    pub(crate) fn bytes_sent(&self) -> usize {
-        self.bytes_sent.load(Ordering::SeqCst)
-    }
-
-    /// BytesReceived returns the number of bytes received
-    pub(crate) fn bytes_received(&self) -> usize {
-        self.bytes_received.load(Ordering::SeqCst)
-    }
-
     /// StreamIdentifier returns the Stream identifier associated to the stream.
     pub(crate) fn stream_identifier(&self) -> u16 {
         self.stream.stream_identifier()

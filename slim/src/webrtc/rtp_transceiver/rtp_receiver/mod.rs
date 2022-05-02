@@ -131,51 +131,6 @@ impl RTPReceiverInternal {
 
         Ok((pkts, attributes))
     }
-
-    pub(crate) async fn read_rtp(&self, b: &mut [u8], tid: usize) -> Result<(usize, Attributes)> {
-        {
-            let mut received_rx = self.received_rx.lock().await;
-            let _ = received_rx.recv().await;
-        }
-
-        //log::debug!("read_rtp enter tracks tid {}", tid);
-        let mut rtp_interceptor = None;
-        //let mut ssrc = 0;
-        {
-            let tracks = self.tracks.read().await;
-            for t in &*tracks {
-                if t.track.tid() == tid {
-                    rtp_interceptor = t.stream.rtp_interceptor.clone();
-                    //ssrc = t.track.ssrc();
-                    break;
-                }
-            }
-        };
-        /*log::debug!(
-            "read_rtp exit tracks with rtp_interceptor {} with tid {}",
-            rtp_interceptor.is_some(),
-            tid,
-        );*/
-
-        if let Some(rtp_interceptor) = rtp_interceptor {
-            let a = Attributes::new();
-            //println!(
-            //    "read_rtp rtp_interceptor.read enter with tid {} ssrc {}",
-            //    tid, ssrc
-            //);
-            tokio::select! {
-                _ = self.closed_rx.notified() => {
-                    Err(Error::ErrClosedPipe)
-                }
-                result = rtp_interceptor.read(b, &a) => {
-                    Ok(result?)
-                }
-            }
-        } else {
-            //log::debug!("read_rtp exit tracks with ErrRTPReceiverWithSSRCTrackStreamNotFound");
-            Err(Error::ErrRTPReceiverWithSSRCTrackStreamNotFound)
-        }
-    }
 }
 
 /// RTPReceiver allows an application to inspect the receipt of a TrackRemote
@@ -239,12 +194,6 @@ impl RTCRtpReceiver {
     ) {
         let mut transceiver_codecs = self.internal.transceiver_codecs.lock().await;
         *transceiver_codecs = codecs;
-    }
-
-    /// transport returns the currently-configured *DTLSTransport or nil
-    /// if one has not yet been configured
-    pub fn transport(&self) -> Arc<RTCDtlsTransport> {
-        Arc::clone(&self.transport)
     }
 
     /// track returns the RtpTransceiver TrackRemote
@@ -366,34 +315,6 @@ impl RTCRtpReceiver {
         }
 
         Ok(())
-    }
-
-    /// read reads incoming RTCP for this RTPReceiver
-    pub async fn read(&self, b: &mut [u8]) -> Result<(usize, Attributes)> {
-        self.internal.read(b).await
-    }
-
-    /// read_simulcast reads incoming RTCP for this RTPReceiver for given rid
-    pub async fn read_simulcast(&self, b: &mut [u8], rid: &str) -> Result<(usize, Attributes)> {
-        self.internal.read_simulcast(b, rid).await
-    }
-
-    /// read_rtcp is a convenience method that wraps Read and unmarshal for you.
-    /// It also runs any configured interceptors.
-    pub async fn read_rtcp(
-        &self,
-    ) -> Result<(Vec<Box<dyn rtcp::packet::Packet + Send + Sync>>, Attributes)> {
-        self.internal.read_rtcp(self.receive_mtu).await
-    }
-
-    /// read_simulcast_rtcp is a convenience method that wraps ReadSimulcast and unmarshal for you
-    pub async fn read_simulcast_rtcp(
-        &self,
-        rid: &str,
-    ) -> Result<(Vec<Box<dyn rtcp::packet::Packet + Send + Sync>>, Attributes)> {
-        self.internal
-            .read_simulcast_rtcp(rid, self.receive_mtu)
-            .await
     }
 
     pub(crate) async fn have_received(&self) -> bool {

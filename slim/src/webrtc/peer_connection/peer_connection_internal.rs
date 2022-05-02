@@ -491,60 +491,6 @@ impl PeerConnectionInternal {
         Ok(t)
     }
 
-    pub(super) async fn new_transceiver_from_track(
-        &self,
-        direction: RTCRtpTransceiverDirection,
-        track: Arc<dyn TrackLocal + Send + Sync>,
-    ) -> Result<Arc<RTCRtpTransceiver>> {
-        let interceptor = self
-            .interceptor
-            .upgrade()
-            .ok_or(Error::ErrInterceptorNotBind)?;
-
-        let (r, s) = match direction {
-            RTCRtpTransceiverDirection::Sendrecv => {
-                let r = Some(Arc::new(RTCRtpReceiver::new(
-                    self.setting_engine.get_receive_mtu(),
-                    track.kind(),
-                    Arc::clone(&self.dtls_transport),
-                    Arc::clone(&interceptor),
-                )));
-                let s = Some(Arc::new(
-                    RTCRtpSender::new(
-                        self.setting_engine.get_receive_mtu(),
-                        Arc::clone(&track),
-                        Arc::clone(&self.dtls_transport),
-                        Arc::clone(&interceptor),
-                    )
-                    .await,
-                ));
-                (r, s)
-            }
-            RTCRtpTransceiverDirection::Sendonly => {
-                let s = Some(Arc::new(
-                    RTCRtpSender::new(
-                        self.setting_engine.get_receive_mtu(),
-                        Arc::clone(&track),
-                        Arc::clone(&self.dtls_transport),
-                        Arc::clone(&interceptor),
-                    )
-                    .await,
-                ));
-                (None, s)
-            }
-            _ => return Err(Error::ErrPeerConnAddTransceiverFromTrackSupport),
-        };
-
-        Ok(RTCRtpTransceiver::new(
-            r,
-            s,
-            direction,
-            track.kind(),
-            vec![],
-        )
-        .await)
-    }
-
     /// add_rtp_transceiver appends t into rtp_transceivers
     /// and fires onNegotiationNeeded;
     /// caller of this method should hold `self.mu` lock
@@ -578,10 +524,6 @@ impl PeerConnectionInternal {
             let current_remote_description = self.current_remote_description.lock().await;
             current_remote_description.clone()
         }
-    }
-
-    pub(super) async fn set_gather_complete_handler(&self, f: OnGatheringCompleteHdlrFn) {
-        self.ice_gatherer.on_gathering_complete(f).await;
     }
 
     /// Start all transports. PeerConnection now has enough state

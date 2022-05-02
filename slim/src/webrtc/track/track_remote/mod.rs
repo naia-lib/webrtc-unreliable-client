@@ -84,23 +84,10 @@ impl TrackRemote {
         self.tid
     }
 
-    /// id is the unique identifier for this Track. This should be unique for the
-    /// stream, but doesn't have to globally unique. A common example would be 'audio' or 'video'
-    /// and StreamID would be 'desktop' or 'webcam'
-    pub async fn id(&self) -> String {
-        let id = self.id.lock().await;
-        id.clone()
-    }
 
     pub async fn set_id(&self, s: String) {
         let mut id = self.id.lock().await;
         *id = s;
-    }
-
-    /// stream_id is the group this track belongs too. This must be unique
-    pub async fn stream_id(&self) -> String {
-        let stream_id = self.stream_id.lock().await;
-        stream_id.clone()
     }
 
     pub async fn set_stream_id(&self, s: String) {
@@ -118,44 +105,5 @@ impl TrackRemote {
     /// ssrc gets the SSRC of the track
     pub fn ssrc(&self) -> SSRC {
         self.ssrc.load(Ordering::SeqCst)
-    }
-
-    /// Read reads data from the track.
-    pub async fn read(&self, b: &mut [u8]) -> Result<(usize, Attributes)> {
-        let (peeked, peeked_attributes) = {
-            let mut internal = self.internal.lock().await;
-            (internal.peeked.take(), internal.peeked_attributes.take())
-        };
-
-        if let (Some(data), Some(attributes)) = (peeked, peeked_attributes) {
-            // someone else may have stolen our packet when we
-            // released the lock.  Deal with it.
-            let n = std::cmp::min(b.len(), data.len());
-            b[..n].copy_from_slice(&data[..n]);
-            Ok((n, attributes))
-        } else {
-            let (n, attributes) = {
-                if let Some(receiver) = &self.receiver {
-                    if let Some(receiver) = receiver.upgrade() {
-                        receiver.read_rtp(b, self.tid).await?
-                    } else {
-                        return Err(Error::ErrRTPReceiverNil);
-                    }
-                } else {
-                    return Err(Error::ErrRTPReceiverNil);
-                }
-            };
-            Ok((n, attributes))
-        }
-    }
-
-    /// read_rtp is a convenience method that wraps Read and unmarshals for you.
-    pub async fn read_rtp(&self) -> Result<(rtp::packet::Packet, Attributes)> {
-        let mut b = vec![0u8; self.receive_mtu];
-        let (n, attributes) = self.read(&mut b).await?;
-
-        let mut buf = &b[..n];
-        let r = rtp::packet::Packet::unmarshal(&mut buf)?;
-        Ok((r, attributes))
     }
 }
