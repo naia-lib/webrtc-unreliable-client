@@ -1,17 +1,13 @@
 pub mod track_local;
 pub mod track_remote;
 
-use track_remote::*;
-
 use interceptor::stream_info::StreamInfo;
-use interceptor::RTPReader;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub(crate) struct TrackStream {
     pub(crate) stream_info: Option<StreamInfo>,
     pub(crate) rtp_read_stream: Option<Arc<srtp::stream::Stream>>,
-    pub(crate) rtp_interceptor: Option<Arc<dyn RTPReader + Send + Sync>>,
     pub(crate) rtcp_read_stream: Option<Arc<srtp::stream::Stream>>,
 }
 
@@ -19,7 +15,6 @@ pub(crate) struct TrackStream {
 /// a RTPReceiver may contain multiple streams if we are dealing with Simulcast
 #[derive(Clone)]
 pub(crate) struct TrackStreams {
-    pub(crate) track: Arc<TrackRemote>,
     pub(crate) stream: TrackStream,
     pub(crate) repair_stream: TrackStream,
 }

@@ -56,7 +56,6 @@ use crate::webrtc::rtp_transceiver::{
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
-use crate::webrtc::track::track_remote::TrackRemote;
 
 use ice::candidate::candidate_base::unmarshal_candidate;
 use ice::candidate::Candidate;
@@ -118,15 +117,6 @@ pub type OnDataChannelHdlrFn = Box<
         + Sync,
 >;
 
-pub type OnTrackHdlrFn = Box<
-    dyn (FnMut(
-            Option<Arc<TrackRemote>>,
-            Option<Arc<RTCRtpReceiver>>,
-        ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
-        + Send
-        + Sync,
->;
-
 pub type OnNegotiationNeededHdlrFn =
     Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
@@ -182,7 +172,7 @@ impl RTCPeerConnection {
 
         let interceptor = api.interceptor_registry.build("").expect("can't create interceptor registry");
         let (internal, configuration) =
-            PeerConnectionInternal::new(&api, Arc::downgrade(&interceptor), configuration).await.expect("can't create peer connection");
+            PeerConnectionInternal::new(&api, configuration).await.expect("can't create peer connection");
 
         // <https://w3c.github.io/webrtc-pc/#constructor> (Step #2)
         // Some variables defined explicitly despite their implicit zero values to
@@ -1040,7 +1030,6 @@ impl RTCPeerConnection {
                                 } else {
                                     let receiver = Arc::new(RTCRtpReceiver::new(
                                         kind,
-                                        Arc::clone(&self.internal.dtls_transport),
                                         Arc::clone(&self.interceptor),
                                     ));
 

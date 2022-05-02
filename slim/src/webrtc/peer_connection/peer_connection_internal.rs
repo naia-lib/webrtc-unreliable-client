@@ -1,6 +1,5 @@
 use crate::webrtc::peer_connection::*;
 use std::sync::atomic::AtomicIsize;
-use std::sync::Weak;
 
 pub(crate) struct PeerConnectionInternal {
     /// a value containing the last known greater mid value
@@ -33,7 +32,6 @@ pub(crate) struct PeerConnectionInternal {
     pub(super) sctp_transport: Arc<RTCSctpTransport>,
     pub(super) rtp_transceivers: Arc<Mutex<Vec<Arc<RTCRtpTransceiver>>>>,
 
-    pub(super) on_track_handler: Arc<Mutex<Option<OnTrackHdlrFn>>>,
     pub(super) on_signaling_state_change_handler: Arc<Mutex<Option<OnSignalingStateChangeHdlrFn>>>,
     pub(super) on_ice_connection_state_change_handler:
         Arc<Mutex<Option<OnICEConnectionStateChangeHdlrFn>>>,
@@ -48,13 +46,11 @@ pub(crate) struct PeerConnectionInternal {
 
     // A reference to the associated API state used by this connection
     pub(super) setting_engine: Arc<SettingEngine>,
-    pub(super) interceptor: Weak<dyn Interceptor + Send + Sync>,
 }
 
 impl PeerConnectionInternal {
     pub(super) async fn new(
         api: &API,
-        interceptor: Weak<dyn Interceptor + Send + Sync>,
         mut configuration: RTCConfiguration,
     ) -> Result<(Arc<Self>, RTCConfiguration)> {
         let mut pc = PeerConnectionInternal {
@@ -74,7 +70,6 @@ impl PeerConnectionInternal {
             ice_connection_state: Arc::new(AtomicU8::new(RTCIceConnectionState::New as u8)),
             sctp_transport: Arc::new(Default::default()),
             rtp_transceivers: Arc::new(Default::default()),
-            on_track_handler: Arc::new(Default::default()),
             on_signaling_state_change_handler: Arc::new(Default::default()),
             on_ice_connection_state_change_handler: Arc::new(Default::default()),
             on_data_channel_handler: Arc::new(Default::default()),
@@ -85,7 +80,6 @@ impl PeerConnectionInternal {
             peer_connection_state: Arc::new(AtomicU8::new(RTCPeerConnectionState::New as u8)),
 
             setting_engine: Arc::clone(&api.setting_engine),
-            interceptor,
             on_peer_connection_state_change_handler: Arc::new(Default::default()),
             pending_remote_description: Arc::new(Default::default()),
         };

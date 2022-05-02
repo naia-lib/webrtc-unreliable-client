@@ -5,10 +5,8 @@ use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::rtp_transceiver::rtp_codec::RTPCodecType;
 use crate::webrtc::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::webrtc::rtp_transceiver::RTCRtpTransceiver;
-use crate::webrtc::rtp_transceiver::SSRC;
 
 pub mod sdp_type;
 pub mod session_description;
@@ -26,15 +24,7 @@ use std::sync::Arc;
 /// TrackDetails represents any media source that can be represented in a SDP
 /// This isn't keyed by SSRC because it also needs to support rid based sources
 #[derive(Default, Debug, Clone)]
-pub(crate) struct TrackDetails {
-    pub(crate) mid: String,
-    pub(crate) kind: RTPCodecType,
-    pub(crate) stream_id: String,
-    pub(crate) id: String,
-    pub(crate) ssrcs: Vec<SSRC>,
-    pub(crate) repair_ssrc: SSRC,
-    pub(crate) rids: Vec<String>,
-}
+pub(crate) struct TrackDetails;
 
 pub(crate) async fn add_candidates_to_media_descriptions(
     candidates: &[RTCIceCandidate],

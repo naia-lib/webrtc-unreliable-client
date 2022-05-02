@@ -1,5 +1,4 @@
 
-use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{flatten_errs, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{
     RTCRtpCodecParameters,
@@ -32,7 +31,6 @@ pub struct RTPReceiverInternal {
 /// RTPReceiver allows an application to inspect the receipt of a TrackRemote
 pub struct RTCRtpReceiver {
     kind: RTPCodecType,
-    transport: Arc<RTCDtlsTransport>,
     closed_tx: Arc<Notify>,
     received_tx: Mutex<Option<mpsc::Sender<()>>>,
 
@@ -50,7 +48,6 @@ impl std::fmt::Debug for RTCRtpReceiver {
 impl RTCRtpReceiver {
     pub fn new(
         kind: RTPCodecType,
-        transport: Arc<RTCDtlsTransport>,
         interceptor: Arc<dyn Interceptor + Send + Sync>,
     ) -> Self {
         let closed_tx = Arc::new(Notify::new());
@@ -58,7 +55,6 @@ impl RTCRtpReceiver {
 
         RTCRtpReceiver {
             kind,
-            transport: Arc::clone(&transport),
             closed_tx,
             received_tx: Mutex::new(Some(received_tx)),
 
