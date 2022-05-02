@@ -177,23 +177,6 @@ pub struct RTCPeerConnection {
     pub(crate) internal: Arc<PeerConnectionInternal>,
 }
 
-impl std::fmt::Debug for RTCPeerConnection {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RTCPeerConnection")
-            .field("stats_id", &self.stats_id)
-            .field("idp_login_url", &self.idp_login_url)
-            .field("signaling_state", &self.signaling_state())
-            .field("ice_connection_state", &self.ice_connection_state())
-            .finish()
-    }
-}
-
-impl std::fmt::Display for RTCPeerConnection {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(RTCPeerConnection {})", self.stats_id)
-    }
-}
-
 impl RTCPeerConnection {
     /// creates a PeerConnection with the default codecs and
     /// interceptors.  See register_default_codecs and register_default_interceptors.
@@ -266,14 +249,6 @@ impl RTCPeerConnection {
         Ok(())
     }
 
-    /// on_signaling_state_change sets an event handler which is invoked when the
-    /// peer connection's signaling state changes
-    pub async fn on_signaling_state_change(&self, f: OnSignalingStateChangeHdlrFn) {
-        let mut on_signaling_state_change_handler =
-            self.internal.on_signaling_state_change_handler.lock().await;
-        *on_signaling_state_change_handler = Some(f);
-    }
-
     async fn do_signaling_state_change(&self, new_state: RTCSignalingState) {
         log::info!("signaling state changed to {}", new_state);
         let mut handler = self.internal.on_signaling_state_change_handler.lock().await;
@@ -284,14 +259,14 @@ impl RTCPeerConnection {
 
     /// on_data_channel sets an event handler which is invoked when a data
     /// channel message arrives from a remote peer.
-    pub async fn on_data_channel(&self, f: OnDataChannelHdlrFn) {
+    pub(crate) async fn on_data_channel(&self, f: OnDataChannelHdlrFn) {
         let mut on_data_channel_handler = self.internal.on_data_channel_handler.lock().await;
         *on_data_channel_handler = Some(f);
     }
 
     /// on_negotiation_needed sets an event handler which is invoked when
     /// a change has occurred which requires session negotiation
-    pub async fn on_negotiation_needed(&self, f: OnNegotiationNeededHdlrFn) {
+    pub(crate) async fn on_negotiation_needed(&self, f: OnNegotiationNeededHdlrFn) {
         let mut on_negotiation_needed_handler =
             self.internal.on_negotiation_needed_handler.lock().await;
         *on_negotiation_needed_handler = Some(f);
@@ -506,19 +481,19 @@ impl RTCPeerConnection {
     /// candidate is found.
     /// Take note that the handler is gonna be called with a nil pointer when
     /// gathering is finished.
-    pub async fn on_ice_candidate(&self, f: OnLocalCandidateHdlrFn) {
+    pub(crate) async fn on_ice_candidate(&self, f: OnLocalCandidateHdlrFn) {
         self.internal.ice_gatherer.on_local_candidate(f).await
     }
 
     /// on_ice_gathering_state_change sets an event handler which is invoked when the
     /// ICE candidate gathering state has changed.
-    pub async fn on_ice_gathering_state_change(&self, f: OnICEGathererStateChangeHdlrFn) {
+    pub(crate) async fn on_ice_gathering_state_change(&self, f: OnICEGathererStateChangeHdlrFn) {
         self.internal.ice_gatherer.on_state_change(f).await
     }
 
     /// on_track sets an event handler which is called when remote track
     /// arrives from a remote peer.
-    pub async fn on_track(&self, f: OnTrackHdlrFn) {
+    pub(crate) async fn on_track(&self, f: OnTrackHdlrFn) {
         let mut on_track_handler = self.internal.on_track_handler.lock().await;
         *on_track_handler = Some(f);
     }
@@ -544,7 +519,7 @@ impl RTCPeerConnection {
 
     /// on_ice_connection_state_change sets an event handler which is called
     /// when an ICE connection state is changed.
-    pub async fn on_ice_connection_state_change(&self, f: OnICEConnectionStateChangeHdlrFn) {
+    pub(crate) async fn on_ice_connection_state_change(&self, f: OnICEConnectionStateChangeHdlrFn) {
         let mut on_ice_connection_state_change_handler = self
             .internal
             .on_ice_connection_state_change_handler
@@ -571,7 +546,7 @@ impl RTCPeerConnection {
 
     /// on_peer_connection_state_change sets an event handler which is called
     /// when the PeerConnectionState has changed
-    pub async fn on_peer_connection_state_change(&self, f: OnPeerConnectionStateChangeHdlrFn) {
+    pub(crate) async fn on_peer_connection_state_change(&self, f: OnPeerConnectionStateChangeHdlrFn) {
         let mut on_peer_connection_state_change_handler = self
             .internal
             .on_peer_connection_state_change_handler
@@ -592,83 +567,16 @@ impl RTCPeerConnection {
         }
     }
 
-    /*TODO: // set_configuration updates the configuration of this PeerConnection object.
-    pub async fn set_configuration(&mut self, configuration: Configuration) -> Result<()> {
-        //nolint:gocognit
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-setconfiguration (step #2)
-        if self.internal.is_closed.load(Ordering::SeqCst) {
-            return Err(Error::ErrConnectionClosed.into());
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #3)
-        if !configuration.peer_identity.is_empty() {
-            if configuration.peer_identity != self.configuration.peer_identity {
-                return Err(Error::ErrModifyingPeerIdentity.into());
-            }
-            self.configuration.peer_identity = configuration.peer_identity;
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #4)
-        if !configuration.certificates.is_empty() {
-            if configuration.certificates.len() != self.configuration.certificates.len() {
-                return Err(Error::ErrModifyingCertificates.into());
-            }
-
-            self.configuration.certificates = configuration.certificates;
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #5)
-        if configuration.bundle_policy != BundlePolicy::Unspecified {
-            if configuration.bundle_policy != self.configuration.bundle_policy {
-                return Err(Error::ErrModifyingBundlePolicy.into());
-            }
-            self.configuration.bundle_policy = configuration.bundle_policy;
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #6)
-        if configuration.rtcp_mux_policy != RTCPMuxPolicy::Unspecified {
-            if configuration.rtcp_mux_policy != self.configuration.rtcp_mux_policy {
-                return Err(Error::ErrModifyingRTCPMuxPolicy.into());
-            }
-            self.configuration.rtcp_mux_policy = configuration.rtcp_mux_policy;
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #7)
-        if configuration.ice_candidate_pool_size != 0 {
-            if self.configuration.ice_candidate_pool_size != configuration.ice_candidate_pool_size
-                && self.local_description().await.is_some()
-            {
-                return Err(Error::ErrModifyingICECandidatePoolSize.into());
-            }
-            self.configuration.ice_candidate_pool_size = configuration.ice_candidate_pool_size;
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #8)
-        if configuration.ice_transport_policy != ICETransportPolicy::Unspecified {
-            self.configuration.ice_transport_policy = configuration.ice_transport_policy
-        }
-
-        // https://www.w3.org/TR/webrtc/#set-the-configuration (step #11)
-        if !configuration.ice_servers.is_empty() {
-            // https://www.w3.org/TR/webrtc/#set-the-configuration (step #11.3)
-            for server in &configuration.ice_servers {
-                server.validate()?;
-            }
-            self.configuration.ice_servers = configuration.ice_servers
-        }
-        Ok(())
-    }*/
-
     /// get_configuration returns a Configuration object representing the current
     /// configuration of this PeerConnection object. The returned object is a
     /// copy and direct mutation on it will not take affect until set_configuration
     /// has been called with Configuration passed as its only argument.
     /// <https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-getconfiguration>
-    pub fn get_configuration(&self) -> &RTCConfiguration {
+    pub(crate) fn get_configuration(&self) -> &RTCConfiguration {
         &self.configuration
     }
 
-    pub fn get_stats_id(&self) -> &str {
+    pub(crate) fn get_stats_id(&self) -> &str {
         self.stats_id.as_str()
     }
 
@@ -855,7 +763,7 @@ impl RTCPeerConnection {
     }
 
     /// create_answer starts the PeerConnection and generates the localDescription
-    pub async fn create_answer(
+    pub(crate) async fn create_answer(
         &self,
         _options: Option<RTCAnswerOptions>,
     ) -> Result<RTCSessionDescription> {
@@ -1433,7 +1341,7 @@ impl RTCPeerConnection {
     /// otherwise it returns current_remote_description. This property is used to
     /// determine if setRemoteDescription has already been called.
     /// <https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-remotedescription>
-    pub async fn remote_description(&self) -> Option<RTCSessionDescription> {
+    pub(crate) async fn remote_description(&self) -> Option<RTCSessionDescription> {
         self.internal.remote_description().await
     }
 
@@ -1466,7 +1374,7 @@ impl RTCPeerConnection {
 
     /// ice_connection_state returns the ICE connection state of the
     /// PeerConnection instance.
-    pub fn ice_connection_state(&self) -> RTCIceConnectionState {
+    pub(crate) fn ice_connection_state(&self) -> RTCIceConnectionState {
         self.internal
             .ice_connection_state
             .load(Ordering::SeqCst)
@@ -1474,7 +1382,7 @@ impl RTCPeerConnection {
     }
 
     /// get_senders returns the RTPSender that are currently attached to this PeerConnection
-    pub async fn get_senders(&self) -> Vec<Arc<RTCRtpSender>> {
+    pub(crate) async fn get_senders(&self) -> Vec<Arc<RTCRtpSender>> {
         let mut senders = vec![];
         let rtp_transceivers = self.internal.rtp_transceivers.lock().await;
         for transceiver in &*rtp_transceivers {
@@ -1486,7 +1394,7 @@ impl RTCPeerConnection {
     }
 
     /// get_receivers returns the RTPReceivers that are currently attached to this PeerConnection
-    pub async fn get_receivers(&self) -> Vec<Arc<RTCRtpReceiver>> {
+    pub(crate) async fn get_receivers(&self) -> Vec<Arc<RTCRtpReceiver>> {
         let mut receivers = vec![];
         let rtp_transceivers = self.internal.rtp_transceivers.lock().await;
         for transceiver in &*rtp_transceivers {
@@ -1498,13 +1406,13 @@ impl RTCPeerConnection {
     }
 
     /// get_transceivers returns the RtpTransceiver that are currently attached to this PeerConnection
-    pub async fn get_transceivers(&self) -> Vec<Arc<RTCRtpTransceiver>> {
+    pub(crate) async fn get_transceivers(&self) -> Vec<Arc<RTCRtpTransceiver>> {
         let rtp_transceivers = self.internal.rtp_transceivers.lock().await;
         rtp_transceivers.clone()
     }
 
     /// add_track adds a Track to the PeerConnection
-    pub async fn add_track(
+    pub(crate) async fn add_track(
         &self,
         track: Arc<dyn TrackLocal + Send + Sync>,
     ) -> Result<Arc<RTCRtpSender>> {
@@ -1584,7 +1492,7 @@ impl RTCPeerConnection {
     }
 
     /// remove_track removes a Track from the PeerConnection
-    pub async fn remove_track(&self, sender: &Arc<RTCRtpSender>) -> Result<()> {
+    pub(crate) async fn remove_track(&self, sender: &Arc<RTCRtpSender>) -> Result<()> {
         if self.internal.is_closed.load(Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);
         }
@@ -1632,7 +1540,7 @@ impl RTCPeerConnection {
     }
 
     /// add_transceiver_from_kind Create a new RtpTransceiver and adds it to the set of transceivers.
-    pub async fn add_transceiver_from_kind(
+    pub(crate) async fn add_transceiver_from_kind(
         &self,
         kind: RTPCodecType,
         init: &[RTCRtpTransceiverInit],
@@ -1641,7 +1549,7 @@ impl RTCPeerConnection {
     }
 
     /// add_transceiver_from_track Create a new RtpTransceiver(SendRecv or SendOnly) and add it to the set of transceivers.
-    pub async fn add_transceiver_from_track<'a>(
+    pub(crate) async fn add_transceiver_from_track<'a>(
         &'a self,
         track: Arc<dyn TrackLocal + Send + Sync>,
         init: &'a [RTCRtpTransceiverInit],
@@ -1754,13 +1662,13 @@ impl RTCPeerConnection {
     }
 
     /// set_identity_provider is used to configure an identity provider to generate identity assertions
-    pub fn set_identity_provider(&self, _provider: &str) -> Result<()> {
+    pub(crate) fn set_identity_provider(&self, _provider: &str) -> Result<()> {
         Err(Error::ErrPeerConnSetIdentityProviderNotImplemented)
     }
 
     /// write_rtcp sends a user provided RTCP packet to the connected peer. If no peer is connected the
     /// packet is discarded. It also runs any configured interceptors.
-    pub async fn write_rtcp(
+    pub(crate) async fn write_rtcp(
         &self,
         pkts: &[Box<dyn rtcp::packet::Packet + Send + Sync>],
     ) -> Result<usize> {
@@ -1853,7 +1761,7 @@ impl RTCPeerConnection {
     /// successfully negotiated the last time the PeerConnection transitioned
     /// into the stable state plus any local candidates that have been generated
     /// by the ICEAgent since the offer or answer was created.
-    pub async fn current_local_description(&self) -> Option<RTCSessionDescription> {
+    pub(crate) async fn current_local_description(&self) -> Option<RTCSessionDescription> {
         let local_description = {
             let current_local_description = self.internal.current_local_description.lock().await;
             current_local_description.clone()
@@ -1868,7 +1776,7 @@ impl RTCPeerConnection {
     /// process of being negotiated plus any local candidates that have been
     /// generated by the ICEAgent since the offer or answer was created. If the
     /// PeerConnection is in the stable state, the value is null.
-    pub async fn pending_local_description(&self) -> Option<RTCSessionDescription> {
+    pub(crate) async fn pending_local_description(&self) -> Option<RTCSessionDescription> {
         let local_description = {
             let pending_local_description = self.internal.pending_local_description.lock().await;
             pending_local_description.clone()
@@ -1883,7 +1791,7 @@ impl RTCPeerConnection {
     /// successfully negotiated the last time the PeerConnection transitioned
     /// into the stable state plus any remote candidates that have been supplied
     /// via add_icecandidate() since the offer or answer was created.
-    pub async fn current_remote_description(&self) -> Option<RTCSessionDescription> {
+    pub(crate) async fn current_remote_description(&self) -> Option<RTCSessionDescription> {
         let current_remote_description = self.internal.current_remote_description.lock().await;
         current_remote_description.clone()
     }
@@ -1893,26 +1801,26 @@ impl RTCPeerConnection {
     /// have been supplied via add_icecandidate() since the offer or answer was
     /// created. If the PeerConnection is in the stable state, the value is
     /// null.
-    pub async fn pending_remote_description(&self) -> Option<RTCSessionDescription> {
+    pub(crate) async fn pending_remote_description(&self) -> Option<RTCSessionDescription> {
         let pending_remote_description = self.internal.pending_remote_description.lock().await;
         pending_remote_description.clone()
     }
 
     /// signaling_state attribute returns the signaling state of the
     /// PeerConnection instance.
-    pub fn signaling_state(&self) -> RTCSignalingState {
+    pub(crate) fn signaling_state(&self) -> RTCSignalingState {
         self.internal.signaling_state.load(Ordering::SeqCst).into()
     }
 
     /// icegathering_state attribute returns the ICE gathering state of the
     /// PeerConnection instance.
-    pub fn ice_gathering_state(&self) -> RTCIceGatheringState {
+    pub(crate) fn ice_gathering_state(&self) -> RTCIceGatheringState {
         self.internal.ice_gathering_state()
     }
 
     /// connection_state attribute returns the connection state of the
     /// PeerConnection instance.
-    pub fn connection_state(&self) -> RTCPeerConnectionState {
+    pub(crate) fn connection_state(&self) -> RTCPeerConnectionState {
         self.internal
             .peer_connection_state
             .load(Ordering::SeqCst)
@@ -1923,7 +1831,7 @@ impl RTCPeerConnection {
     ///
     /// The SCTP transport over which SCTP data is sent and received. If SCTP has not been negotiated, the value is nil.
     /// <https://www.w3.org/TR/webrtc/#attributes-15>
-    pub fn sctp(&self) -> Arc<RTCSctpTransport> {
+    pub(crate) fn sctp(&self) -> Arc<RTCSctpTransport> {
         Arc::clone(&self.internal.sctp_transport)
     }
 
@@ -1932,7 +1840,7 @@ impl RTCPeerConnection {
     ///
     /// It is better to not use this function, and instead trickle candidates. If you use this function you will see longer connection startup times.
     /// When the call is connected you will see no impact however.
-    pub async fn gathering_complete_promise(&self) -> mpsc::Receiver<()> {
+    pub(crate) async fn gathering_complete_promise(&self) -> mpsc::Receiver<()> {
         let (gathering_complete_tx, gathering_complete_rx) = mpsc::channel(1);
 
         // It's possible to miss the GatherComplete event since setGatherCompleteHandler is an atomic operation and the

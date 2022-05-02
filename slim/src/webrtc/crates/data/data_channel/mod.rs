@@ -49,7 +49,7 @@ pub struct DataChannel {
 }
 
 impl DataChannel {
-    pub fn new(stream: Arc<Stream>, config: Config) -> Self {
+    pub(crate) fn new(stream: Arc<Stream>, config: Config) -> Self {
         Self {
             config,
             stream,
@@ -58,7 +58,7 @@ impl DataChannel {
     }
 
     /// Dial opens a data channels over SCTP
-    pub async fn dial(
+    pub(crate) async fn dial(
         association: &Arc<Association>,
         identifier: u16,
         config: Config,
@@ -71,7 +71,7 @@ impl DataChannel {
     }
 
     /// Accept is used to accept incoming data channels over SCTP
-    pub async fn accept(association: &Arc<Association>, config: Config) -> Result<Self> {
+    pub(crate) async fn accept(association: &Arc<Association>, config: Config) -> Result<Self> {
         let stream = association
             .accept_stream()
             .await
@@ -83,7 +83,7 @@ impl DataChannel {
     }
 
     /// Client opens a data channel over an SCTP stream
-    pub async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
+    pub(crate) async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
         if !config.negotiated {
             let msg = Message::DataChannelOpen(DataChannelOpen {
                 channel_type: config.channel_type,
@@ -102,7 +102,7 @@ impl DataChannel {
     }
 
     /// Server accepts a data channel over an SCTP stream
-    pub async fn server(stream: Arc<Stream>, mut config: Config) -> Result<Self> {
+    pub(crate) async fn server(stream: Arc<Stream>, mut config: Config) -> Result<Self> {
         let mut buf = vec![0u8; RECEIVE_MTU];
 
         let (n, ppi) = stream.read_sctp(&mut buf).await?;
@@ -138,7 +138,7 @@ impl DataChannel {
     }
 
     /// ReadDataChannel reads a packet of len(p) bytes
-    pub async fn read_data_channel(&self, buf: &mut [u8]) -> Result<(usize, bool)> {
+    pub(crate) async fn read_data_channel(&self, buf: &mut [u8]) -> Result<(usize, bool)> {
         loop {
             //TODO: add handling of cancel read_data_channel
             let (mut n, ppi) = match self.stream.read_sctp(buf).await {
@@ -185,27 +185,27 @@ impl DataChannel {
     }
 
     /// MessagesSent returns the number of messages sent
-    pub fn messages_sent(&self) -> usize {
+    pub(crate) fn messages_sent(&self) -> usize {
         self.messages_sent.load(Ordering::SeqCst)
     }
 
     /// MessagesReceived returns the number of messages received
-    pub fn messages_received(&self) -> usize {
+    pub(crate) fn messages_received(&self) -> usize {
         self.messages_received.load(Ordering::SeqCst)
     }
 
     /// BytesSent returns the number of bytes sent
-    pub fn bytes_sent(&self) -> usize {
+    pub(crate) fn bytes_sent(&self) -> usize {
         self.bytes_sent.load(Ordering::SeqCst)
     }
 
     /// BytesReceived returns the number of bytes received
-    pub fn bytes_received(&self) -> usize {
+    pub(crate) fn bytes_received(&self) -> usize {
         self.bytes_received.load(Ordering::SeqCst)
     }
 
     /// StreamIdentifier returns the Stream identifier associated to the stream.
-    pub fn stream_identifier(&self) -> u16 {
+    pub(crate) fn stream_identifier(&self) -> u16 {
         self.stream.stream_identifier()
     }
 
@@ -237,7 +237,7 @@ impl DataChannel {
     }
 
     /// WriteDataChannel writes len(p) bytes from p
-    pub async fn write_data_channel(&self, data: &Bytes, is_string: bool) -> Result<usize> {
+    pub(crate) async fn write_data_channel(&self, data: &Bytes, is_string: bool) -> Result<usize> {
         let data_len = data.len();
 
         // https://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-12#section-6.6
@@ -294,25 +294,25 @@ impl DataChannel {
 
     /// BufferedAmount returns the number of bytes of data currently queued to be
     /// sent over this stream.
-    pub fn buffered_amount(&self) -> usize {
+    pub(crate) fn buffered_amount(&self) -> usize {
         self.stream.buffered_amount()
     }
 
     /// BufferedAmountLowThreshold returns the number of bytes of buffered outgoing
     /// data that is considered "low." Defaults to 0.
-    pub fn buffered_amount_low_threshold(&self) -> usize {
+    pub(crate) fn buffered_amount_low_threshold(&self) -> usize {
         self.stream.buffered_amount_low_threshold()
     }
 
     /// SetBufferedAmountLowThreshold is used to update the threshold.
     /// See BufferedAmountLowThreshold().
-    pub fn set_buffered_amount_low_threshold(&self, threshold: usize) {
+    pub(crate) fn set_buffered_amount_low_threshold(&self, threshold: usize) {
         self.stream.set_buffered_amount_low_threshold(threshold)
     }
 
     /// OnBufferedAmountLow sets the callback handler which would be called when the
     /// number of bytes of outgoing data buffered is lower than the threshold.
-    pub async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
+    pub(crate) async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
         self.stream.on_buffered_amount_low(f).await
     }
 
