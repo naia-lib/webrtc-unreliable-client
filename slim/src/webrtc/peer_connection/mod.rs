@@ -1312,7 +1312,6 @@ impl RTCPeerConnection {
                                         self.internal.setting_engine.get_receive_mtu(),
                                         kind,
                                         Arc::clone(&self.internal.dtls_transport),
-                                        Arc::clone(&self.internal.media_engine),
                                         Arc::clone(&self.interceptor),
                                     ));
 
@@ -1329,7 +1328,6 @@ impl RTCPeerConnection {
                                         local_direction,
                                         kind,
                                         vec![],
-                                        Arc::clone(&self.internal.media_engine),
                                     )
                                     .await;
 
@@ -1527,7 +1525,6 @@ impl RTCPeerConnection {
                             self.internal.setting_engine.get_receive_mtu(),
                             Arc::clone(&track),
                             Arc::clone(&self.internal.dtls_transport),
-                            Arc::clone(&self.internal.media_engine),
                             Arc::clone(&self.interceptor),
                         )
                         .await,

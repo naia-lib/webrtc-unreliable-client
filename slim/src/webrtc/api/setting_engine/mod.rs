@@ -69,7 +69,6 @@ pub struct SettingEngine {
     //iceTCPMux                                 :ice.TCPMux,?
     //iceProxyDialer                            :proxy.Dialer,?
     pub(crate) udp_network: UDPNetwork,
-    pub(crate) disable_media_engine_copy: bool,
     pub(crate) srtp_protection_profiles: Vec<SrtpProtectionProfile>,
     pub(crate) receive_mtu: usize,
 }

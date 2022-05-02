@@ -215,7 +215,6 @@ impl RTCRtpReceiver {
         receive_mtu: usize,
         kind: RTPCodecType,
         transport: Arc<RTCDtlsTransport>,
-        media_engine: Arc<MediaEngine>,
         interceptor: Arc<dyn Interceptor + Send + Sync>,
     ) -> Self {
         let closed_tx = Arc::new(Notify::new());
@@ -234,7 +233,7 @@ impl RTCRtpReceiver {
 
                 tracks: RwLock::new(vec![]),
                 transport,
-                media_engine,
+                media_engine: Arc::new(MediaEngine),
                 interceptor,
 
                 closed_rx,

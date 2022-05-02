@@ -48,7 +48,6 @@ pub(crate) struct PeerConnectionInternal {
 
     // A reference to the associated API state used by this connection
     pub(super) setting_engine: Arc<SettingEngine>,
-    pub(crate) media_engine: Arc<MediaEngine>,
     pub(super) interceptor: Weak<dyn Interceptor + Send + Sync>,
 }
 
@@ -86,7 +85,6 @@ impl PeerConnectionInternal {
             peer_connection_state: Arc::new(AtomicU8::new(RTCPeerConnectionState::New as u8)),
 
             setting_engine: Arc::clone(&api.setting_engine),
-            media_engine: Arc::new(MediaEngine),
             interceptor,
             on_peer_connection_state_change_handler: Arc::new(Default::default()),
             pending_remote_description: Arc::new(Default::default()),
@@ -194,7 +192,6 @@ impl PeerConnectionInternal {
                         self.setting_engine.get_receive_mtu(),
                         receiver.kind(),
                         Arc::clone(&self.dtls_transport),
-                        Arc::clone(&self.media_engine),
                         interceptor,
                     ));
                     t.set_receiver(Some(receiver)).await;
@@ -474,7 +471,6 @@ impl PeerConnectionInternal {
                     self.setting_engine.get_receive_mtu(),
                     kind,
                     Arc::clone(&self.dtls_transport),
-                    Arc::clone(&self.media_engine),
                     interceptor,
                 ));
 
@@ -484,7 +480,6 @@ impl PeerConnectionInternal {
                     RTCRtpTransceiverDirection::Recvonly,
                     kind,
                     vec![],
-                    Arc::clone(&self.media_engine),
                 )
                 .await
             }
@@ -512,7 +507,6 @@ impl PeerConnectionInternal {
                     self.setting_engine.get_receive_mtu(),
                     track.kind(),
                     Arc::clone(&self.dtls_transport),
-                    Arc::clone(&self.media_engine),
                     Arc::clone(&interceptor),
                 )));
                 let s = Some(Arc::new(
@@ -520,7 +514,6 @@ impl PeerConnectionInternal {
                         self.setting_engine.get_receive_mtu(),
                         Arc::clone(&track),
                         Arc::clone(&self.dtls_transport),
-                        Arc::clone(&self.media_engine),
                         Arc::clone(&interceptor),
                     )
                     .await,
@@ -533,7 +526,6 @@ impl PeerConnectionInternal {
                         self.setting_engine.get_receive_mtu(),
                         Arc::clone(&track),
                         Arc::clone(&self.dtls_transport),
-                        Arc::clone(&self.media_engine),
                         Arc::clone(&interceptor),
                     )
                     .await,
@@ -549,7 +541,6 @@ impl PeerConnectionInternal {
             direction,
             track.kind(),
             vec![],
-            Arc::clone(&self.media_engine),
         )
         .await)
     }
@@ -720,7 +711,6 @@ impl PeerConnectionInternal {
         populate_sdp(
             d,
             &dtls_fingerprints,
-            &self.media_engine,
             &candidates,
             &ice_params,
             &media_sections,
@@ -814,7 +804,6 @@ impl PeerConnectionInternal {
                                             RTCRtpTransceiverDirection::Inactive,
                                             kind,
                                             vec![],
-                                            Arc::clone(&self.media_engine),
                                         )
                                         .await;
                                         media_transceivers.push(t);
@@ -913,7 +902,6 @@ impl PeerConnectionInternal {
         populate_sdp(
             d,
             &dtls_fingerprints,
-            &self.media_engine,
             &candidates,
             &ice_params,
             &media_sections,

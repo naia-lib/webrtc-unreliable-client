@@ -1,7 +1,4 @@
-#[cfg(test)]
-mod sdp_test;
 
-use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
@@ -395,7 +392,6 @@ pub(crate) struct AddTransceiverSdpParams {
 pub(crate) async fn add_transceiver_sdp(
     mut d: SessionDescription,
     dtls_fingerprints: &[RTCDtlsFingerprint],
-    media_engine: &Arc<MediaEngine>,
     ice_params: &RTCIceParameters,
     candidates: &[RTCIceCandidate],
     media_section: &MediaSection,
@@ -574,7 +570,6 @@ pub(crate) struct PopulateSdpParams {
 pub(crate) async fn populate_sdp(
     mut d: SessionDescription,
     dtls_fingerprints: &[RTCDtlsFingerprint],
-    media_engine: &Arc<MediaEngine>,
     candidates: &[RTCIceCandidate],
     ice_params: &RTCIceParameters,
     media_sections: &[MediaSection],
@@ -623,7 +618,6 @@ pub(crate) async fn populate_sdp(
             let (d1, should_add_id) = add_transceiver_sdp(
                 d,
                 &media_dtls_fingerprints,
-                media_engine,
                 ice_params,
                 candidates,
                 m,

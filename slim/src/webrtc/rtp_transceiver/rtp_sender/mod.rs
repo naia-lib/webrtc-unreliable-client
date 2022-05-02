@@ -1,5 +1,4 @@
 
-use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTCRtpParameters, RTPCodecType};
@@ -91,7 +90,6 @@ pub struct RTCRtpSender {
     /// transceiver negotiation status
     pub(crate) negotiated: AtomicBool,
 
-    pub(crate) media_engine: Arc<MediaEngine>,
     pub(crate) interceptor: Arc<dyn Interceptor + Send + Sync>,
 
     pub(crate) id: String,
@@ -118,7 +116,6 @@ impl RTCRtpSender {
         receive_mtu: usize,
         track: Arc<dyn TrackLocal + Send + Sync>,
         transport: Arc<RTCDtlsTransport>,
-        media_engine: Arc<MediaEngine>,
         interceptor: Arc<dyn Interceptor + Send + Sync>,
     ) -> RTCRtpSender {
         let id = generate_crypto_random_string(
@@ -169,7 +166,6 @@ impl RTCRtpSender {
 
             negotiated: AtomicBool::new(false),
 
-            media_engine,
             interceptor,
 
             id,

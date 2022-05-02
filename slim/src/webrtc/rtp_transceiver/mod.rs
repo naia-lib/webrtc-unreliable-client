@@ -1,5 +1,4 @@
 
-use crate::webrtc::api::media_engine::MediaEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::rtp_transceiver::rtp_codec::*;
 use crate::webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
@@ -156,8 +155,6 @@ pub struct RTCRtpTransceiver {
 
     pub(crate) stopped: AtomicBool,
     pub(crate) kind: RTPCodecType,
-
-    media_engine: Arc<MediaEngine>,
 }
 
 impl RTCRtpTransceiver {
@@ -167,7 +164,6 @@ impl RTCRtpTransceiver {
         direction: RTCRtpTransceiverDirection,
         kind: RTPCodecType,
         codecs: Vec<RTCRtpCodecParameters>,
-        media_engine: Arc<MediaEngine>,
     ) -> Arc<Self> {
         let t = Arc::new(RTCRtpTransceiver {
             mid: Mutex::new(String::new()),
@@ -177,7 +173,6 @@ impl RTCRtpTransceiver {
             codecs: Arc::new(Mutex::new(codecs)),
             stopped: AtomicBool::new(false),
             kind,
-            media_engine,
         });
 
         t.set_receiver(receiver).await;
