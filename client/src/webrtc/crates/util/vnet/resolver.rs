@@ -1,0 +1,41 @@
+
+use std::collections::HashMap;
+use std::future::Future;
+use std::net::IpAddr;
+use std::pin::Pin;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+#[derive(Default)]
+pub struct Resolver {
+    parent: Option<Arc<Mutex<Resolver>>>,
+    hosts: HashMap<String, IpAddr>,
+}
+
+impl Resolver {
+
+    pub fn set_parent(&mut self, p: Arc<Mutex<Resolver>>) {
+        self.parent = Some(p);
+    }
+
+    pub fn lookup(
+        &self,
+        host_name: String,
+    ) -> Pin<Box<dyn Future<Output = Option<IpAddr>> + Send + 'static>> {
+        if let Some(ip) = self.hosts.get(&host_name) {
+            let ip2 = *ip;
+            return Box::pin(async move { Some(ip2) });
+        }
+
+        // mutex must be unlocked before calling into parent Resolver
+        if let Some(parent) = &self.parent {
+            let parent2 = Arc::clone(parent);
+            Box::pin(async move {
+                let p = parent2.lock().await;
+                p.lookup(host_name).await
+            })
+        } else {
+            Box::pin(async move { None })
+        }
+    }
+}

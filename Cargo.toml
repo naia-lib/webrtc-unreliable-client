@@ -1,7 +1,6 @@
 [workspace]
 members = [
-    "new_client",
-    "slim",
+    "client",
     "demos/client",
     "demos/server",
     ]

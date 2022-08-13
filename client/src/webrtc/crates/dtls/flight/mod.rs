@@ -1,0 +1,85 @@
+pub mod flight0;
+pub mod flight1;
+pub mod flight2;
+pub mod flight3;
+pub mod flight4;
+pub mod flight5;
+pub mod flight6;
+
+use crate::webrtc::dtls::alert::*;
+use crate::webrtc::dtls::error::Error;
+use crate::webrtc::dtls::handshake::handshake_cache::*;
+use crate::webrtc::dtls::handshaker::*;
+use crate::webrtc::dtls::record_layer::*;
+use crate::webrtc::dtls::state::*;
+
+use async_trait::async_trait;
+use std::fmt;
+use tokio::sync::mpsc;
+
+/*
+  DTLS messages are grouped into a series of message flights, according
+  to the diagrams below.  Although each Flight of messages may consist
+  of a number of messages, they should be viewed as monolithic for the
+  purpose of timeout and retransmission.
+  https://tools.ietf.org/html/rfc4347#section-4.2.4
+  Client                                          Server
+  ------                                          ------
+                                      Waiting                 Flight 0
+
+  ClientHello             -------->                           Flight 1
+
+                          <-------    HelloVerifyRequest      Flight 2
+
+  ClientHello              -------->                           Flight 3
+
+                                             ServerHello    \
+                                            Certificate*     \
+                                      ServerKeyExchange*      Flight 4
+                                     CertificateRequest*     /
+                          <--------      ServerHelloDone    /
+
+  Certificate*                                              \
+  ClientKeyExchange                                          \
+  CertificateVerify*                                          Flight 5
+  [ChangeCipherSpec]                                         /
+  Finished                -------->                         /
+
+                                      [ChangeCipherSpec]    \ Flight 6
+                          <--------             Finished    /
+
+*/
+
+#[derive(Clone, Debug)]
+pub struct Packet {
+    pub record: RecordLayer,
+    pub should_encrypt: bool,
+}
+
+#[async_trait]
+pub trait Flight: fmt::Display + fmt::Debug {
+    fn is_last_send_flight(&self) -> bool {
+        false
+    }
+    fn is_last_recv_flight(&self) -> bool {
+        false
+    }
+    fn has_retransmit(&self) -> bool {
+        true
+    }
+
+    async fn parse(
+        &self,
+        tx: &mut mpsc::Sender<mpsc::Sender<()>>,
+        state: &mut State,
+        cache: &HandshakeCache,
+        cfg: &HandshakeConfig,
+    ) -> Result<Box<dyn Flight + Send + Sync>, (Option<Alert>, Option<Error>)>;
+
+    async fn generate(
+        &self,
+        state: &mut State,
+        cache: &HandshakeCache,
+        cfg: &HandshakeConfig,
+    ) -> Result<Vec<Packet>, (Option<Alert>, Option<Error>)>;
+}

@@ -10,7 +10,7 @@ publish = false
 [features]
 
 [dependencies]
-webrtc-unreliable-client = { path = "../../new_client" }
+webrtc-unreliable-client = { path = "../../client" }
 tokio = { version = "1.15", features = ["full"] }
 anyhow = "1.0"
 # env_logger = { version = "0.9" }
