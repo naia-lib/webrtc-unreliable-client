@@ -20,8 +20,6 @@ use std::sync::Arc;
 #[derive(Eq, PartialEq, Default, Clone, Debug, Builder)]
 pub struct Config {
     #[builder(default)]
-    pub priority: u16,
-    #[builder(default)]
     pub label: String,
     #[builder(default)]
     pub protocol: String,
@@ -67,11 +65,11 @@ impl DataChannel {
 
         // Do this next Connor
         let msg = Message::DataChannelOpen(DataChannelOpen {
-            channel_type: ChannelType::PartialReliableRexmitUnordered,
-            priority: config.priority,
-            reliability_parameter: Some(0),
             label: config.label.bytes().collect(),
             protocol: config.protocol.bytes().collect(),
+            channel_type: ChannelType::PartialReliableRexmitUnordered,
+            priority: CHANNEL_PRIORITY_NORMAL,
+            reliability_parameter: Some(0),
         })
         .marshal()?;
 

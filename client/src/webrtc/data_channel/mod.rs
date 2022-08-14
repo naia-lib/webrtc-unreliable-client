@@ -92,9 +92,7 @@ impl RTCDataChannel {
                 }
             }
 
-            // Do next Connor
             let cfg = crate::webrtc::data::data_channel::Config {
-                priority: crate::webrtc::data::message::message_channel_open::CHANNEL_PRIORITY_NORMAL,
                 label: self.label.clone(),
                 protocol: self.protocol.clone(),
             };
