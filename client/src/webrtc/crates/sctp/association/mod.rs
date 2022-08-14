@@ -482,9 +482,8 @@ impl Association {
     pub async fn open_stream(
         &self,
         stream_identifier: u16,
-        default_payload_type: PayloadProtocolIdentifier,
     ) -> Result<Arc<Stream>> {
         let mut ai = self.association_internal.lock().await;
-        ai.open_stream(stream_identifier, default_payload_type)
+        ai.open_stream(stream_identifier)
     }
 }

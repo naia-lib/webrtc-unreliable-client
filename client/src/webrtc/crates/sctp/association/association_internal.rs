@@ -1047,14 +1047,12 @@ impl AssociationInternal {
     pub fn open_stream(
         &mut self,
         stream_identifier: u16,
-        default_payload_type: PayloadProtocolIdentifier,
     ) -> Result<Arc<Stream>> {
         if self.streams.contains_key(&stream_identifier) {
             return Err(Error::ErrStreamAlreadyExist);
         }
 
         if let Some(s) = self.create_stream(stream_identifier, false) {
-            s.set_default_payload_type(default_payload_type);
             Ok(Arc::clone(&s))
         } else {
             Err(Error::ErrStreamCreateFailed)

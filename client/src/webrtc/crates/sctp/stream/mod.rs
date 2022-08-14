@@ -72,7 +72,6 @@ pub struct Stream {
     pub pending_queue: Arc<PendingQueue>,
 
     pub stream_identifier: u16,
-    pub default_payload_type: AtomicU32, //PayloadProtocolIdentifier,
     pub reassembly_queue: Mutex<ReassemblyQueue>,
     pub sequence_number: AtomicU16,
     pub read_notifier: Notify,
@@ -91,7 +90,6 @@ impl fmt::Debug for Stream {
             .field("state", &self.state)
             .field("awake_write_loop_ch", &self.awake_write_loop_ch)
             .field("stream_identifier", &self.stream_identifier)
-            .field("default_payload_type", &self.default_payload_type)
             .field("reassembly_queue", &self.reassembly_queue)
             .field("sequence_number", &self.sequence_number)
             .field("closed", &self.closed)
@@ -120,7 +118,6 @@ impl Stream {
             pending_queue,
 
             stream_identifier,
-            default_payload_type: AtomicU32::new(0), //PayloadProtocolIdentifier::Unknown,
             reassembly_queue: Mutex::new(ReassemblyQueue::new(stream_identifier)),
             sequence_number: AtomicU16::new(0),
             read_notifier: Notify::new(),
@@ -130,12 +127,6 @@ impl Stream {
             on_buffered_amount_low: Mutex::new(None),
             name,
         }
-    }
-
-    /// set_default_payload_type sets the default payload type used by write.
-    pub fn set_default_payload_type(&self, default_payload_type: PayloadProtocolIdentifier) {
-        self.default_payload_type
-            .store(default_payload_type as u32, Ordering::SeqCst);
     }
 
     /// read reads a packet of len(p) bytes, dropping the Payload Protocol Identifier.
@@ -208,7 +199,7 @@ impl Stream {
 
     /// write writes len(p) bytes from p with the default Payload Protocol Identifier
     pub async fn write(&self, p: &Bytes) -> Result<usize> {
-        self.write_sctp(p, self.default_payload_type.load(Ordering::SeqCst).into())
+        self.write_sctp(p, PayloadProtocolIdentifier::Binary)
             .await
     }
 

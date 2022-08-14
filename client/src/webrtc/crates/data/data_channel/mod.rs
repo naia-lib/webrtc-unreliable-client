@@ -54,7 +54,7 @@ impl DataChannel {
         config: Config,
     ) -> Result<Self> {
         let stream = association
-            .open_stream(identifier, PayloadProtocolIdentifier::Binary)
+            .open_stream(identifier)
             .await?;
 
         Self::client(stream, config).await
