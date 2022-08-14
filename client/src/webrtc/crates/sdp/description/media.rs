@@ -1,23 +1,7 @@
-use std::collections::HashMap;
+
 use std::fmt;
-use url::Url;
 
 use crate::webrtc::sdp::description::common::*;
-use crate::webrtc::sdp::extmap::*;
-
-/// Constants for extmap key
-pub const EXT_MAP_VALUE_TRANSPORT_CC_KEY: isize = 3;
-pub const EXT_MAP_VALUE_TRANSPORT_CC_URI: &str =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
-
-fn ext_map_uri() -> HashMap<isize, &'static str> {
-    let mut m = HashMap::new();
-    m.insert(
-        EXT_MAP_VALUE_TRANSPORT_CC_KEY,
-        EXT_MAP_VALUE_TRANSPORT_CC_URI,
-    );
-    m
-}
 
 /// MediaDescription represents a media type.
 /// <https://tools.ietf.org/html/rfc4566#section-5.14>
@@ -69,40 +53,6 @@ impl MediaDescription {
         None
     }
 
-    /// new_jsep_media_description creates a new MediaName with
-    /// some settings that are required by the JSEP spec.
-    pub fn new_jsep_media_description(codec_type: String, _codec_prefs: Vec<&str>) -> Self {
-        MediaDescription {
-            media_name: MediaName {
-                media: codec_type,
-                port: RangedPort {
-                    value: 9,
-                    range: None,
-                },
-                protos: vec![
-                    "UDP".to_string(),
-                    "TLS".to_string(),
-                    "RTP".to_string(),
-                    "SAVPF".to_string(),
-                ],
-                formats: vec![],
-            },
-            media_title: None,
-            connection_information: Some(ConnectionInformation {
-                network_type: "IN".to_string(),
-                address_type: "IP4".to_string(),
-                address: Some(Address {
-                    address: "0.0.0.0".to_string(),
-                    ttl: None,
-                    range: None,
-                }),
-            }),
-            bandwidth: vec![],
-            encryption_key: None,
-            attributes: vec![],
-        }
-    }
-
     /// with_property_attribute adds a property attribute 'a=key' to the media description
     pub fn with_property_attribute(mut self, key: String) -> Self {
         self.attributes.push(Attribute::new(key, None));
@@ -124,51 +74,6 @@ impl MediaDescription {
     pub fn with_ice_credentials(self, username: String, password: String) -> Self {
         self.with_value_attribute("ice-ufrag".to_string(), username)
             .with_value_attribute("ice-pwd".to_string(), password)
-    }
-
-    /// with_codec adds codec information to the media description
-    pub fn with_codec(
-        mut self,
-        payload_type: u8,
-        name: String,
-        clockrate: u32,
-        channels: u16,
-        fmtp: String,
-    ) -> Self {
-        self.media_name.formats.push(payload_type.to_string());
-        let mut rtpmap = format!("{} {}/{}", payload_type, name, clockrate);
-        if channels > 0 {
-            rtpmap += format!("/{}", channels).as_str();
-        }
-
-        if !fmtp.is_empty() {
-            self.with_value_attribute("rtpmap".to_string(), rtpmap)
-                .with_value_attribute("fmtp".to_string(), format!("{} {}", payload_type, fmtp))
-        } else {
-            self.with_value_attribute("rtpmap".to_string(), rtpmap)
-        }
-    }
-
-    /// with_media_source adds media source information to the media description
-    pub fn with_media_source(
-        self,
-        ssrc: u32,
-        cname: String,
-        stream_label: String,
-        label: String,
-    ) -> Self {
-        self.
-            with_value_attribute("ssrc".to_string(), format!("{} cname:{}", ssrc, cname)). // Deprecated but not phased out?
-            with_value_attribute("ssrc".to_string(), format!("{} msid:{} {}", ssrc, stream_label, label)).
-            with_value_attribute("ssrc".to_string(), format!("{} mslabel:{}", ssrc, stream_label)). // Deprecated but not phased out?
-            with_value_attribute("ssrc".to_string(), format!("{} label:{}", ssrc, label))
-        // Deprecated but not phased out?
-    }
-
-    /// with_candidate adds an ICE candidate to the media description
-    /// Deprecated: use WithICECandidate instead
-    pub fn with_candidate(self, value: String) -> Self {
-        self.with_value_attribute("candidate".to_string(), value)
     }
 }
 
