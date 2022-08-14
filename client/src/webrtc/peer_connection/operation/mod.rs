@@ -26,6 +26,8 @@ impl fmt::Debug for Operation {
 pub struct Operations {
     length: Arc<AtomicUsize>,
     ops_tx: Option<Arc<mpsc::UnboundedSender<Operation>>>,
+    // Removing this causes exceptions
+    #[allow(dead_code)]
     close_tx: Option<mpsc::Sender<()>>,
 }
 

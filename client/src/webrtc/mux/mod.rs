@@ -32,6 +32,8 @@ pub struct Mux {
     id: Arc<AtomicUsize>,
     next_conn: Arc<dyn Conn + Send + Sync>,
     endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
+    // Removing this causes exceptions
+    #[allow(dead_code)]
     closed_ch_tx: Option<mpsc::Sender<()>>,
 }
 
