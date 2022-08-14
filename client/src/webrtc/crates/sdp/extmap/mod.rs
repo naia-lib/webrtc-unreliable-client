@@ -1,10 +1,8 @@
 
 use super::direction::*;
-use super::error::{Error, Result};
 use crate::webrtc::sdp::description::common::*;
 
 use std::fmt;
-use std::io;
 use url::Url;
 
 /// ExtMap represents the activation of a single RTP header extension
@@ -32,20 +30,5 @@ impl fmt::Display for ExtMap {
         }
 
         write!(f, "{}", output)
-    }
-}
-
-impl ExtMap {
-    /// converts this object to an Attribute
-    pub fn convert(&self) -> Attribute {
-        Attribute {
-            key: "extmap".to_string(),
-            value: Some(self.to_string()),
-        }
-    }
-
-    /// marshal creates a string from an ExtMap
-    pub fn marshal(&self) -> String {
-        "extmap:".to_string() + self.to_string().as_str()
     }
 }

@@ -170,33 +170,6 @@ impl MediaDescription {
     pub fn with_candidate(self, value: String) -> Self {
         self.with_value_attribute("candidate".to_string(), value)
     }
-
-    pub fn with_extmap(self, e: ExtMap) -> Self {
-        self.with_property_attribute(e.marshal())
-    }
-
-    /// with_transport_cc_extmap adds an extmap to the media description
-    pub fn with_transport_cc_extmap(self) -> Self {
-        let uri = {
-            let m = ext_map_uri();
-            if let Some(uri_str) = m.get(&EXT_MAP_VALUE_TRANSPORT_CC_KEY) {
-                match Url::parse(uri_str) {
-                    Ok(uri) => Some(uri),
-                    Err(_) => None,
-                }
-            } else {
-                None
-            }
-        };
-
-        let e = ExtMap {
-            value: EXT_MAP_VALUE_TRANSPORT_CC_KEY,
-            uri,
-            ..Default::default()
-        };
-
-        self.with_extmap(e)
-    }
 }
 
 /// RangedPort supports special format for the media field "m=" port value. If
