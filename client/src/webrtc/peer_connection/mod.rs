@@ -951,15 +951,6 @@ impl RTCPeerConnection {
             .await
     }
 
-    /// ice_connection_state returns the ICE connection state of the
-    /// PeerConnection instance.
-    pub fn ice_connection_state(&self) -> RTCIceConnectionState {
-        self.internal
-            .ice_connection_state
-            .load(Ordering::SeqCst)
-            .into()
-    }
-
     /// create_data_channel creates a new DataChannel object with the given label
     /// and optional DataChannelInit used to configure properties of the
     /// underlying channel such as data reliability.

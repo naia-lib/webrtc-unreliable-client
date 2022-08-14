@@ -329,11 +329,6 @@ impl Agent {
         self.internal.close().await
     }
 
-    /// Returns the selected pair or nil if there is none
-    pub async fn get_selected_candidate_pair(&self) -> Option<Arc<CandidatePair>> {
-        self.internal.agent_conn.get_selected_pair().await
-    }
-
     /// Restarts the ICE Agent with the provided ufrag/pwd
     /// If no ufrag/pwd is provided the Agent will generate one itself.
     ///

@@ -1,6 +1,5 @@
 
 use super::direction::*;
-use crate::webrtc::sdp::description::common::*;
 
 use std::fmt;
 use url::Url;

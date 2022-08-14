@@ -76,19 +76,6 @@ impl RTCIceTransport {
         }
     }
 
-    /// get_selected_candidate_pair returns the selected candidate pair on which packets are sent
-    /// if there is no selected pair nil is returned
-    pub async fn get_selected_candidate_pair(&self) -> Option<RTCIceCandidatePair> {
-        if let Some(agent) = self.gatherer.get_agent().await {
-            if let Some(ice_pair) = agent.get_selected_candidate_pair().await {
-                let local = RTCIceCandidate::from(&ice_pair.local);
-                let remote = RTCIceCandidate::from(&ice_pair.remote);
-                return Some(RTCIceCandidatePair::new(local, remote));
-            }
-        }
-        None
-    }
-
     /// Start incoming connectivity checks based on its configured role.
     pub async fn start(&self, params: &RTCIceParameters, role: Option<RTCIceRole>) -> Result<()> {
         if self.state() != RTCIceTransportState::New {
