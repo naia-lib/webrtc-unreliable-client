@@ -1956,19 +1956,8 @@ impl AssociationInternal {
         }
 
         // PR-SCTP
-        if let Some(s) = self.streams.get(&c.stream_identifier) {
-            if s.has_reliability_value.load(Ordering::SeqCst) {
-                if c.nsent >= s.reliability_value.load(Ordering::SeqCst).into() {
-                    c.set_abandoned(true);
-                    log::trace!(
-                        "[{}] marked as abandoned: tsn={} ppi={} (remix: {})",
-                        self.name,
-                        c.tsn,
-                        c.payload_type,
-                        c.nsent
-                    );
-                }
-            }
+        if self.streams.contains_key(&c.stream_identifier) {
+            c.set_abandoned(true);
         } else {
             log::error!("[{}] stream {} not found)", self.name, c.stream_identifier);
         }

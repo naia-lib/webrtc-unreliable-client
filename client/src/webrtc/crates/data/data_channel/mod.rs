@@ -143,7 +143,6 @@ impl DataChannel {
             }
             Message::DataChannelAck(_) => {
                 log::debug!("Received DATA_CHANNEL_ACK");
-                self.commit_reliability_params();
             }
         };
 
@@ -205,9 +204,5 @@ impl DataChannel {
     /// number of bytes of outgoing data buffered is lower than the threshold.
     pub async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
         self.stream.on_buffered_amount_low(f).await
-    }
-
-    fn commit_reliability_params(&self) {
-        self.stream.set_reliability_params();
     }
 }

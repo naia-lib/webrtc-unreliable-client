@@ -77,8 +77,6 @@ pub struct Stream {
     pub sequence_number: AtomicU16,
     pub read_notifier: Notify,
     pub closed: AtomicBool,
-    pub has_reliability_value: AtomicBool,
-    pub reliability_value: AtomicU16,
     pub buffered_amount: AtomicUsize,
     pub buffered_amount_low: AtomicUsize,
     pub on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
@@ -97,8 +95,6 @@ impl fmt::Debug for Stream {
             .field("reassembly_queue", &self.reassembly_queue)
             .field("sequence_number", &self.sequence_number)
             .field("closed", &self.closed)
-            .field("has_reliability_value", &self.has_reliability_value)
-            .field("reliability_value", &self.reliability_value)
             .field("buffered_amount", &self.buffered_amount)
             .field("buffered_amount_low", &self.buffered_amount_low)
             .field("name", &self.name)
@@ -129,8 +125,6 @@ impl Stream {
             sequence_number: AtomicU16::new(0),
             read_notifier: Notify::new(),
             closed: AtomicBool::new(false),
-            has_reliability_value: AtomicBool::new(false),
-            reliability_value: AtomicU16::new(0),
             buffered_amount: AtomicUsize::new(0),
             buffered_amount_low: AtomicUsize::new(0),
             on_buffered_amount_low: Mutex::new(None),
@@ -142,29 +136,6 @@ impl Stream {
     pub fn set_default_payload_type(&self, default_payload_type: PayloadProtocolIdentifier) {
         self.default_payload_type
             .store(default_payload_type as u32, Ordering::SeqCst);
-    }
-
-    /// set_reliability_params sets reliability parameters for this stream.
-    pub fn set_reliability_params(
-        &self,
-    ) {
-        // Do this next Connor
-        let rel_val = Some(0);
-
-        log::debug!(
-            "[{}] reliability params: value={}",
-            self.name,
-            match rel_val {
-                Some(v) => format!("Some({v})"),
-                None => "None".to_string(),
-            }
-        );
-        if let Some(v) = rel_val {
-            self.has_reliability_value.store(true, Ordering::SeqCst);
-            self.reliability_value.store(v, Ordering::SeqCst);
-        } else {
-            self.has_reliability_value.store(false, Ordering::SeqCst);
-        }
     }
 
     /// read reads a packet of len(p) bytes, dropping the Payload Protocol Identifier.
