@@ -195,38 +195,6 @@ impl RTCDataChannel {
         *handler = Some(f);
     }
 
-    /// send sends the binary message to the DataChannel peer
-    pub async fn send(&self, data: &Bytes) -> Result<usize> {
-        self.ensure_open()?;
-
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            Ok(dc.write_data_channel(data, false).await?)
-        } else {
-            Err(Error::ErrClosedPipe)
-        }
-    }
-
-    /// send_text sends the text message to the DataChannel peer
-    pub async fn send_text(&self, s: String) -> Result<usize> {
-        self.ensure_open()?;
-
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            Ok(dc.write_data_channel(&Bytes::from(s), true).await?)
-        } else {
-            Err(Error::ErrClosedPipe)
-        }
-    }
-
-    fn ensure_open(&self) -> Result<()> {
-        if self.ready_state() != RTCDataChannelState::Open {
-            Err(Error::ErrClosedPipe)
-        } else {
-            Ok(())
-        }
-    }
-
     /// detach allows you to detach the underlying datachannel. This provides
     /// an idiomatic API to work with, however it disables the OnMessage callback.
     /// Before calling Detach you have to enable this behavior by calling

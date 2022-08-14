@@ -13,7 +13,7 @@ use ice_candidate_pair::RTCIceCandidatePair;
 use ice_gatherer::RTCIceGatherer;
 use ice_role::RTCIceRole;
 
-use crate::webrtc::error::{flatten_errs, Error, Result};
+use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::mux::endpoint::Endpoint;
@@ -189,31 +189,6 @@ impl RTCIceTransport {
         } else {
             Err(Error::ErrICEAgentNotExist)
         }
-    }
-
-    /// Stop irreversibly stops the ICETransport.
-    pub async fn stop(&self) -> Result<()> {
-        self.set_state(RTCIceTransportState::Closed);
-
-        let mut errs: Vec<Error> = vec![];
-        {
-            let mut internal = self.internal.lock().await;
-            internal.cancel_tx.take();
-            if let Some(mut mux) = internal.mux.take() {
-                mux.close().await;
-            }
-            if let Some(conn) = internal.conn.take() {
-                if let Err(err) = conn.close().await {
-                    errs.push(err.into());
-                }
-            }
-        }
-
-        if let Err(err) = self.gatherer.close().await {
-            errs.push(err);
-        }
-
-        flatten_errs(errs)
     }
 
     /// on_selected_candidate_pair_change sets a handler that is invoked when a new

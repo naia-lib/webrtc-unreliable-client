@@ -272,36 +272,6 @@ impl RTCSctpTransport {
         self.state.load(Ordering::SeqCst).into()
     }
 
-    pub async fn generate_and_set_data_channel_id(
-        &self,
-        dtls_role: DTLSRole,
-    ) -> Result<u16> {
-        let mut id = 0u16;
-        if dtls_role != DTLSRole::Client {
-            id += 1;
-        }
-
-        // Create map of ids so we can compare without double-looping each time.
-        let mut ids_map = HashSet::new();
-        {
-            let data_channels = self.data_channels.lock().await;
-            if data_channels.len() > 0 {
-                ids_map.insert(0); // the only id configured right now
-            }
-        }
-
-        let max = self.max_channels();
-        while id < max - 1 {
-            if ids_map.contains(&id) {
-                id += 2;
-            } else {
-                return Ok(id);
-            }
-        }
-
-        Err(Error::ErrMaxDataChannelID)
-    }
-
     pub async fn association(&self) -> Option<Arc<Association>> {
         let sctp_association = self.sctp_association.lock().await;
         sctp_association.clone()

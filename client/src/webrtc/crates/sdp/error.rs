@@ -3,21 +3,12 @@ use thiserror::Error;
 use std::io;
 use std::num::ParseIntError;
 use std::string::FromUtf8Error;
-use substring::Substring;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
-    #[error("codec not found")]
-    CodecNotFound,
-    #[error("missing whitespace")]
-    MissingWhitespace,
-    #[error("missing colon")]
-    MissingColon,
-    #[error("payload type not found")]
-    PayloadTypeNotFound,
     #[error("{0}")]
     Io(#[source] IoError),
     #[error("utf-8 error: {0}")]
@@ -32,10 +23,6 @@ pub enum Error {
     ParseInt(#[from] ParseIntError),
     #[error("parse url: {0}")]
     ParseUrl(#[from] url::ParseError),
-    #[error("parse extmap: {0}")]
-    ParseExtMap(String),
-    #[error("{} --> {} <-- {}", .s.substring(0,*.p), .s.substring(*.p, *.p+1), .s.substring(*.p+1, .s.len()))]
-    SyntaxError { s: String, p: usize },
 }
 
 #[derive(Debug, Error)]

@@ -22,7 +22,7 @@ use crate::webrtc::dtls_transport::dtls_role::{
 };
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
-use crate::webrtc::error::{flatten_errs, Error, Result};
+use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
@@ -1003,72 +1003,6 @@ impl RTCPeerConnection {
         .await;
 
         Ok(d)
-    }
-
-    /// close ends the PeerConnection
-    pub async fn close(&self) -> Result<()> {
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #1)
-        if self.internal.is_closed.load(Ordering::SeqCst) {
-            return Ok(());
-        }
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #2)
-        self.internal.is_closed.store(true, Ordering::SeqCst);
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #3)
-        self.internal
-            .signaling_state
-            .store(RTCSignalingState::Closed as u8, Ordering::SeqCst);
-
-        // Try closing everything and collect the errors
-        // Shutdown strategy:
-        // 1. All Conn close by closing their underlying Conn.
-        // 2. A Mux stops this chain. It won't close the underlying
-        //    Conn if one of the endpoints is closed down. To
-        //    continue the chain the Mux has to be closed.
-        let mut close_errs = vec![];
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #5)
-        {
-            let mut data_channels = self.internal.sctp_transport.data_channels.lock().await;
-            for d in &*data_channels {
-                if let Err(err) = d.close().await {
-                    close_errs.push(Error::new(format!("data_channels: {}", err)));
-                }
-            }
-            data_channels.clear();
-        }
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #6)
-        if let Err(err) = self.internal.sctp_transport.stop().await {
-            close_errs.push(Error::new(format!("sctp_transport: {}", err)));
-        }
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #7)
-        if let Err(err) = self.internal.dtls_transport.stop().await {
-            close_errs.push(Error::new(format!("dtls_transport: {}", err)));
-        }
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #8, #9, #10)
-        if let Err(err) = self.internal.ice_transport.stop().await {
-            close_errs.push(Error::new(format!("dtls_transport: {}", err)));
-        }
-
-        // https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close (step #11)
-        RTCPeerConnection::update_connection_state(
-            &self.internal.on_peer_connection_state_change_handler,
-            &self.internal.is_closed,
-            &self.internal.peer_connection_state,
-            self.ice_connection_state(),
-            self.internal.dtls_transport.state(),
-        )
-        .await;
-
-        if let Err(err) = self.internal.ops.close().await {
-            close_errs.push(Error::new(format!("ops: {}", err)));
-        }
-
-        flatten_errs(close_errs)
     }
 
     /// CurrentLocalDescription represents the local description that was

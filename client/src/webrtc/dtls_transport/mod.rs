@@ -14,7 +14,7 @@ use dtls_role::*;
 
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
-use crate::webrtc::error::{flatten_errs, Error, Result};
+use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::mux::mux_func::match_dtls;
@@ -184,28 +184,6 @@ impl RTCDtlsTransport {
         self.state_change(RTCDtlsTransportState::Connected).await;
 
         Ok(())
-    }
-
-    /// stops and closes the DTLSTransport object.
-    pub async fn stop(&self) -> Result<()> {
-        // Try closing everything and collect the errors
-        let mut close_errs: Vec<Error> = vec![];
-
-        if let Some(conn) = self.conn().await {
-            // dtls_transport connection may be closed on sctp close.
-            match conn.close().await {
-                Ok(_) => {}
-                Err(err) => {
-                    if err.to_string() != crate::webrtc::dtls::Error::ErrConnClosed.to_string() {
-                        close_errs.push(err.into());
-                    }
-                }
-            }
-        }
-
-        self.state_change(RTCDtlsTransportState::Closed).await;
-
-        flatten_errs(close_errs)
     }
 
     pub fn ensure_ice_conn(&self) -> Result<()> {
