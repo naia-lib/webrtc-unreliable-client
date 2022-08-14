@@ -219,22 +219,6 @@ impl RTCIceGatherer {
         Ok(())
     }
 
-    /// Close prunes all local candidates, and closes the ports.
-    pub async fn close(&self) -> Result<()> {
-        self.set_state(RTCIceGathererState::Closed).await;
-
-        let agent = {
-            let mut agent_opt = self.agent.lock().await;
-            agent_opt.take()
-        };
-
-        if let Some(agent) = agent {
-            agent.close().await?;
-        }
-
-        Ok(())
-    }
-
     /// get_local_parameters returns the ICE parameters of the ICEGatherer.
     pub async fn get_local_parameters(&self) -> Result<RTCIceParameters> {
         self.create_agent().await?;

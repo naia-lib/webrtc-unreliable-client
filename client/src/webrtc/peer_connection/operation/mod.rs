@@ -26,14 +26,13 @@ impl fmt::Debug for Operation {
 pub struct Operations {
     length: Arc<AtomicUsize>,
     ops_tx: Option<Arc<mpsc::UnboundedSender<Operation>>>,
-    close_tx: Option<mpsc::Sender<()>>,
 }
 
 impl Operations {
     pub fn new() -> Self {
         let length = Arc::new(AtomicUsize::new(0));
         let (ops_tx, ops_rx) = mpsc::unbounded_channel();
-        let (close_tx, close_rx) = mpsc::channel(1);
+        let (_close_tx, close_rx) = mpsc::channel(1);
         let l = Arc::clone(&length);
         let ops_tx = Arc::new(ops_tx);
         let ops_tx2 = Arc::clone(&ops_tx);
@@ -44,7 +43,6 @@ impl Operations {
         Operations {
             length,
             ops_tx: Some(ops_tx2),
-            close_tx: Some(close_tx),
         }
     }
 
@@ -96,12 +94,5 @@ impl Operations {
                 }
             }
         }
-    }
-
-    pub async fn close(&self) -> Result<()> {
-        if let Some(close_tx) = &self.close_tx {
-            let _ = close_tx.send(()).await?;
-        }
-        Ok(())
     }
 }

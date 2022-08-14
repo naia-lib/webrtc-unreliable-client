@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{fmt, io};
 use url::Url;
@@ -283,56 +282,6 @@ impl SessionDescription {
     pub fn with_media(mut self, md: MediaDescription) -> Self {
         self.media_descriptions.push(md);
         self
-    }
-
-    fn build_codec_map(&self) -> HashMap<u8, Codec> {
-        let mut codecs: HashMap<u8, Codec> = HashMap::new();
-
-        for m in &self.media_descriptions {
-            for a in &m.attributes {
-                let attr = a.to_string();
-                if attr.starts_with("rtpmap:") {
-                    if let Ok(codec) = parse_rtpmap(&attr) {
-                        merge_codecs(codec, &mut codecs);
-                    }
-                } else if attr.starts_with("fmtp:") {
-                    if let Ok(codec) = parse_fmtp(&attr) {
-                        merge_codecs(codec, &mut codecs);
-                    }
-                } else if attr.starts_with("rtcp-fb:") {
-                    if let Ok(codec) = parse_rtcp_fb(&attr) {
-                        merge_codecs(codec, &mut codecs);
-                    }
-                }
-            }
-        }
-
-        codecs
-    }
-
-    /// get_codec_for_payload_type scans the SessionDescription for the given payload type and returns the codec
-    pub fn get_codec_for_payload_type(&self, payload_type: u8) -> Result<Codec> {
-        let codecs = self.build_codec_map();
-
-        if let Some(codec) = codecs.get(&payload_type) {
-            Ok(codec.clone())
-        } else {
-            Err(Error::PayloadTypeNotFound)
-        }
-    }
-
-    /// get_payload_type_for_codec scans the SessionDescription for a codec that matches the provided codec
-    /// as closely as possible and returns its payload type
-    pub fn get_payload_type_for_codec(&self, wanted: &Codec) -> Result<u8> {
-        let codecs = self.build_codec_map();
-
-        for (payload_type, codec) in codecs.iter() {
-            if codecs_match(wanted, codec) {
-                return Ok(*payload_type);
-            }
-        }
-
-        Err(Error::CodecNotFound)
     }
 
     /// Attribute returns the value of an attribute and if it exists

@@ -13,7 +13,7 @@ use ice_candidate_pair::RTCIceCandidatePair;
 use ice_gatherer::RTCIceGatherer;
 use ice_role::RTCIceRole;
 
-use crate::webrtc::error::{flatten_errs, Error, Result};
+use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::mux::endpoint::Endpoint;
@@ -74,19 +74,6 @@ impl RTCIceTransport {
             gatherer,
             ..Default::default()
         }
-    }
-
-    /// get_selected_candidate_pair returns the selected candidate pair on which packets are sent
-    /// if there is no selected pair nil is returned
-    pub async fn get_selected_candidate_pair(&self) -> Option<RTCIceCandidatePair> {
-        if let Some(agent) = self.gatherer.get_agent().await {
-            if let Some(ice_pair) = agent.get_selected_candidate_pair().await {
-                let local = RTCIceCandidate::from(&ice_pair.local);
-                let remote = RTCIceCandidate::from(&ice_pair.remote);
-                return Some(RTCIceCandidatePair::new(local, remote));
-            }
-        }
-        None
     }
 
     /// Start incoming connectivity checks based on its configured role.
@@ -191,66 +178,12 @@ impl RTCIceTransport {
         }
     }
 
-    /// Stop irreversibly stops the ICETransport.
-    pub async fn stop(&self) -> Result<()> {
-        self.set_state(RTCIceTransportState::Closed);
-
-        let mut errs: Vec<Error> = vec![];
-        {
-            let mut internal = self.internal.lock().await;
-            internal.cancel_tx.take();
-            if let Some(mut mux) = internal.mux.take() {
-                mux.close().await;
-            }
-            if let Some(conn) = internal.conn.take() {
-                if let Err(err) = conn.close().await {
-                    errs.push(err.into());
-                }
-            }
-        }
-
-        if let Err(err) = self.gatherer.close().await {
-            errs.push(err);
-        }
-
-        flatten_errs(errs)
-    }
-
-    /// on_selected_candidate_pair_change sets a handler that is invoked when a new
-    /// ICE candidate pair is selected
-    pub async fn on_selected_candidate_pair_change(&self, f: OnSelectedCandidatePairChangeHdlrFn) {
-        let mut on_selected_candidate_pair_change_handler =
-            self.on_selected_candidate_pair_change_handler.lock().await;
-        *on_selected_candidate_pair_change_handler = Some(f);
-    }
-
     /// on_connection_state_change sets a handler that is fired when the ICE
     /// connection state changes.
     pub async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
         let mut on_connection_state_change_handler =
             self.on_connection_state_change_handler.lock().await;
         *on_connection_state_change_handler = Some(f);
-    }
-
-    /// Role indicates the current role of the ICE transport.
-    pub async fn role(&self) -> RTCIceRole {
-        let internal = self.internal.lock().await;
-        internal.role
-    }
-
-    /// set_remote_candidates sets the sequence of candidates associated with the remote ICETransport.
-    pub async fn set_remote_candidates(&self, remote_candidates: &[RTCIceCandidate]) -> Result<()> {
-        self.ensure_gatherer().await?;
-
-        if let Some(agent) = self.gatherer.get_agent().await {
-            for rc in remote_candidates {
-                let c: Arc<dyn Candidate + Send + Sync> = Arc::new(rc.to_ice().await?);
-                agent.add_remote_candidate(&c).await?;
-            }
-            Ok(())
-        } else {
-            Err(Error::ErrICEAgentNotExist)
-        }
     }
 
     /// adds a candidate associated with the remote ICETransport.
@@ -275,10 +208,6 @@ impl RTCIceTransport {
     /// State returns the current ice transport state.
     pub fn state(&self) -> RTCIceTransportState {
         RTCIceTransportState::from(self.state.load(Ordering::SeqCst))
-    }
-
-    pub fn set_state(&self, s: RTCIceTransportState) {
-        self.state.store(s as u8, Ordering::SeqCst)
     }
 
     pub async fn new_endpoint(&self, f: MatchFunc) -> Option<Arc<Endpoint>> {

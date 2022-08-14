@@ -140,19 +140,6 @@ impl RTCIceCandidate {
 
         Ok(c)
     }
-
-    /// to_json returns an ICECandidateInit
-    /// as indicated by the spec <https://w3c.github.io/webrtc-pc/#dom-rtcicecandidate-tojson>
-    pub async fn to_json(&self) -> Result<RTCIceCandidateInit> {
-        let candidate = self.to_ice().await?;
-
-        Ok(RTCIceCandidateInit {
-            candidate: format!("candidate:{}", candidate.marshal()),
-            sdp_mid: Some("".to_owned()),
-            sdp_mline_index: Some(0u16),
-            username_fragment: None,
-        })
-    }
 }
 
 impl fmt::Display for RTCIceCandidate {

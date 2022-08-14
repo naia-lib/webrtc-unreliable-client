@@ -184,11 +184,6 @@ impl DataChannel {
         }
     }
 
-    /// StreamIdentifier returns the Stream identifier associated to the stream.
-    pub fn stream_identifier(&self) -> u16 {
-        self.stream.stream_identifier()
-    }
-
     async fn handle_dcep<B>(&self, data: &mut B) -> Result<()>
     where
         B: Buf,
@@ -254,34 +249,6 @@ impl DataChannel {
             .stream
             .write_sctp(&ack, PayloadProtocolIdentifier::Dcep)
             .await?)
-    }
-
-    /// Close closes the DataChannel and the underlying SCTP stream.
-    pub async fn close(&self) -> Result<()> {
-        // https://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-13#section-6.7
-        // Closing of a data channel MUST be signaled by resetting the
-        // corresponding outgoing streams [RFC6525].  This means that if one
-        // side decides to close the data channel, it resets the corresponding
-        // outgoing stream.  When the peer sees that an incoming stream was
-        // reset, it also resets its corresponding outgoing stream.  Once this
-        // is completed, the data channel is closed.  Resetting a stream sets
-        // the Stream Sequence Numbers (SSNs) of the stream back to 'zero' with
-        // a corresponding notification to the application layer that the reset
-        // has been performed.  Streams are available for reuse after a reset
-        // has been performed.
-        Ok(self.stream.close().await?)
-    }
-
-    /// BufferedAmount returns the number of bytes of data currently queued to be
-    /// sent over this stream.
-    pub fn buffered_amount(&self) -> usize {
-        self.stream.buffered_amount()
-    }
-
-    /// BufferedAmountLowThreshold returns the number of bytes of buffered outgoing
-    /// data that is considered "low." Defaults to 0.
-    pub fn buffered_amount_low_threshold(&self) -> usize {
-        self.stream.buffered_amount_low_threshold()
     }
 
     /// SetBufferedAmountLowThreshold is used to update the threshold.

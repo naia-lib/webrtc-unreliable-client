@@ -14,7 +14,7 @@ use dtls_role::*;
 
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
-use crate::webrtc::error::{flatten_errs, Error, Result};
+use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::mux::mux_func::match_dtls;
@@ -65,12 +65,6 @@ impl RTCDtlsTransport {
         conn.clone()
     }
 
-    /// returns the currently-configured ICETransport or None
-    /// if one has not been configured
-    pub fn ice_transport(&self) -> &RTCIceTransport {
-        &self.ice_transport
-    }
-
     /// state_change requires the caller holds the lock
     async fn state_change(&self, state: RTCDtlsTransportState) {
         self.state.store(state as u8, Ordering::SeqCst);
@@ -80,37 +74,9 @@ impl RTCDtlsTransport {
         }
     }
 
-    /// on_state_change sets a handler that is fired when the DTLS
-    /// connection state changes.
-    pub async fn on_state_change(&self, f: OnDTLSTransportStateChangeHdlrFn) {
-        let mut on_state_change_handler = self.on_state_change_handler.lock().await;
-        *on_state_change_handler = Some(f);
-    }
-
     /// state returns the current dtls_transport transport state.
     pub fn state(&self) -> RTCDtlsTransportState {
         self.state.load(Ordering::SeqCst).into()
-    }
-
-    /// get_local_parameters returns the DTLS parameters of the local DTLSTransport upon construction.
-    pub fn get_local_parameters(&self) -> Result<DTLSParameters> {
-        let mut fingerprints = vec![];
-
-        for c in &self.certificates {
-            fingerprints.extend(c.get_fingerprints()?);
-        }
-
-        Ok(DTLSParameters {
-            role: DTLSRole::Auto, // always returns the default role
-            fingerprints,
-        })
-    }
-
-    /// get_remote_certificate returns the certificate chain in use by the remote side
-    /// returns an empty list prior to selection of the remote certificate
-    pub async fn get_remote_certificate(&self) -> Bytes {
-        let remote_certificate = self.remote_certificate.lock().await;
-        remote_certificate.clone()
     }
 
     async fn prepare_transport(
@@ -184,28 +150,6 @@ impl RTCDtlsTransport {
         self.state_change(RTCDtlsTransportState::Connected).await;
 
         Ok(())
-    }
-
-    /// stops and closes the DTLSTransport object.
-    pub async fn stop(&self) -> Result<()> {
-        // Try closing everything and collect the errors
-        let mut close_errs: Vec<Error> = vec![];
-
-        if let Some(conn) = self.conn().await {
-            // dtls_transport connection may be closed on sctp close.
-            match conn.close().await {
-                Ok(_) => {}
-                Err(err) => {
-                    if err.to_string() != crate::webrtc::dtls::Error::ErrConnClosed.to_string() {
-                        close_errs.push(err.into());
-                    }
-                }
-            }
-        }
-
-        self.state_change(RTCDtlsTransportState::Closed).await;
-
-        flatten_errs(close_errs)
     }
 
     pub fn ensure_ice_conn(&self) -> Result<()> {

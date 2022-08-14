@@ -25,10 +25,6 @@ pub enum Error {
     Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("utf-8 error: {0}")]
     Utf8(#[from] FromUtf8Error),
-
-    #[allow(non_camel_case_types)]
-    #[error("{0}")]
-    new(String),
 }
 
 impl From<Error> for crate::webrtc::util::Error {

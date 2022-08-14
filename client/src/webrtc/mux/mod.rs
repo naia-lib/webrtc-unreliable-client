@@ -32,17 +32,15 @@ pub struct Mux {
     id: Arc<AtomicUsize>,
     next_conn: Arc<dyn Conn + Send + Sync>,
     endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
-    closed_ch_tx: Option<mpsc::Sender<()>>,
 }
 
 impl Mux {
     pub fn new(config: Config) -> Self {
-        let (closed_ch_tx, closed_ch_rx) = mpsc::channel(1);
+        let (_closed_ch_tx, closed_ch_rx) = mpsc::channel(1);
         let m = Mux {
             id: Arc::new(AtomicUsize::new(0)),
             next_conn: Arc::clone(&config.conn),
             endpoints: Arc::new(Mutex::new(HashMap::new())),
-            closed_ch_tx: Some(closed_ch_tx),
         };
 
         let next_conn = Arc::clone(&m.next_conn);
@@ -72,14 +70,6 @@ impl Mux {
         endpoints.insert(e.id, Arc::clone(&e));
 
         e
-    }
-
-    /// Close closes the Mux and all associated Endpoints.
-    pub async fn close(&mut self) {
-        self.closed_ch_tx.take();
-
-        let mut endpoints = self.endpoints.lock().await;
-        endpoints.clear();
     }
 
     async fn read_loop(

@@ -13,16 +13,10 @@ pub enum Error {
     ErrJoiningMulticastGroup,
     #[error("mDNS: connection is closed")]
     ErrConnectionClosed,
-    #[error("mDNS: context has elapsed")]
-    ErrContextElapsed,
-    #[error("mDNS: config must not be nil")]
-    ErrNilConfig,
     #[error("parsing/packing of this type isn't available yet")]
     ErrNotStarted,
     #[error("parsing/packing of this section has completed")]
     ErrSectionDone,
-    #[error("parsing/packing of this section is header")]
-    ErrSectionHeader,
     #[error("insufficient data for base length type")]
     ErrBaseLen,
     #[error("insufficient data for calculated length type")]
@@ -35,8 +29,6 @@ pub enum Error {
     ErrInvalidPtr,
     #[error("nil resource body")]
     ErrNilResourceBody,
-    #[error("insufficient data for resource body length")]
-    ErrResourceLen,
     #[error("segment length too long")]
     ErrSegTooLong,
     #[error("zero length segment")]
@@ -57,8 +49,6 @@ pub enum Error {
     ErrStringTooLong,
     #[error("compressed name in SRV resource data")]
     ErrCompressedSrv,
-    #[error("empty builder msg")]
-    ErrEmptyBuilderMsg,
     #[error("{0}")]
     Io(#[source] IoError),
     #[error("utf-8 error: {0}")]
