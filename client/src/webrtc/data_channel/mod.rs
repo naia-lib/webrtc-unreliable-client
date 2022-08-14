@@ -37,6 +37,9 @@ pub type OnCloseHdlrFn =
 #[derive(Default)]
 pub struct RTCDataChannel {
 
+    label: String,
+    protocol: String,
+
     pub ready_state: Arc<AtomicU8>, // DataChannelState
     pub buffered_amount_low_threshold: AtomicUsize,
     pub detach_called: Arc<AtomicBool>,
@@ -64,9 +67,11 @@ pub struct RTCDataChannel {
 
 impl RTCDataChannel {
     // create the DataChannel object before the networking is set up.
-    pub fn new() -> Self {
+    pub fn new(label: &str, protocol: &str) -> Self {
 
         RTCDataChannel {
+            label: label.to_string(),
+            protocol: protocol.to_string(),
             ready_state: Arc::new(AtomicU8::new(RTCDataChannelState::Connecting as u8)),
             detach_called: Arc::new(AtomicBool::new(false)),
 
@@ -90,9 +95,8 @@ impl RTCDataChannel {
             // Do next Connor
             let cfg = crate::webrtc::data::data_channel::Config {
                 priority: crate::webrtc::data::message::message_channel_open::CHANNEL_PRIORITY_NORMAL,
-                label: "data".to_string(),
-                protocol: "".to_string(),
-                negotiated: false,
+                label: self.label.clone(),
+                protocol: self.protocol.clone(),
             };
 
             let dc = crate::webrtc::data::data_channel::DataChannel::dial(&association, 0, cfg).await?;

@@ -30,9 +30,12 @@ impl Socket {
         // create a new RTCPeerConnection
         let peer_connection = RTCPeerConnection::new().await;
 
+        let label = "data";
+        let protocol = "";
+
         // create a datachannel with label 'data'
         let data_channel = peer_connection
-            .create_data_channel()
+            .create_data_channel(label, protocol)
             .await
             .expect("cannot create data channel");
 

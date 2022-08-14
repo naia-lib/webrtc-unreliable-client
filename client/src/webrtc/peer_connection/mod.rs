@@ -956,6 +956,8 @@ impl RTCPeerConnection {
     /// underlying channel such as data reliability.
     pub async fn create_data_channel(
         &self,
+        label: &str,
+        protocol: &str,
     ) -> Result<Arc<RTCDataChannel>> {
 
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #2)
@@ -963,7 +965,7 @@ impl RTCPeerConnection {
             return Err(Error::ErrConnectionClosed);
         }
 
-        let d = Arc::new(RTCDataChannel::new());
+        let d = Arc::new(RTCDataChannel::new(label, protocol));
 
         {
             let mut data_channels = self.internal.sctp_transport.data_channels.lock().await;

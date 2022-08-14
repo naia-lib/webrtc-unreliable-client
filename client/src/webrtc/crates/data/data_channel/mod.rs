@@ -20,8 +20,6 @@ use std::sync::Arc;
 #[derive(Eq, PartialEq, Default, Clone, Debug, Builder)]
 pub struct Config {
     #[builder(default)]
-    pub negotiated: bool,
-    #[builder(default)]
     pub priority: u16,
     #[builder(default)]
     pub label: String,
@@ -66,20 +64,21 @@ impl DataChannel {
 
     /// Client opens a data channel over an SCTP stream
     pub async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
-        if !config.negotiated {
-            let msg = Message::DataChannelOpen(DataChannelOpen {
-                channel_type: ChannelType::PartialReliableRexmitUnordered,
-                priority: config.priority,
-                reliability_parameter: Some(0),
-                label: config.label.bytes().collect(),
-                protocol: config.protocol.bytes().collect(),
-            })
-            .marshal()?;
 
-            stream
-                .write_sctp(&msg, PayloadProtocolIdentifier::Dcep)
-                .await?;
-        }
+        // Do this next Connor
+        let msg = Message::DataChannelOpen(DataChannelOpen {
+            channel_type: ChannelType::PartialReliableRexmitUnordered,
+            priority: config.priority,
+            reliability_parameter: Some(0),
+            label: config.label.bytes().collect(),
+            protocol: config.protocol.bytes().collect(),
+        })
+        .marshal()?;
+
+        stream
+            .write_sctp(&msg, PayloadProtocolIdentifier::Dcep)
+            .await?;
+
         Ok(DataChannel::new(stream, config))
     }
 
