@@ -69,11 +69,6 @@ impl Default for NetworkType {
 }
 
 impl NetworkType {
-    /// Returns true when network is UDP4 or UDP6.
-    #[must_use]
-    pub fn is_udp(self) -> bool {
-        self == Self::Udp4 || self == Self::Udp6
-    }
 
     /// Returns true when network is TCP4 or TCP6.
     #[must_use]
@@ -88,15 +83,6 @@ impl NetworkType {
             Self::Udp4 | Self::Udp6 => UDP.to_owned(),
             Self::Tcp4 | Self::Tcp6 => TCP.to_owned(),
             Self::Unspecified => "Unspecified".to_owned(),
-        }
-    }
-
-    /// Returns true if the network is reliable.
-    #[must_use]
-    pub const fn is_reliable(self) -> bool {
-        match self {
-            Self::Tcp4 | Self::Tcp6 => true,
-            Self::Udp4 | Self::Udp6 | Self::Unspecified => false,
         }
     }
 
