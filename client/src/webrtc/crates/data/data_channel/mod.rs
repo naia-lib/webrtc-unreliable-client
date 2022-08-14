@@ -67,7 +67,6 @@ impl DataChannel {
         let msg = Message::DataChannelOpen(DataChannelOpen {
             label: config.label.bytes().collect(),
             protocol: config.protocol.bytes().collect(),
-            channel_type: ChannelType::PartialReliableRexmitUnordered,
             priority: CHANNEL_PRIORITY_NORMAL,
             reliability_parameter: Some(0),
         })

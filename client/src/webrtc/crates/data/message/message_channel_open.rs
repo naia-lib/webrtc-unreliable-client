@@ -3,78 +3,8 @@ use crate::webrtc::data::error::Error;
 
 type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
-const CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT_UNORDERED: u8 = 0x81;
-const CHANNEL_TYPE_LEN: usize = 1;
-
 /// ChannelPriority
 pub const CHANNEL_PRIORITY_NORMAL: u16 = 256;
-
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
-pub enum ChannelType {
-    // `PartialReliableRexmitUnordered` determines
-    //  the Data Channel provides a partial reliable unordered bi-directional communication.
-    // User messages will not be retransmitted more times than specified in the Reliability Parameter.
-    PartialReliableRexmitUnordered
-}
-
-impl Default for ChannelType {
-    fn default() -> Self {
-        Self::PartialReliableRexmitUnordered
-    }
-}
-
-impl MarshalSize for ChannelType {
-    fn marshal_size(&self) -> usize {
-        CHANNEL_TYPE_LEN
-    }
-}
-
-impl Marshal for ChannelType {
-    fn marshal_to(&self, mut buf: &mut [u8]) -> Result<usize> {
-        let required_len = self.marshal_size();
-        if buf.remaining_mut() < required_len {
-            return Err(Error::UnexpectedEndOfBuffer {
-                expected: required_len,
-                actual: buf.remaining_mut(),
-            }
-            .into());
-        }
-
-        let byte = match self {
-            Self::PartialReliableRexmitUnordered => CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT_UNORDERED,
-        };
-
-        buf.put_u8(byte);
-
-        Ok(1)
-    }
-}
-
-impl Unmarshal for ChannelType {
-    fn unmarshal<B>(buf: &mut B) -> Result<Self>
-    where
-        Self: Sized,
-        B: Buf,
-    {
-        let required_len = CHANNEL_TYPE_LEN;
-        if buf.remaining() < required_len {
-            return Err(Error::UnexpectedEndOfBuffer {
-                expected: required_len,
-                actual: buf.remaining(),
-            }
-            .into());
-        }
-
-        let b0 = buf.get_u8();
-
-        match b0 {
-            CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT_UNORDERED => {
-                Ok(Self::PartialReliableRexmitUnordered)
-            }
-            _ => Err(Error::InvalidChannelType(b0).into()),
-        }
-    }
-}
 
 const CHANNEL_OPEN_HEADER_LEN: usize = 11;
 
@@ -103,11 +33,10 @@ const CHANNEL_OPEN_HEADER_LEN: usize = 11;
 /// ```
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct DataChannelOpen {
-    pub channel_type: ChannelType,
-    pub priority: u16,
-    pub reliability_parameter: Option<u16>,
     pub label: Vec<u8>,
     pub protocol: Vec<u8>,
+    pub priority: u16,
+    pub reliability_parameter: Option<u16>,
 }
 
 impl MarshalSize for DataChannelOpen {
@@ -130,8 +59,6 @@ impl Marshal for DataChannelOpen {
             .into());
         }
 
-        let n = self.channel_type.marshal_to(buf)?;
-        buf = &mut buf[n..];
         buf.put_u16(self.priority);
 
         let has_reliability_param: u8 = match self.reliability_parameter.is_some() {
@@ -165,7 +92,6 @@ impl Unmarshal for DataChannelOpen {
             .into());
         }
 
-        let channel_type = ChannelType::unmarshal(buf)?;
         let priority = buf.get_u16();
 
         let reliability_parameter = match buf.get_u8() {
@@ -192,7 +118,6 @@ impl Unmarshal for DataChannelOpen {
         buf.copy_to_slice(&mut protocol[..]);
 
         Ok(Self {
-            channel_type,
             priority,
             reliability_parameter,
             label,
