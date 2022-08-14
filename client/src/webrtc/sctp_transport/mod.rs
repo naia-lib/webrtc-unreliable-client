@@ -21,8 +21,6 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, Notify};
 use crate::webrtc::util::Conn;
 
-const SCTP_MAX_CHANNELS: u16 = u16::MAX;
-
 pub type OnDataChannelHdlrFn = Box<
     dyn (FnMut(Arc<RTCDataChannel>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
@@ -64,10 +62,6 @@ pub struct RTCSctpTransport {
     // so we need a dedicated field
     is_started: AtomicBool,
 
-    // max_channels represents the maximum amount of DataChannel's that can
-    // be used simultaneously.
-    max_channels: u16,
-
     sctp_association: Mutex<Option<Arc<Association>>>,
 
     on_error_handler: Arc<Mutex<Option<OnErrorHdlrFn>>>,
@@ -96,7 +90,6 @@ impl RTCSctpTransport {
             dtls_transport,
             state: AtomicU8::new(RTCSctpTransportState::Connecting as u8),
             is_started: AtomicBool::new(false),
-            max_channels: SCTP_MAX_CHANNELS,
             sctp_association: Mutex::new(None),
             on_error_handler: Arc::new(Mutex::new(None)),
             on_data_channel_handler: Arc::new(Mutex::new(None)),
