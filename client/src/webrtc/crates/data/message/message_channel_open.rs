@@ -3,12 +3,7 @@ use crate::webrtc::data::error::Error;
 
 type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
-const CHANNEL_TYPE_RELIABLE: u8 = 0x00;
-const CHANNEL_TYPE_RELIABLE_UNORDERED: u8 = 0x80;
-const CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT: u8 = 0x01;
 const CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT_UNORDERED: u8 = 0x81;
-const CHANNEL_TYPE_PARTIAL_RELIABLE_TIMED: u8 = 0x02;
-const CHANNEL_TYPE_PARTIAL_RELIABLE_TIMED_UNORDERED: u8 = 0x82;
 const CHANNEL_TYPE_LEN: usize = 1;
 
 /// ChannelPriority
@@ -16,36 +11,15 @@ pub const CHANNEL_PRIORITY_NORMAL: u16 = 256;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum ChannelType {
-    // `Reliable` determines the Data Channel provides a
-    // reliable in-order bi-directional communication.
-    Reliable,
-    // `ReliableUnordered` determines the Data Channel
-    // provides a reliable unordered bi-directional communication.
-    ReliableUnordered,
-    // `PartialReliableRexmit` determines the Data Channel
-    // provides a partially-reliable in-order bi-directional communication.
-    // User messages will not be retransmitted more times than specified in the Reliability Parameter.
-    PartialReliableRexmit,
     // `PartialReliableRexmitUnordered` determines
     //  the Data Channel provides a partial reliable unordered bi-directional communication.
     // User messages will not be retransmitted more times than specified in the Reliability Parameter.
-    PartialReliableRexmitUnordered,
-    // `PartialReliableTimed` determines the Data Channel
-    // provides a partial reliable in-order bi-directional communication.
-    // User messages might not be transmitted or retransmitted after
-    // a specified life-time given in milli- seconds in the Reliability Parameter.
-    // This life-time starts when providing the user message to the protocol stack.
-    PartialReliableTimed,
-    // The Data Channel provides a partial reliable unordered bi-directional
-    // communication.  User messages might not be transmitted or retransmitted
-    // after a specified life-time given in milli- seconds in the Reliability Parameter.
-    // This life-time starts when providing the user message to the protocol stack.
-    PartialReliableTimedUnordered,
+    PartialReliableRexmitUnordered
 }
 
 impl Default for ChannelType {
     fn default() -> Self {
-        Self::Reliable
+        Self::PartialReliableRexmitUnordered
     }
 }
 
@@ -67,12 +41,7 @@ impl Marshal for ChannelType {
         }
 
         let byte = match self {
-            Self::Reliable => CHANNEL_TYPE_RELIABLE,
-            Self::ReliableUnordered => CHANNEL_TYPE_RELIABLE_UNORDERED,
-            Self::PartialReliableRexmit => CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT,
             Self::PartialReliableRexmitUnordered => CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT_UNORDERED,
-            Self::PartialReliableTimed => CHANNEL_TYPE_PARTIAL_RELIABLE_TIMED,
-            Self::PartialReliableTimedUnordered => CHANNEL_TYPE_PARTIAL_RELIABLE_TIMED_UNORDERED,
         };
 
         buf.put_u8(byte);
@@ -99,15 +68,8 @@ impl Unmarshal for ChannelType {
         let b0 = buf.get_u8();
 
         match b0 {
-            CHANNEL_TYPE_RELIABLE => Ok(Self::Reliable),
-            CHANNEL_TYPE_RELIABLE_UNORDERED => Ok(Self::ReliableUnordered),
-            CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT => Ok(Self::PartialReliableRexmit),
             CHANNEL_TYPE_PARTIAL_RELIABLE_REXMIT_UNORDERED => {
                 Ok(Self::PartialReliableRexmitUnordered)
-            }
-            CHANNEL_TYPE_PARTIAL_RELIABLE_TIMED => Ok(Self::PartialReliableTimed),
-            CHANNEL_TYPE_PARTIAL_RELIABLE_TIMED_UNORDERED => {
-                Ok(Self::PartialReliableTimedUnordered)
             }
             _ => Err(Error::InvalidChannelType(b0).into()),
         }

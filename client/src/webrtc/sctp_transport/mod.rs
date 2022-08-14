@@ -13,10 +13,7 @@ use crate::webrtc::dtls_transport::*;
 use crate::webrtc::error::*;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 
-use crate::webrtc::data::message::message_channel_open::ChannelType;
 use crate::webrtc::sctp::association::Association;
-
-use crate::webrtc::data_channel::data_channel_parameters::DataChannelParameters;
 
 use crate::webrtc::data::data_channel::DataChannel;
 use std::future::Future;
@@ -215,48 +212,7 @@ impl RTCSctpTransport {
                 }
             };
 
-            let mut max_retransmits: Option<u16> = None;
-            let mut max_packet_lifetime: Option<u16> = None;
-            let val: Option<u16> = dc.config.reliability_parameter;
-            let ordered;
-
-            match dc.config.channel_type {
-                ChannelType::Reliable => {
-                    ordered = true;
-                }
-                ChannelType::ReliableUnordered => {
-                    ordered = false;
-                }
-                ChannelType::PartialReliableRexmit => {
-                    ordered = true;
-                    max_retransmits = val;
-                }
-                ChannelType::PartialReliableRexmitUnordered => {
-                    ordered = false;
-                    max_retransmits = val;
-                }
-                ChannelType::PartialReliableTimed => {
-                    ordered = true;
-                    max_packet_lifetime = val;
-                }
-                ChannelType::PartialReliableTimedUnordered => {
-                    ordered = false;
-                    max_packet_lifetime = val;
-                }
-            };
-
-            let id = dc.stream_identifier();
-            let rtc_dc = Arc::new(RTCDataChannel::new(
-                DataChannelParameters {
-                    id: Some(id),
-                    label: dc.config.label.clone(),
-                    protocol: dc.config.protocol.clone(),
-                    negotiated: dc.config.negotiated,
-                    ordered,
-                    max_packet_life_time: max_packet_lifetime,
-                    max_retransmits,
-                }
-            ));
+            let rtc_dc = Arc::new(RTCDataChannel::new());
 
             {
                 let mut handler = param.on_data_channel_handler.lock().await;

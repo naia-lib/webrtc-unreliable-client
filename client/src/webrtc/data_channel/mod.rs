@@ -3,11 +3,9 @@ mod data_channel_test;
 
 pub mod data_channel_init;
 pub mod data_channel_message;
-pub mod data_channel_parameters;
 pub mod data_channel_state;
 
 use data_channel_message::*;
-use data_channel_parameters::*;
 
 use bytes::Bytes;
 use std::future::Future;
@@ -47,7 +45,6 @@ pub struct RTCDataChannel {
     pub setting_engine: bool,
 
     pub label: String,
-    pub ordered: bool,
     pub max_packet_lifetime: Option<u16>,
     pub max_retransmits: Option<u16>,
     pub protocol: String,
@@ -81,21 +78,14 @@ pub struct RTCDataChannel {
 
 impl RTCDataChannel {
     // create the DataChannel object before the networking is set up.
-    pub fn new(params: DataChannelParameters) -> Self {
-        let id = match params.id {
-            Some(inner) => inner,
-            None => 0,
-        };
+    pub fn new() -> Self {
 
         RTCDataChannel {
-            label: params.label,
-            protocol: params.protocol,
-            negotiated: params.negotiated,
-            has_id: AtomicBool::new(params.id.is_some()),
-            id: AtomicU16::new(id),
-            ordered: params.ordered,
-            max_packet_lifetime: params.max_packet_life_time,
-            max_retransmits: params.max_retransmits,
+            label: "data".to_string(),
+            protocol: "".to_string(),
+            negotiated: false,
+            has_id: AtomicBool::new(true),
+            id: AtomicU16::new(0),
             ready_state: Arc::new(AtomicU8::new(RTCDataChannelState::Connecting as u8)),
             detach_called: Arc::new(AtomicBool::new(false)),
 
@@ -121,28 +111,8 @@ impl RTCDataChannel {
             let channel_type;
             let reliability_parameter: Option<u16>;
 
-            if self.max_packet_lifetime.is_none() && self.max_retransmits.is_none() {
-                reliability_parameter = None;
-                if self.ordered {
-                    channel_type = ChannelType::Reliable;
-                } else {
-                    channel_type = ChannelType::ReliableUnordered;
-                }
-            } else if self.max_retransmits.is_some() {
-                reliability_parameter = self.max_retransmits;
-                if self.ordered {
-                    channel_type = ChannelType::PartialReliableRexmit;
-                } else {
-                    channel_type = ChannelType::PartialReliableRexmitUnordered;
-                }
-            } else {
-                reliability_parameter = self.max_packet_lifetime;
-                if self.ordered {
-                    channel_type = ChannelType::PartialReliableTimed;
-                } else {
-                    channel_type = ChannelType::PartialReliableTimedUnordered;
-                }
-            }
+            reliability_parameter = self.max_retransmits;
+            channel_type = ChannelType::PartialReliableRexmitUnordered;
 
             let cfg = crate::webrtc::data::data_channel::Config {
                 channel_type,
@@ -336,12 +306,6 @@ impl RTCDataChannel {
     /// allowed to create multiple DataChannel objects with the same label.
     pub fn label(&self) -> &str {
         self.label.as_str()
-    }
-
-    /// Ordered returns true if the DataChannel is ordered, and false if
-    /// out-of-order delivery is allowed.
-    pub fn ordered(&self) -> bool {
-        self.ordered
     }
 
     /// max_packet_lifetime represents the length of the time window (msec) during

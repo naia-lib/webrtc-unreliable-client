@@ -13,7 +13,6 @@ pub mod signaling_state;
 
 use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::api::API;
-use crate::webrtc::data_channel::data_channel_parameters::DataChannelParameters;
 use crate::webrtc::data_channel::data_channel_state::RTCDataChannelState;
 use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
@@ -828,10 +827,6 @@ impl RTCPeerConnection {
         }
     }
 
-    fn what_is_this(&self) {
-        let a: bool = false;
-    }
-
     /// local_description returns PendingLocalDescription if it is not null and
     /// otherwise it returns CurrentLocalDescription. This property is used to
     /// determine if set_local_description has already been called.
@@ -977,39 +972,7 @@ impl RTCPeerConnection {
             return Err(Error::ErrConnectionClosed);
         }
 
-        let mut params = DataChannelParameters {
-            label: "data".to_string(),
-            ordered: true,
-            ..Default::default()
-        };
-
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #19)
-
-        params.id = Some(0);
-
-        // Ordered indicates if data is allowed to be delivered out of order. The
-        // default value of true, guarantees that data will be delivered in order.
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #9)
-        params.ordered = false;
-
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #7)
-        params.max_packet_life_time = None;
-
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #8)
-        params.max_retransmits = Some(0);
-
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #10)
-        params.protocol = "".to_string();
-
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #11)
-        if params.protocol.len() > 65535 {
-            return Err(Error::ErrProtocolTooLarge);
-        }
-
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #12)
-        params.negotiated = false;
-
-        let d = Arc::new(RTCDataChannel::new(params));
+        let d = Arc::new(RTCDataChannel::new());
 
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #16)
         if d.max_packet_lifetime.is_some() && d.max_retransmits.is_some() {

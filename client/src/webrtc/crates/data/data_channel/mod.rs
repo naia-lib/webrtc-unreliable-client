@@ -298,12 +298,7 @@ impl DataChannel {
 
     fn commit_reliability_params(&self) {
         let (unordered, reliability_type) = match self.config.channel_type {
-            ChannelType::Reliable => (false, ReliabilityType::Reliable),
-            ChannelType::ReliableUnordered => (true, ReliabilityType::Reliable),
-            ChannelType::PartialReliableRexmit => (false, ReliabilityType::Rexmit),
             ChannelType::PartialReliableRexmitUnordered => (true, ReliabilityType::Rexmit),
-            ChannelType::PartialReliableTimed => (false, ReliabilityType::Timed),
-            ChannelType::PartialReliableTimedUnordered => (true, ReliabilityType::Timed),
         };
 
         self.stream.set_reliability_params(
