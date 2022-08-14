@@ -1725,15 +1725,6 @@ impl AssociationInternal {
             self.peer_last_tsn += 1;
         }
 
-        // Report new peer_last_tsn value and abandoned largest SSN value to
-        // corresponding streams so that the abandoned chunks can be removed
-        // from the reassemblyQueue.
-        for forwarded in &c.streams {
-            if let Some(s) = self.streams.get_mut(&forwarded.identifier) {
-                s.handle_forward_tsn_for_ordered(forwarded.sequence).await;
-            }
-        }
-
         // TSN may be forewared for unordered chunks. ForwardTSN chunk does not
         // report which stream identifier it skipped for unordered chunks.
         // Therefore, we need to broadcast this event to all existing streams for

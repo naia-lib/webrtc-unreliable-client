@@ -63,12 +63,9 @@ impl DataChannel {
     /// Client opens a data channel over an SCTP stream
     pub async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
 
-        // Do this next Connor
         let msg = Message::DataChannelOpen(DataChannelOpen {
             label: config.label.bytes().collect(),
             protocol: config.protocol.bytes().collect(),
-            priority: CHANNEL_PRIORITY_NORMAL,
-            reliability_parameter: Some(0),
         })
         .marshal()?;
 
@@ -211,10 +208,6 @@ impl DataChannel {
     }
 
     fn commit_reliability_params(&self) {
-        self.stream.set_reliability_params(
-            true,
-            ReliabilityType::Rexmit,
-            Some(0),
-        );
+        self.stream.set_reliability_params();
     }
 }

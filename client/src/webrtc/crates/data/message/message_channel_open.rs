@@ -3,9 +3,6 @@ use crate::webrtc::data::error::Error;
 
 type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
-/// ChannelPriority
-pub const CHANNEL_PRIORITY_NORMAL: u16 = 256;
-
 const CHANNEL_OPEN_HEADER_LEN: usize = 11;
 
 /// The data-part of an data-channel OPEN message without the message type.
@@ -35,8 +32,6 @@ const CHANNEL_OPEN_HEADER_LEN: usize = 11;
 pub struct DataChannelOpen {
     pub label: Vec<u8>,
     pub protocol: Vec<u8>,
-    pub priority: u16,
-    pub reliability_parameter: Option<u16>,
 }
 
 impl MarshalSize for DataChannelOpen {
@@ -57,17 +52,6 @@ impl Marshal for DataChannelOpen {
                 actual: buf.remaining_mut(),
             }
             .into());
-        }
-
-        buf.put_u16(self.priority);
-
-        let has_reliability_param: u8 = match self.reliability_parameter.is_some() {
-            false => 0,
-            true => 1,
-        };
-        buf.put_u8(has_reliability_param);
-        if let Some(value) = &self.reliability_parameter {
-            buf.put_u16(*value);
         }
 
         buf.put_u16(self.label.len() as u16);
@@ -92,13 +76,6 @@ impl Unmarshal for DataChannelOpen {
             .into());
         }
 
-        let priority = buf.get_u16();
-
-        let reliability_parameter = match buf.get_u8() {
-            1 => Some(buf.get_u16()),
-            _ => None,
-        };
-
         let label_len = buf.get_u16() as usize;
         let protocol_len = buf.get_u16() as usize;
 
@@ -118,8 +95,6 @@ impl Unmarshal for DataChannelOpen {
         buf.copy_to_slice(&mut protocol[..]);
 
         Ok(Self {
-            priority,
-            reliability_parameter,
             label,
             protocol,
         })

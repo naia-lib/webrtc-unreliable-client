@@ -297,27 +297,6 @@ impl ReassemblyQueue {
         }
     }
 
-    /// Use last_ssn to locate a chunkSet then remove it if the set has
-    /// not been complete
-    pub fn forward_tsn_for_ordered(&mut self, last_ssn: u16) {
-        let num_bytes = self
-            .ordered
-            .iter()
-            .filter(|s| sna16lte(s.ssn, last_ssn) && !s.is_complete())
-            .fold(0, |n, s| {
-                n + s.chunks.iter().fold(0, |acc, c| acc + c.user_data.len())
-            });
-        self.subtract_num_bytes(num_bytes);
-
-        self.ordered
-            .retain(|s| !sna16lte(s.ssn, last_ssn) || s.is_complete());
-
-        // Finally, forward next_ssn
-        if sna16lte(self.next_ssn, last_ssn) {
-            self.next_ssn = last_ssn + 1;
-        }
-    }
-
     /// Remove all fragments in the unordered sets that contains chunks
     /// equal to or older than `new_cumulative_tsn`.
     /// We know all sets in the r.unordered are complete ones.

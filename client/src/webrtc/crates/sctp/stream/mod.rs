@@ -77,7 +77,6 @@ pub struct Stream {
     pub sequence_number: AtomicU16,
     pub read_notifier: Notify,
     pub closed: AtomicBool,
-    pub unordered: AtomicBool,
     pub reliability_type: AtomicU8, //ReliabilityType,
     pub has_reliability_value: AtomicBool,
     pub reliability_value: AtomicU16,
@@ -99,7 +98,6 @@ impl fmt::Debug for Stream {
             .field("reassembly_queue", &self.reassembly_queue)
             .field("sequence_number", &self.sequence_number)
             .field("closed", &self.closed)
-            .field("unordered", &self.unordered)
             .field("reliability_type", &self.reliability_type)
             .field("has_reliability_value", &self.has_reliability_value)
             .field("reliability_value", &self.reliability_value)
@@ -133,7 +131,6 @@ impl Stream {
             sequence_number: AtomicU16::new(0),
             read_notifier: Notify::new(),
             closed: AtomicBool::new(false),
-            unordered: AtomicBool::new(false),
             reliability_type: AtomicU8::new(0), //ReliabilityType::Reliable,
             has_reliability_value: AtomicBool::new(false),
             reliability_value: AtomicU16::new(0),
@@ -153,21 +150,20 @@ impl Stream {
     /// set_reliability_params sets reliability parameters for this stream.
     pub fn set_reliability_params(
         &self,
-        unordered: bool,
-        rel_type: ReliabilityType,
-        rel_val: Option<u16>,
     ) {
+        // Do this next Connor
+        let rel_type = ReliabilityType::Rexmit;
+        let rel_val = Some(0);
+
         log::debug!(
-            "[{}] reliability params: ordered={} type={} value={}",
+            "[{}] reliability params: type={} value={}",
             self.name,
-            !unordered,
             rel_type,
             match rel_val {
                 Some(v) => format!("Some({v})"),
                 None => "None".to_string(),
             }
         );
-        self.unordered.store(unordered, Ordering::SeqCst);
         self.reliability_type
             .store(rel_type as u8, Ordering::SeqCst);
         if let Some(v) = rel_val {
@@ -230,29 +226,7 @@ impl Stream {
         }
     }
 
-    pub async fn handle_forward_tsn_for_ordered(&self, ssn: u16) {
-        if self.unordered.load(Ordering::SeqCst) {
-            return; // unordered chunks are handled by handleForwardUnordered method
-        }
-
-        // Remove all chunks older than or equal to the new TSN from
-        // the reassembly_queue.
-        let readable = {
-            let mut reassembly_queue = self.reassembly_queue.lock().await;
-            reassembly_queue.forward_tsn_for_ordered(ssn);
-            reassembly_queue.is_readable()
-        };
-
-        // Notify the reader asynchronously if there's a data chunk to read.
-        if readable {
-            self.read_notifier.notify_one();
-        }
-    }
-
     pub async fn handle_forward_tsn_for_unordered(&self, new_cumulative_tsn: u32) {
-        if !self.unordered.load(Ordering::SeqCst) {
-            return; // ordered chunks are handled by handleForwardTSNOrdered method
-        }
 
         // Remove all chunks older than or equal to the new TSN from
         // the reassembly_queue.
@@ -303,7 +277,7 @@ impl Stream {
         //   All Data Channel Establishment Protocol messages MUST be sent using
         //   ordered delivery and reliable transmission.
         let unordered =
-            ppi != PayloadProtocolIdentifier::Dcep && self.unordered.load(Ordering::SeqCst);
+            ppi != PayloadProtocolIdentifier::Dcep;
 
         let mut chunks = vec![];
 
