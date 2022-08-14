@@ -1,15 +1,15 @@
-pub mod addr;
-pub mod chandata;
-pub mod channum;
-pub mod data;
-pub mod dontfrag;
-pub mod evenport;
-pub mod lifetime;
-pub mod peeraddr;
-pub mod relayaddr;
-pub mod reqfamily;
-pub mod reqtrans;
-pub mod rsrvtoken;
+pub(crate) mod addr;
+pub(crate) mod chandata;
+pub(crate) mod channum;
+pub(crate) mod data;
+pub(crate) mod dontfrag;
+pub(crate) mod evenport;
+pub(crate) mod lifetime;
+pub(crate) mod peeraddr;
+pub(crate) mod relayaddr;
+pub(crate) mod reqfamily;
+pub(crate) mod reqtrans;
+pub(crate) mod rsrvtoken;
 
 use std::fmt;
 
@@ -17,11 +17,11 @@ use std::fmt;
 
 // protocol is IANA assigned protocol number.
 #[derive(PartialEq, Eq, Default, Debug, Clone, Copy)]
-pub struct Protocol(pub u8);
+pub(crate) struct Protocol(pub(crate) u8);
 
 // PROTO_UDP is IANA assigned protocol number for UDP.
-pub const PROTO_TCP: Protocol = Protocol(6);
-pub const PROTO_UDP: Protocol = Protocol(17);
+pub(crate) const PROTO_TCP: Protocol = Protocol(6);
+pub(crate) const PROTO_UDP: Protocol = Protocol(17);
 
 impl fmt::Display for Protocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -9,13 +9,13 @@ use std::fmt;
 
 /// Common helper for ICE-{CONTROLLED,CONTROLLING} and represents the so-called Tiebreaker number.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub struct TieBreaker(pub u64);
+pub(crate) struct TieBreaker(pub(crate) u64);
 
-pub const TIE_BREAKER_SIZE: usize = 8; // 64 bit
+pub(crate) const TIE_BREAKER_SIZE: usize = 8; // 64 bit
 
 impl TieBreaker {
     /// Adds Tiebreaker value to m as t attribute.
-    pub fn add_to_as(self, m: &mut Message, t: AttrType) -> Result<(), crate::webrtc::stun::Error> {
+    pub(crate) fn add_to_as(self, m: &mut Message, t: AttrType) -> Result<(), crate::webrtc::stun::Error> {
         let mut v = vec![0; TIE_BREAKER_SIZE];
         v.copy_from_slice(&(self.0 as u64).to_be_bytes());
         m.add(t, &v);
@@ -23,7 +23,7 @@ impl TieBreaker {
     }
 
     /// Decodes Tiebreaker value in message getting it as for t type.
-    pub fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<(), crate::webrtc::stun::Error> {
+    pub(crate) fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<(), crate::webrtc::stun::Error> {
         let v = m.get(t)?;
         check_size(t, v.len(), TIE_BREAKER_SIZE)?;
         self.0 = u64::from_be_bytes([v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]]);
@@ -32,7 +32,7 @@ impl TieBreaker {
 }
 /// Represents ICE-CONTROLLED attribute.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub struct AttrControlled(pub u64);
+pub(crate) struct AttrControlled(pub(crate) u64);
 
 impl Setter for AttrControlled {
     /// Adds ICE-CONTROLLED to message.
@@ -53,7 +53,7 @@ impl Getter for AttrControlled {
 
 /// Represents ICE-CONTROLLING attribute.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub struct AttrControlling(pub u64);
+pub(crate) struct AttrControlling(pub(crate) u64);
 
 impl Setter for AttrControlling {
     // add_to adds ICE-CONTROLLING to message.
@@ -74,7 +74,7 @@ impl Getter for AttrControlling {
 
 /// Helper that wraps ICE-{CONTROLLED,CONTROLLING}.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub struct AttrControl {
+pub(crate) struct AttrControl {
     role: Role,
     tie_breaker: TieBreaker,
 }
@@ -109,7 +109,7 @@ impl Getter for AttrControl {
 /// Represents ICE agent role, which can be controlling or controlled.
 /// Possible ICE agent roles.
 #[derive(PartialEq, Copy, Clone, Debug)]
-pub enum Role {
+pub(crate) enum Role {
     Controlling,
     Controlled,
     Unspecified,

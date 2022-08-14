@@ -14,8 +14,8 @@ use std::fmt;
 /// |                                                               |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone)]
-pub struct ChunkCookieEcho {
-    pub cookie: Bytes,
+pub(crate) struct ChunkCookieEcho {
+    pub(crate) cookie: Bytes,
 }
 
 /// makes ChunkCookieEcho printable

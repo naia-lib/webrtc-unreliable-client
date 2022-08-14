@@ -19,18 +19,18 @@ use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::Mutex;
 
-pub const LO0_STR: &str = "lo0";
-pub const UDP_STR: &str = "udp";
+pub(crate) const LO0_STR: &str = "lo0";
+pub(crate) const UDP_STR: &str = "udp";
 
 lazy_static! {
-    pub static ref MAC_ADDR_COUNTER: AtomicU64 = AtomicU64::new(0xBEEFED910200);
+    pub(crate) static ref MAC_ADDR_COUNTER: AtomicU64 = AtomicU64::new(0xBEEFED910200);
 }
 
 #[derive(Default)]
-pub struct VNetInternal {
-    pub interfaces: Vec<Interface>,         // read-only
-    pub router: Option<Arc<Mutex<Router>>>, // read-only
-    pub udp_conns: UdpConnMap,              // read-only
+pub(crate) struct VNetInternal {
+    pub(crate) interfaces: Vec<Interface>,         // read-only
+    pub(crate) router: Option<Arc<Mutex<Router>>>, // read-only
+    pub(crate) udp_conns: UdpConnMap,              // read-only
 }
 
 impl VNetInternal {
@@ -104,10 +104,10 @@ impl ConnObserver for VNetInternal {
 }
 
 #[derive(Default)]
-pub struct VNet {
-    pub interfaces: Vec<Interface>, // read-only
-    pub static_ips: Vec<IpAddr>,    // read-only
-    pub vi: Arc<Mutex<VNetInternal>>,
+pub(crate) struct VNet {
+    pub(crate) interfaces: Vec<Interface>, // read-only
+    pub(crate) static_ips: Vec<IpAddr>,    // read-only
+    pub(crate) vi: Arc<Mutex<VNetInternal>>,
 }
 
 #[async_trait]
@@ -172,12 +172,12 @@ impl Nic for VNet {
 }
 
 impl VNet {
-    pub fn get_interfaces(&self) -> &[Interface] {
+    pub(crate) fn get_interfaces(&self) -> &[Interface] {
         &self.interfaces
     }
 
     // caller must hold the mutex
-    pub fn get_all_ipaddrs(&self, ipv6: bool) -> Vec<IpAddr> {
+    pub(crate) fn get_all_ipaddrs(&self, ipv6: bool) -> Vec<IpAddr> {
         let mut ips = vec![];
 
         for ifc in &self.interfaces {
@@ -192,7 +192,7 @@ impl VNet {
     }
 
     // caller must hold the mutex
-    pub fn has_ipaddr(&self, ip: IpAddr) -> bool {
+    pub(crate) fn has_ipaddr(&self, ip: IpAddr) -> bool {
         for ifc in &self.interfaces {
             for ipnet in ifc.addrs() {
                 let loc_ip = ipnet.addr();
@@ -221,7 +221,7 @@ impl VNet {
     }
 
     // caller must hold the mutex
-    pub async fn allocate_local_addr(&self, ip: IpAddr, port: u16) -> Result<()> {
+    pub(crate) async fn allocate_local_addr(&self, ip: IpAddr, port: u16) -> Result<()> {
         // gather local IP addresses to bind
         let mut ips = vec![];
         if ip.is_unspecified() {
@@ -247,7 +247,7 @@ impl VNet {
     }
 
     // caller must hold the mutex
-    pub async fn assign_port(&self, ip: IpAddr, start: u16, end: u16) -> Result<u16> {
+    pub(crate) async fn assign_port(&self, ip: IpAddr, start: u16, end: u16) -> Result<u16> {
         // choose randomly from the range between start and end (inclusive)
         if end < start {
             return Err(Error::ErrEndPortLessThanStart);
@@ -266,7 +266,7 @@ impl VNet {
         Err(Error::ErrPortSpaceExhausted)
     }
 
-    pub async fn resolve_addr(&self, use_ipv4: bool, address: &str) -> Result<SocketAddr> {
+    pub(crate) async fn resolve_addr(&self, use_ipv4: bool, address: &str) -> Result<SocketAddr> {
         let v: Vec<&str> = address.splitn(2, ':').collect();
         if v.len() != 2 {
             return Err(Error::ErrAddrNotUdpAddr);
@@ -316,7 +316,7 @@ impl VNet {
     }
 
     // caller must hold the mutex
-    pub async fn bind(
+    pub(crate) async fn bind(
         &self,
         mut local_addr: SocketAddr,
     ) -> Result<Arc<dyn Conn + Send + Sync>> {
@@ -349,19 +349,19 @@ impl VNet {
 
 // NetConfig is a bag of configuration parameters passed to NewNet().
 #[derive(Debug, Default)]
-pub struct NetConfig {
+pub(crate) struct NetConfig {
     // static_ips is an array of static IP addresses to be assigned for this Net.
     // If no static IP address is given, the router will automatically assign
     // an IP address.
-    pub static_ips: Vec<String>,
+    pub(crate) static_ips: Vec<String>,
 
     // static_ip is deprecated. Use static_ips.
-    pub static_ip: String,
+    pub(crate) static_ip: String,
 }
 
 // Net represents a local network stack euivalent to a set of layers from NIC
 // up to the transport (UDP / TCP) layer.
-pub enum Net {
+pub(crate) enum Net {
     VNet(Arc<Mutex<VNet>>),
     Ifs(Vec<Interface>),
 }
@@ -373,7 +373,7 @@ impl Net {
     // By design, it always have lo0 and eth0 interfaces.
     // The lo0 has the address 127.0.0.1 assigned by default.
     // IP address for eth0 will be assigned when this Net is added to a router.
-    pub fn new(config: Option<NetConfig>) -> Self {
+    pub(crate) fn new(config: Option<NetConfig>) -> Self {
         if let Some(config) = config {
             let mut lo0 = Interface::new(LO0_STR.to_owned(), vec![]);
             if let Ok(ipnet) = Interface::convert(
@@ -439,7 +439,7 @@ impl Net {
     }
 
     // Interfaces returns a list of the system's network interfaces.
-    pub async fn get_interfaces(&self) -> Vec<Interface> {
+    pub(crate) async fn get_interfaces(&self) -> Vec<Interface> {
         match self {
             Net::VNet(vnet) => {
                 let net = vnet.lock().await;
@@ -450,14 +450,14 @@ impl Net {
     }
 
     // IsVirtual tests if the virtual network is enabled.
-    pub fn is_virtual(&self) -> bool {
+    pub(crate) fn is_virtual(&self) -> bool {
         match self {
             Net::VNet(_) => true,
             Net::Ifs(_) => false,
         }
     }
 
-    pub async fn resolve_addr(&self, use_ipv4: bool, address: &str) -> Result<SocketAddr> {
+    pub(crate) async fn resolve_addr(&self, use_ipv4: bool, address: &str) -> Result<SocketAddr> {
         match self {
             Net::VNet(vnet) => {
                 let net = vnet.lock().await;
@@ -467,7 +467,7 @@ impl Net {
         }
     }
 
-    pub async fn bind(&self, addr: SocketAddr) -> Result<Arc<dyn Conn + Send + Sync>> {
+    pub(crate) async fn bind(&self, addr: SocketAddr) -> Result<Arc<dyn Conn + Send + Sync>> {
         match self {
             Net::VNet(vnet) => {
                 let net = vnet.lock().await;

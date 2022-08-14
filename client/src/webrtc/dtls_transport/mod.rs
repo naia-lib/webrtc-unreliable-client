@@ -20,12 +20,12 @@ use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::mux::mux_func::match_dtls;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 
-pub mod dtls_fingerprint;
-pub mod dtls_parameters;
-pub mod dtls_role;
-pub mod dtls_transport_state;
+pub(crate) mod dtls_fingerprint;
+pub(crate) mod dtls_parameters;
+pub(crate) mod dtls_role;
+pub(crate) mod dtls_transport_state;
 
-pub type OnDTLSTransportStateChangeHdlrFn = Box<
+pub(crate) type OnDTLSTransportStateChangeHdlrFn = Box<
     dyn (FnMut(RTCDtlsTransportState) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
@@ -36,19 +36,19 @@ pub type OnDTLSTransportStateChangeHdlrFn = Box<
 /// RTPSender and RTPReceiver, as well other data such as SCTP packets sent
 /// and received by data channels.
 #[derive(Default)]
-pub struct RTCDtlsTransport {
-    pub ice_transport: Arc<RTCIceTransport>,
-    pub certificates: Vec<RTCCertificate>,
+pub(crate) struct RTCDtlsTransport {
+    pub(crate) ice_transport: Arc<RTCIceTransport>,
+    pub(crate) certificates: Vec<RTCCertificate>,
 
-    pub remote_parameters: Mutex<DTLSParameters>,
-    pub remote_certificate: Mutex<Bytes>,
-    pub state: AtomicU8, //DTLSTransportState,
-    pub on_state_change_handler: Arc<Mutex<Option<OnDTLSTransportStateChangeHdlrFn>>>,
-    pub conn: Mutex<Option<Arc<DTLSConn>>>,
+    pub(crate) remote_parameters: Mutex<DTLSParameters>,
+    pub(crate) remote_certificate: Mutex<Bytes>,
+    pub(crate) state: AtomicU8, //DTLSTransportState,
+    pub(crate) on_state_change_handler: Arc<Mutex<Option<OnDTLSTransportStateChangeHdlrFn>>>,
+    pub(crate) conn: Mutex<Option<Arc<DTLSConn>>>,
 }
 
 impl RTCDtlsTransport {
-    pub fn new(
+    pub(crate) fn new(
         ice_transport: Arc<RTCIceTransport>,
         certificates: Vec<RTCCertificate>,
     ) -> Self {
@@ -60,7 +60,7 @@ impl RTCDtlsTransport {
         }
     }
 
-    pub async fn conn(&self) -> Option<Arc<DTLSConn>> {
+    pub(crate) async fn conn(&self) -> Option<Arc<DTLSConn>> {
         let conn = self.conn.lock().await;
         conn.clone()
     }
@@ -75,7 +75,7 @@ impl RTCDtlsTransport {
     }
 
     /// state returns the current dtls_transport transport state.
-    pub fn state(&self) -> RTCDtlsTransportState {
+    pub(crate) fn state(&self) -> RTCDtlsTransportState {
         self.state.load(Ordering::SeqCst).into()
     }
 
@@ -114,7 +114,7 @@ impl RTCDtlsTransport {
     }
 
     /// start DTLS transport negotiation with the parameters of the remote DTLS transport
-    pub async fn start(&self, remote_parameters: DTLSParameters) -> Result<()> {
+    pub(crate) async fn start(&self, remote_parameters: DTLSParameters) -> Result<()> {
         let dtls_conn_result = if let Some(dtls_endpoint) =
             self.ice_transport.new_endpoint(Box::new(match_dtls)).await
         {
@@ -152,7 +152,7 @@ impl RTCDtlsTransport {
         Ok(())
     }
 
-    pub fn ensure_ice_conn(&self) -> Result<()> {
+    pub(crate) fn ensure_ice_conn(&self) -> Result<()> {
         if self.ice_transport.state() == RTCIceTransportState::New {
             Err(Error::ErrICEConnectionNotStarted)
         } else {

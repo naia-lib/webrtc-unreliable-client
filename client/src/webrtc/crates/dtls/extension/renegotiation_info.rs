@@ -6,22 +6,22 @@ use crate::webrtc::dtls::error::Error::ErrInvalidPacketLength;
 /// communicate their renegotation support
 /// https://tools.ietf.org/html/rfc5746
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExtensionRenegotiationInfo {
-    pub renegotiated_connection: u8,
+pub(crate) struct ExtensionRenegotiationInfo {
+    pub(crate) renegotiated_connection: u8,
 }
 
 impl ExtensionRenegotiationInfo {
     // TypeValue returns the extension TypeValue
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         ExtensionValue::RenegotiationInfo
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         3
     }
 
     /// marshal encodes the extension
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u16::<BigEndian>(1)?; //length
         writer.write_u8(self.renegotiated_connection)?;
 
@@ -29,7 +29,7 @@ impl ExtensionRenegotiationInfo {
     }
 
     /// Unmarshal populates the extension from encoded data
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let l = reader.read_u16::<BigEndian>()?; //length
         if l != 1 {
             return Err(ErrInvalidPacketLength);

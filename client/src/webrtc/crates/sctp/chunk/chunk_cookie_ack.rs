@@ -11,7 +11,7 @@ use std::fmt;
 /// |   Type = 11   |Chunk  Flags   |     Length = 4                |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Debug, Clone)]
-pub struct ChunkCookieAck;
+pub(crate) struct ChunkCookieAck;
 
 /// makes ChunkCookieAck printable
 impl fmt::Display for ChunkCookieAck {

@@ -18,17 +18,17 @@ use std::sync::Arc;
 
 /// Config is used to configure the data channel.
 #[derive(Eq, PartialEq, Default, Clone, Debug, Builder)]
-pub struct Config {
+pub(crate) struct Config {
     #[builder(default)]
-    pub label: String,
+    pub(crate) label: String,
     #[builder(default)]
-    pub protocol: String,
+    pub(crate) protocol: String,
 }
 
 /// DataChannel represents a data channel
 #[derive(Debug, Default, Clone)]
-pub struct DataChannel {
-    pub config: Config,
+pub(crate) struct DataChannel {
+    pub(crate) config: Config,
     stream: Arc<Stream>,
 
     // stats
@@ -39,7 +39,7 @@ pub struct DataChannel {
 }
 
 impl DataChannel {
-    pub fn new(stream: Arc<Stream>, config: Config) -> Self {
+    pub(crate) fn new(stream: Arc<Stream>, config: Config) -> Self {
         Self {
             config,
             stream,
@@ -48,7 +48,7 @@ impl DataChannel {
     }
 
     /// Dial opens a data channels over SCTP
-    pub async fn dial(
+    pub(crate) async fn dial(
         association: &Arc<Association>,
         identifier: u16,
         config: Config,
@@ -61,7 +61,7 @@ impl DataChannel {
     }
 
     /// Client opens a data channel over an SCTP stream
-    pub async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
+    pub(crate) async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
 
         let msg = Message::DataChannelOpen(DataChannelOpen {
             label: config.label.bytes().collect(),
@@ -77,12 +77,12 @@ impl DataChannel {
     }
 
     /// Read reads a packet of len(p) bytes as binary data
-    pub async fn read(&self, buf: &mut [u8]) -> Result<usize> {
+    pub(crate) async fn read(&self, buf: &mut [u8]) -> Result<usize> {
         self.read_data_channel(buf).await.map(|(n, _)| n)
     }
 
     /// ReadDataChannel reads a packet of len(p) bytes
-    pub async fn read_data_channel(&self, buf: &mut [u8]) -> Result<(usize, bool)> {
+    pub(crate) async fn read_data_channel(&self, buf: &mut [u8]) -> Result<(usize, bool)> {
         loop {
             //TODO: add handling of cancel read_data_channel
             let (mut n, ppi) = match self.stream.read_sctp(buf).await {
@@ -150,12 +150,12 @@ impl DataChannel {
     }
 
     /// Write writes len(p) bytes from p as binary data
-    pub async fn write(&self, data: &Bytes) -> Result<usize> {
+    pub(crate) async fn write(&self, data: &Bytes) -> Result<usize> {
         self.write_data_channel(data, false).await
     }
 
     /// WriteDataChannel writes len(p) bytes from p
-    pub async fn write_data_channel(&self, data: &Bytes, is_string: bool) -> Result<usize> {
+    pub(crate) async fn write_data_channel(&self, data: &Bytes, is_string: bool) -> Result<usize> {
         let data_len = data.len();
 
         // https://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-12#section-6.6
@@ -196,13 +196,13 @@ impl DataChannel {
 
     /// SetBufferedAmountLowThreshold is used to update the threshold.
     /// See BufferedAmountLowThreshold().
-    pub fn set_buffered_amount_low_threshold(&self, threshold: usize) {
+    pub(crate) fn set_buffered_amount_low_threshold(&self, threshold: usize) {
         self.stream.set_buffered_amount_low_threshold(threshold)
     }
 
     /// OnBufferedAmountLow sets the callback handler which would be called when the
     /// number of bytes of outgoing data buffered is lower than the threshold.
-    pub async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
+    pub(crate) async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
         self.stream.on_buffered_amount_low(f).await
     }
 }

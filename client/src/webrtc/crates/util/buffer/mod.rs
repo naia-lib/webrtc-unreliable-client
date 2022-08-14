@@ -95,13 +95,13 @@ impl BufferInternal {
 }
 
 #[derive(Debug, Clone)]
-pub struct Buffer {
+pub(crate) struct Buffer {
     buffer: Arc<Mutex<BufferInternal>>,
     notify: Arc<Notify>,
 }
 
 impl Buffer {
-    pub fn new(limit_count: usize, limit_size: usize) -> Self {
+    pub(crate) fn new(limit_count: usize, limit_size: usize) -> Self {
         Buffer {
             buffer: Arc::new(Mutex::new(BufferInternal {
                 data: vec![],
@@ -123,7 +123,7 @@ impl Buffer {
     /// Returns ErrFull if the packet doesn't fit.
     /// Note that the packet size is limited to 65536 bytes since v0.11.0
     /// due to the internal data structure.
-    pub async fn write(&self, packet: &[u8]) -> Result<usize> {
+    pub(crate) async fn write(&self, packet: &[u8]) -> Result<usize> {
         if packet.len() >= 0x10000 {
             return Err(Error::ErrPacketTooBig);
         }
@@ -187,7 +187,7 @@ impl Buffer {
     // Blocks until data is available or the buffer is closed.
     // Returns io.ErrShortBuffer is the packet is too small to copy the Write.
     // Returns io.EOF if the buffer is closed.
-    pub async fn read(&self, packet: &mut [u8], duration: Option<Duration>) -> Result<usize> {
+    pub(crate) async fn read(&self, packet: &mut [u8], duration: Option<Duration>) -> Result<usize> {
         loop {
             {
                 // use {} to let LockGuard RAII
@@ -264,7 +264,7 @@ impl Buffer {
 
     // Close will unblock any readers and prevent future writes.
     // Data in the buffer can still be read, returning io.EOF when fully depleted.
-    pub async fn close(&self) {
+    pub(crate) async fn close(&self) {
         // note: We don't use defer so we can close the notify channel after unlocking.
         // This will unblock goroutines that can grab the lock immediately, instead of blocking again.
         let mut b = self.buffer.lock().await;

@@ -1,16 +1,16 @@
-pub mod handshake_cache;
-pub mod handshake_header;
-pub mod handshake_message_certificate;
-pub mod handshake_message_certificate_request;
-pub mod handshake_message_certificate_verify;
-pub mod handshake_message_client_hello;
-pub mod handshake_message_client_key_exchange;
-pub mod handshake_message_finished;
-pub mod handshake_message_hello_verify_request;
-pub mod handshake_message_server_hello;
-pub mod handshake_message_server_hello_done;
-pub mod handshake_message_server_key_exchange;
-pub mod handshake_random;
+pub(crate) mod handshake_cache;
+pub(crate) mod handshake_header;
+pub(crate) mod handshake_message_certificate;
+pub(crate) mod handshake_message_certificate_request;
+pub(crate) mod handshake_message_certificate_verify;
+pub(crate) mod handshake_message_client_hello;
+pub(crate) mod handshake_message_client_key_exchange;
+pub(crate) mod handshake_message_finished;
+pub(crate) mod handshake_message_hello_verify_request;
+pub(crate) mod handshake_message_server_hello;
+pub(crate) mod handshake_message_server_hello_done;
+pub(crate) mod handshake_message_server_key_exchange;
+pub(crate) mod handshake_random;
 
 #[cfg(test)]
 mod handshake_test;
@@ -35,7 +35,7 @@ use handshake_message_server_key_exchange::*;
 
 // https://tools.ietf.org/html/rfc5246#section-7.4
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum HandshakeType {
+pub(crate) enum HandshakeType {
     HelloRequest = 0,
     ClientHello = 1,
     ServerHello = 2,
@@ -95,7 +95,7 @@ impl Default for HandshakeType {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub enum HandshakeMessage {
+pub(crate) enum HandshakeMessage {
     //HelloRequest(errNotImplemented),
     ClientHello(HandshakeMessageClientHello),
     ServerHello(HandshakeMessageServerHello),
@@ -110,7 +110,7 @@ pub enum HandshakeMessage {
 }
 
 impl HandshakeMessage {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         match self {
             HandshakeMessage::ClientHello(msg) => msg.handshake_type(),
             HandshakeMessage::ServerHello(msg) => msg.handshake_type(),
@@ -125,7 +125,7 @@ impl HandshakeMessage {
         }
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         match self {
             HandshakeMessage::ClientHello(msg) => msg.size(),
             HandshakeMessage::ServerHello(msg) => msg.size(),
@@ -140,7 +140,7 @@ impl HandshakeMessage {
         }
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         match self {
             HandshakeMessage::ClientHello(msg) => msg.marshal(writer)?,
             HandshakeMessage::ServerHello(msg) => msg.marshal(writer)?,
@@ -165,13 +165,13 @@ impl HandshakeMessage {
 // certificates signed by a trusted certificate authority.
 // https://tools.ietf.org/html/rfc5246#section-7.3
 #[derive(PartialEq, Debug, Clone)]
-pub struct Handshake {
-    pub handshake_header: HandshakeHeader,
-    pub handshake_message: HandshakeMessage,
+pub(crate) struct Handshake {
+    pub(crate) handshake_header: HandshakeHeader,
+    pub(crate) handshake_message: HandshakeMessage,
 }
 
 impl Handshake {
-    pub fn new(handshake_message: HandshakeMessage) -> Self {
+    pub(crate) fn new(handshake_message: HandshakeMessage) -> Self {
         Handshake {
             handshake_header: HandshakeHeader {
                 handshake_type: handshake_message.handshake_type(),
@@ -184,21 +184,21 @@ impl Handshake {
         }
     }
 
-    pub fn content_type(&self) -> ContentType {
+    pub(crate) fn content_type(&self) -> ContentType {
         ContentType::Handshake
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         self.handshake_header.size() + self.handshake_message.size()
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         self.handshake_header.marshal(writer)?;
         self.handshake_message.marshal(writer)?;
         Ok(())
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let handshake_header = HandshakeHeader::unmarshal(reader)?;
 
         let handshake_message = match handshake_header.handshake_type {

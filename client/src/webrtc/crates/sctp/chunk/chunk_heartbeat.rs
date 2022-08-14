@@ -31,8 +31,8 @@ use std::fmt;
 ///-------------------------------------------------------------
 ///heartbeat Info                       Mandatory   1
 #[derive(Default, Debug)]
-pub struct ChunkHeartbeat {
-    pub params: Vec<Box<dyn Param + Send + Sync>>,
+pub(crate) struct ChunkHeartbeat {
+    pub(crate) params: Vec<Box<dyn Param + Send + Sync>>,
 }
 
 /// makes ChunkHeartbeat printable

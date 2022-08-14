@@ -15,22 +15,22 @@ use crate::webrtc::ice_transport::ice_protocol::RTCIceProtocol;
 
 /// ICECandidate represents a ice candidate
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct RTCIceCandidate {
-    pub stats_id: String,
-    pub foundation: String,
-    pub priority: u32,
-    pub address: String,
-    pub protocol: RTCIceProtocol,
-    pub port: u16,
-    pub typ: RTCIceCandidateType,
-    pub component: u16,
-    pub related_address: String,
-    pub related_port: u16,
-    pub tcp_type: String,
+pub(crate) struct RTCIceCandidate {
+    pub(crate) stats_id: String,
+    pub(crate) foundation: String,
+    pub(crate) priority: u32,
+    pub(crate) address: String,
+    pub(crate) protocol: RTCIceProtocol,
+    pub(crate) port: u16,
+    pub(crate) typ: RTCIceCandidateType,
+    pub(crate) component: u16,
+    pub(crate) related_address: String,
+    pub(crate) related_port: u16,
+    pub(crate) tcp_type: String,
 }
 
 /// Conversion for ice_candidates
-pub fn rtc_ice_candidates_from_ice_candidates(
+pub(crate) fn rtc_ice_candidates_from_ice_candidates(
     ice_candidates: &[Arc<dyn Candidate + Send + Sync>],
 ) -> Vec<RTCIceCandidate> {
     ice_candidates.iter().map(|c| c.into()).collect()
@@ -63,7 +63,7 @@ impl From<&Arc<dyn Candidate + Send + Sync>> for RTCIceCandidate {
 }
 
 impl RTCIceCandidate {
-    pub async fn to_ice(&self) -> Result<impl Candidate> {
+    pub(crate) async fn to_ice(&self) -> Result<impl Candidate> {
         let candidate_id = self.stats_id.clone();
         let c = match self.typ {
             RTCIceCandidateType::Host => {
@@ -155,12 +155,12 @@ impl fmt::Display for RTCIceCandidate {
 /// ICECandidateInit is used to serialize ice candidates
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RTCIceCandidateInit {
-    pub candidate: String,
-    pub sdp_mid: Option<String>,
+pub(crate) struct RTCIceCandidateInit {
+    pub(crate) candidate: String,
+    pub(crate) sdp_mid: Option<String>,
     #[serde(rename = "sdpMLineIndex")]
-    pub sdp_mline_index: Option<u16>,
-    pub username_fragment: Option<String>,
+    pub(crate) sdp_mline_index: Option<u16>,
+    pub(crate) username_fragment: Option<String>,
 }
 
 #[cfg(test)]

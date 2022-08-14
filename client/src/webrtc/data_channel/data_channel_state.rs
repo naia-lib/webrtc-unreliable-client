@@ -2,7 +2,7 @@ use std::fmt;
 
 /// DataChannelState indicates the state of a data channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCDataChannelState {
+pub(crate) enum RTCDataChannelState {
     Unspecified = 0,
 
     /// DataChannelStateConnecting indicates that the data channel is being

@@ -16,8 +16,8 @@ use crate::webrtc::stun::message::*;
 //
 // RFC 5766 Section 14.7
 #[derive(Default, Debug, PartialEq)]
-pub struct RequestedTransport {
-    pub protocol: Protocol,
+pub(crate) struct RequestedTransport {
+    pub(crate) protocol: Protocol,
 }
 
 impl fmt::Display for RequestedTransport {

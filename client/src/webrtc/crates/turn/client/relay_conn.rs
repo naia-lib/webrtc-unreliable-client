@@ -30,14 +30,14 @@ use async_trait::async_trait;
 const PERM_REFRESH_INTERVAL: Duration = Duration::from_secs(120);
 const MAX_RETRY_ATTEMPTS: u16 = 3;
 
-pub struct InboundData {
-    pub data: Vec<u8>,
-    pub from: SocketAddr,
+pub(crate) struct InboundData {
+    pub(crate) data: Vec<u8>,
+    pub(crate) from: SocketAddr,
 }
 
 // UDPConnObserver is an interface to UDPConn observer
 #[async_trait]
-pub trait RelayConnObserver {
+pub(crate) trait RelayConnObserver {
     fn turn_server_addr(&self) -> String;
     fn username(&self) -> Username;
     fn realm(&self) -> Realm;
@@ -51,16 +51,16 @@ pub trait RelayConnObserver {
 }
 
 // RelayConnConfig is a set of configuration params use by NewUDPConn
-pub struct RelayConnConfig {
-    pub relayed_addr: SocketAddr,
-    pub integrity: MessageIntegrity,
-    pub nonce: Nonce,
-    pub lifetime: Duration,
-    pub binding_mgr: Arc<Mutex<BindingManager>>,
-    pub read_ch_rx: Arc<Mutex<mpsc::Receiver<InboundData>>>,
+pub(crate) struct RelayConnConfig {
+    pub(crate) relayed_addr: SocketAddr,
+    pub(crate) integrity: MessageIntegrity,
+    pub(crate) nonce: Nonce,
+    pub(crate) lifetime: Duration,
+    pub(crate) binding_mgr: Arc<Mutex<BindingManager>>,
+    pub(crate) read_ch_rx: Arc<Mutex<mpsc::Receiver<InboundData>>>,
 }
 
-pub struct RelayConnInternal<T: 'static + RelayConnObserver + Send + Sync> {
+pub(crate) struct RelayConnInternal<T: 'static + RelayConnObserver + Send + Sync> {
     obs: Arc<Mutex<T>>,
     perm_map: PermissionMap,
     binding_mgr: Arc<Mutex<BindingManager>>,
@@ -70,7 +70,7 @@ pub struct RelayConnInternal<T: 'static + RelayConnObserver + Send + Sync> {
 }
 
 // RelayConn is the implementation of the Conn interfaces for UDP Relayed network connections.
-pub struct RelayConn<T: 'static + RelayConnObserver + Send + Sync> {
+pub(crate) struct RelayConn<T: 'static + RelayConnObserver + Send + Sync> {
     relayed_addr: SocketAddr,
     read_ch_rx: Arc<Mutex<mpsc::Receiver<InboundData>>>,
     relay_conn: Arc<Mutex<RelayConnInternal<T>>>,
@@ -80,7 +80,7 @@ pub struct RelayConn<T: 'static + RelayConnObserver + Send + Sync> {
 
 impl<T: 'static + RelayConnObserver + Send + Sync> RelayConn<T> {
     // new creates a new instance of UDPConn
-    pub async fn new(obs: Arc<Mutex<T>>, config: RelayConnConfig) -> Self {
+    pub(crate) async fn new(obs: Arc<Mutex<T>>, config: RelayConnConfig) -> Self {
         log::debug!("initial lifetime: {} seconds", config.lifetime.as_secs());
 
         let c = RelayConn {
@@ -438,7 +438,7 @@ impl<T: RelayConnObserver + Send + Sync> RelayConnInternal<T> {
         Ok(())
     }
 
-    pub fn set_nonce_from_msg(&mut self, msg: &Message) {
+    pub(crate) fn set_nonce_from_msg(&mut self, msg: &Message) {
         // Update nonce
         match Nonce::get_from_as(msg, ATTR_NONCE) {
             Ok(nonce) => {
@@ -451,7 +451,7 @@ impl<T: RelayConnObserver + Send + Sync> RelayConnInternal<T> {
 
     // Close closes the connection.
     // Any blocked ReadFrom or write_to operations will be unblocked and return errors.
-    pub async fn close(&mut self) -> Result<(), Error> {
+    pub(crate) async fn close(&mut self) -> Result<(), Error> {
         self.refresh_allocation(Duration::from_secs(0), true /* dontWait=true */)
             .await
     }

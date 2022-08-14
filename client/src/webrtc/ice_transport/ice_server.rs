@@ -4,24 +4,24 @@ use crate::webrtc::ice_transport::ice_credential_type::RTCIceCredentialType;
 /// ICEServer describes a single STUN and TURN server that can be used by
 /// the ICEAgent to establish a connection with a peer.
 #[derive(Default, Debug, Clone)]
-pub struct RTCIceServer {
-    pub urls: Vec<String>,
-    pub username: String,
-    pub credential: String,
-    pub credential_type: RTCIceCredentialType,
+pub(crate) struct RTCIceServer {
+    pub(crate) urls: Vec<String>,
+    pub(crate) username: String,
+    pub(crate) credential: String,
+    pub(crate) credential_type: RTCIceCredentialType,
 }
 
 impl RTCIceServer {
-    pub fn parse_url(&self, url_str: &str) -> Result<crate::webrtc::ice::url::Url> {
+    pub(crate) fn parse_url(&self, url_str: &str) -> Result<crate::webrtc::ice::url::Url> {
         Ok(crate::webrtc::ice::url::Url::parse_url(url_str)?)
     }
 
-    pub fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         self.urls()?;
         Ok(())
     }
 
-    pub fn urls(&self) -> Result<Vec<crate::webrtc::ice::url::Url>> {
+    pub(crate) fn urls(&self) -> Result<Vec<crate::webrtc::ice::url::Url>> {
         let mut urls = vec![];
 
         for url_str in &self.urls {

@@ -7,11 +7,11 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 /// Endpoint implements net.Conn. It is used to read muxed packets.
-pub struct Endpoint {
-    pub id: usize,
-    pub buffer: Buffer,
-    pub match_fn: MatchFunc,
-    pub next_conn: Arc<dyn Conn + Send + Sync>,
+pub(crate) struct Endpoint {
+    pub(crate) id: usize,
+    pub(crate) buffer: Buffer,
+    pub(crate) match_fn: MatchFunc,
+    pub(crate) next_conn: Arc<dyn Conn + Send + Sync>,
 }
 
 type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;

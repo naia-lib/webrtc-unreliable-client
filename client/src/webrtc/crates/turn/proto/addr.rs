@@ -7,7 +7,7 @@ use std::net::{IpAddr, Ipv4Addr};
 
 // Addr is ip:port.
 #[derive(PartialEq, Eq, Debug)]
-pub struct Addr {
+pub(crate) struct Addr {
     ip: IpAddr,
     port: u16,
 }
@@ -29,10 +29,10 @@ impl fmt::Display for Addr {
 
 // FiveTuple represents 5-TUPLE value.
 #[derive(PartialEq, Eq, Default)]
-pub struct FiveTuple {
-    pub client: Addr,
-    pub server: Addr,
-    pub proto: Protocol,
+pub(crate) struct FiveTuple {
+    pub(crate) client: Addr,
+    pub(crate) server: Addr,
+    pub(crate) proto: Protocol,
 }
 
 impl fmt::Display for FiveTuple {

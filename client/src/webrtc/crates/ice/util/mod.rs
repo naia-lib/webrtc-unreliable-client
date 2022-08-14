@@ -12,7 +12,7 @@ use crate::webrtc::stun::{agent::*, attributes::*, integrity::*, message::*, tex
 use tokio::time::Duration;
 use crate::webrtc::util::{vnet::net::*, Conn};
 
-pub fn create_addr(_network: NetworkType, ip: IpAddr, port: u16) -> SocketAddr {
+pub(crate) fn create_addr(_network: NetworkType, ip: IpAddr, port: u16) -> SocketAddr {
     /*if network.is_tcp(){
         return &net.TCPAddr{IP: ip, Port: port}
     default:
@@ -21,7 +21,7 @@ pub fn create_addr(_network: NetworkType, ip: IpAddr, port: u16) -> SocketAddr {
     SocketAddr::new(ip, port)
 }
 
-pub fn assert_inbound_username(m: &Message, expected_username: &str) -> Result<()> {
+pub(crate) fn assert_inbound_username(m: &Message, expected_username: &str) -> Result<()> {
     let mut username = Username::new(ATTR_USERNAME, String::new());
     username.get_from(m)?;
 
@@ -37,7 +37,7 @@ pub fn assert_inbound_username(m: &Message, expected_username: &str) -> Result<(
     Ok(())
 }
 
-pub fn assert_inbound_message_integrity(m: &mut Message, key: &[u8]) -> Result<()> {
+pub(crate) fn assert_inbound_message_integrity(m: &mut Message, key: &[u8]) -> Result<()> {
     let message_integrity_attr = MessageIntegrity(key.to_vec());
     Ok(message_integrity_attr.check(m)?)
 }
@@ -45,7 +45,7 @@ pub fn assert_inbound_message_integrity(m: &mut Message, key: &[u8]) -> Result<(
 /// Initiates a stun requests to `server_addr` using conn, reads the response and returns the
 /// `XORMappedAddress` returned by the stun server.
 /// Adapted from stun v0.2.
-pub async fn get_xormapped_addr(
+pub(crate) async fn get_xormapped_addr(
     conn: &Arc<dyn Conn + Send + Sync>,
     server_addr: SocketAddr,
     deadline: Duration,
@@ -58,7 +58,7 @@ pub async fn get_xormapped_addr(
 
 const MAX_MESSAGE_SIZE: usize = 1280;
 
-pub async fn stun_request(
+pub(crate) async fn stun_request(
     conn: &Arc<dyn Conn + Send + Sync>,
     server_addr: SocketAddr,
     deadline: Duration,
@@ -87,7 +87,7 @@ pub async fn stun_request(
     Ok(res)
 }
 
-pub async fn local_interfaces(
+pub(crate) async fn local_interfaces(
     vnet: &Arc<Net>,
     interface_filter: &Option<InterfaceFilterFn>,
     network_types: &[NetworkType],
@@ -125,7 +125,7 @@ pub async fn local_interfaces(
     ips
 }
 
-pub async fn listen_udp_in_port_range(
+pub(crate) async fn listen_udp_in_port_range(
     vnet: &Arc<Net>,
     port_max: u16,
     port_min: u16,

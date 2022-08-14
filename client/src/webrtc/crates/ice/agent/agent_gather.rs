@@ -19,19 +19,19 @@ use waitgroup::WaitGroup;
 
 const STUN_GATHER_TIMEOUT: Duration = Duration::from_secs(5);
 
-pub struct GatherCandidatesInternalParams {
-    pub udp_network: UDPNetwork,
-    pub candidate_types: Vec<CandidateType>,
-    pub urls: Vec<Url>,
-    pub network_types: Vec<NetworkType>,
-    pub mdns_mode: MulticastDnsMode,
-    pub mdns_name: String,
-    pub net: Arc<Net>,
-    pub interface_filter: Arc<Option<InterfaceFilterFn>>,
-    pub ext_ip_mapper: Arc<Option<ExternalIpMapper>>,
-    pub agent_internal: Arc<AgentInternal>,
-    pub gathering_state: Arc<AtomicU8>,
-    pub chan_candidate_tx: ChanCandidateTx,
+pub(crate) struct GatherCandidatesInternalParams {
+    pub(crate) udp_network: UDPNetwork,
+    pub(crate) candidate_types: Vec<CandidateType>,
+    pub(crate) urls: Vec<Url>,
+    pub(crate) network_types: Vec<NetworkType>,
+    pub(crate) mdns_mode: MulticastDnsMode,
+    pub(crate) mdns_name: String,
+    pub(crate) net: Arc<Net>,
+    pub(crate) interface_filter: Arc<Option<InterfaceFilterFn>>,
+    pub(crate) ext_ip_mapper: Arc<Option<ExternalIpMapper>>,
+    pub(crate) agent_internal: Arc<AgentInternal>,
+    pub(crate) gathering_state: Arc<AtomicU8>,
+    pub(crate) chan_candidate_tx: ChanCandidateTx,
 }
 
 struct GatherCandidatesLocalParams {
@@ -64,7 +64,7 @@ struct GatherCandidatesSrflxParams {
 }
 
 impl Agent {
-    pub async fn gather_candidates_internal(params: GatherCandidatesInternalParams) {
+    pub(crate) async fn gather_candidates_internal(params: GatherCandidatesInternalParams) {
         Self::set_gathering_state(
             &params.chan_candidate_tx,
             &params.gathering_state,
@@ -586,7 +586,7 @@ impl Agent {
         wg.wait().await;
     }
 
-    pub async fn gather_candidates_relay(
+    pub(crate) async fn gather_candidates_relay(
         urls: Vec<Url>,
         net: Arc<Net>,
         agent_internal: Arc<AgentInternal>,

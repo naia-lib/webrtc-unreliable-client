@@ -6,7 +6,7 @@ use crate::webrtc::stun::message::*;
 
 // DontFragmentAttr represents DONT-FRAGMENT attribute.
 #[derive(Debug, Default, PartialEq)]
-pub struct DontFragmentAttr;
+pub(crate) struct DontFragmentAttr;
 
 impl Setter for DontFragmentAttr {
     // AddTo adds DONT-FRAGMENT attribute to message.

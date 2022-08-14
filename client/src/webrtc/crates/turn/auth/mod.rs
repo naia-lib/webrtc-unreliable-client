@@ -9,7 +9,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use md5::{Digest, Md5};
 use ring::hmac;
 
-pub trait AuthHandler {
+pub(crate) trait AuthHandler {
     fn auth_handle(&self, username: &str, realm: &str, src_addr: SocketAddr) -> Result<Vec<u8>>;
 }
 
@@ -23,7 +23,7 @@ fn long_term_credentials(username: &str, shared_secret: &str) -> String {
 }
 
 // generate_auth_key is a convenience function to easily generate keys in the format used by AuthHandler
-pub fn generate_auth_key(username: &str, realm: &str, password: &str) -> Vec<u8> {
+pub(crate) fn generate_auth_key(username: &str, realm: &str, password: &str) -> Vec<u8> {
     let s = format!("{}:{}:{}", username, realm, password);
 
     let mut h = Md5::new();
@@ -31,7 +31,7 @@ pub fn generate_auth_key(username: &str, realm: &str, password: &str) -> Vec<u8>
     h.finalize().as_slice().to_vec()
 }
 
-pub struct LongTermAuthHandler {
+pub(crate) struct LongTermAuthHandler {
     shared_secret: String,
 }
 

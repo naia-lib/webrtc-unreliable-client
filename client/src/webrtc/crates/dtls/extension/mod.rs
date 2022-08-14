@@ -1,10 +1,10 @@
-pub mod extension_server_name;
-pub mod extension_supported_elliptic_curves;
-pub mod extension_supported_point_formats;
-pub mod extension_supported_signature_algorithms;
-pub mod extension_use_extended_master_secret;
-pub mod extension_use_srtp;
-pub mod renegotiation_info;
+pub(crate) mod extension_server_name;
+pub(crate) mod extension_supported_elliptic_curves;
+pub(crate) mod extension_supported_point_formats;
+pub(crate) mod extension_supported_signature_algorithms;
+pub(crate) mod extension_use_extended_master_secret;
+pub(crate) mod extension_use_srtp;
+pub(crate) mod renegotiation_info;
 
 use extension_server_name::*;
 use extension_supported_elliptic_curves::*;
@@ -21,7 +21,7 @@ use std::io::{Read, Write};
 
 // https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
 #[derive(Clone, Debug, PartialEq)]
-pub enum ExtensionValue {
+pub(crate) enum ExtensionValue {
     ServerName = 0,
     SupportedEllipticCurves = 10,
     SupportedPointFormats = 11,
@@ -48,7 +48,7 @@ impl From<u16> for ExtensionValue {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub enum Extension {
+pub(crate) enum Extension {
     ServerName(ExtensionServerName),
     SupportedEllipticCurves(ExtensionSupportedEllipticCurves),
     SupportedPointFormats(ExtensionSupportedPointFormats),
@@ -59,7 +59,7 @@ pub enum Extension {
 }
 
 impl Extension {
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         match self {
             Extension::ServerName(ext) => ext.extension_value(),
             Extension::SupportedEllipticCurves(ext) => ext.extension_value(),
@@ -71,7 +71,7 @@ impl Extension {
         }
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         let mut len = 2;
 
         len += match self {
@@ -87,7 +87,7 @@ impl Extension {
         len
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u16::<BigEndian>(self.extension_value() as u16)?;
         match self {
             Extension::ServerName(ext) => ext.marshal(writer),
@@ -100,7 +100,7 @@ impl Extension {
         }
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let extension_value: ExtensionValue = reader.read_u16::<BigEndian>()?.into();
         match extension_value {
             ExtensionValue::ServerName => Ok(Extension::ServerName(

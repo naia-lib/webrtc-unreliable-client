@@ -1,14 +1,14 @@
-pub mod exact_size_buf;
+pub(crate) mod exact_size_buf;
 
 use bytes::{Buf, Bytes, BytesMut};
 
 use crate::webrtc::util::error::{Error, Result};
 
-pub trait MarshalSize {
+pub(crate) trait MarshalSize {
     fn marshal_size(&self) -> usize;
 }
 
-pub trait Marshal: MarshalSize {
+pub(crate) trait Marshal: MarshalSize {
     fn marshal_to(&self, buf: &mut [u8]) -> Result<usize>;
 
     fn marshal(&self) -> Result<Bytes> {
@@ -27,7 +27,7 @@ pub trait Marshal: MarshalSize {
     }
 }
 
-pub trait Unmarshal: MarshalSize {
+pub(crate) trait Unmarshal: MarshalSize {
     fn unmarshal<B>(buf: &mut B) -> Result<Self>
     where
         Self: Sized,

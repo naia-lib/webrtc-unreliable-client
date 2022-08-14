@@ -16,7 +16,7 @@ use crate::webrtc::stun::message::*;
 //
 // RFC 5766 Section 14.9
 #[derive(Debug, Default, PartialEq)]
-pub struct ReservationToken(pub Vec<u8>);
+pub(crate) struct ReservationToken(pub(crate) Vec<u8>);
 
 const RESERVATION_TOKEN_SIZE: usize = 8; // 8 bytes
 

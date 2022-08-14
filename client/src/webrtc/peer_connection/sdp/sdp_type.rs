@@ -3,7 +3,7 @@ use std::fmt;
 
 /// SDPType describes the type of an SessionDescription.
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCSdpType {
+pub(crate) enum RTCSdpType {
     Unspecified = 0,
 
     /// indicates that a description MUST be treated as an SDP offer.

@@ -4,7 +4,7 @@ use std::fmt;
 
 /// ICECandidateType represents the type of the ICE candidate used.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
-pub enum RTCIceCandidateType {
+pub(crate) enum RTCIceCandidateType {
     Unspecified,
 
     /// ICECandidateTypeHost indicates that the candidate is of Host type as

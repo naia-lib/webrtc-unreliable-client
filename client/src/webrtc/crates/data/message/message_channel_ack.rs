@@ -14,7 +14,7 @@ type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 ///+-+-+-+-+-+-+-+-+
 /// ```
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct DataChannelAck;
+pub(crate) struct DataChannelAck;
 
 impl MarshalSize for DataChannelAck {
     fn marshal_size(&self) -> usize {

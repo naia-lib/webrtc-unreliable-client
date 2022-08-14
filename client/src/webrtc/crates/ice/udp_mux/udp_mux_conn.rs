@@ -18,19 +18,19 @@ fn make_buffer() -> Vec<u8> {
     vec![0u8; RECEIVE_MTU + MAX_ADDR_SIZE + 2 + 2]
 }
 
-pub struct UDPMuxConnParams {
-    pub local_addr: SocketAddr,
+pub(crate) struct UDPMuxConnParams {
+    pub(crate) local_addr: SocketAddr,
 
-    pub key: String,
+    pub(crate) key: String,
 
     // NOTE: This Arc exists in both directions which is liable to cause a retain cycle. This is
     // accounted for in [`UDPMuxDefault::close`], which makes sure to drop all Arcs referencing any
     // `UDPMuxConn`.
-    pub udp_mux: Arc<UDPMuxDefault>,
+    pub(crate) udp_mux: Arc<UDPMuxDefault>,
 }
 
 struct UDPMuxConnInner {
-    pub params: UDPMuxConnParams,
+    pub(crate) params: UDPMuxConnParams,
 
     /// Close Sender. We'll send a value on this channel when we close
     closed_watch_tx: Mutex<Option<watch::Sender<bool>>>,
@@ -116,27 +116,27 @@ impl UDPMuxConnInner {
     }
 
     // Address related methods
-    pub fn get_addresses(&self) -> Vec<SocketAddr> {
+    pub(crate) fn get_addresses(&self) -> Vec<SocketAddr> {
         let addresses = self.addresses.lock();
 
         addresses.iter().cloned().collect()
     }
 
-    pub fn add_address(self: &Arc<Self>, addr: SocketAddr) {
+    pub(crate) fn add_address(self: &Arc<Self>, addr: SocketAddr) {
         {
             let mut addresses = self.addresses.lock();
             addresses.insert(addr);
         }
     }
 
-    pub fn remove_address(&self, addr: &SocketAddr) {
+    pub(crate) fn remove_address(&self, addr: &SocketAddr) {
         {
             let mut addresses = self.addresses.lock();
             addresses.remove(addr);
         }
     }
 
-    pub fn contains_address(&self, addr: &SocketAddr) -> bool {
+    pub(crate) fn contains_address(&self, addr: &SocketAddr) -> bool {
         let addresses = self.addresses.lock();
 
         addresses.contains(addr)
@@ -144,7 +144,7 @@ impl UDPMuxConnInner {
 }
 
 #[derive(Clone)]
-pub struct UDPMuxConn {
+pub(crate) struct UDPMuxConn {
     /// Close Receiver. A copy of this can be obtained via [`close_tx`].
     closed_watch_rx: watch::Receiver<bool>,
 
@@ -152,7 +152,7 @@ pub struct UDPMuxConn {
 }
 
 impl UDPMuxConn {
-    pub fn new(params: UDPMuxConnParams) -> Self {
+    pub(crate) fn new(params: UDPMuxConnParams) -> Self {
         let (closed_watch_tx, closed_watch_rx) = watch::channel(false);
 
         Self {
@@ -166,26 +166,26 @@ impl UDPMuxConn {
         }
     }
 
-    pub fn key(&self) -> &str {
+    pub(crate) fn key(&self) -> &str {
         &self.inner.params.key
     }
 
     /// Get a copy of the close [`tokio::sync::watch::Receiver`] that fires when this
     /// connection is closed.
-    pub fn close_rx(&self) -> watch::Receiver<bool> {
+    pub(crate) fn close_rx(&self) -> watch::Receiver<bool> {
         self.closed_watch_rx.clone()
     }
 
     /// Close this connection
-    pub fn close(&self) {
+    pub(crate) fn close(&self) {
         self.inner.close();
     }
 
-    pub fn get_addresses(&self) -> Vec<SocketAddr> {
+    pub(crate) fn get_addresses(&self) -> Vec<SocketAddr> {
         self.inner.get_addresses()
     }
 
-    pub async fn add_address(&self, addr: SocketAddr) {
+    pub(crate) async fn add_address(&self, addr: SocketAddr) {
         self.inner.add_address(addr);
         self.inner
             .params
@@ -194,11 +194,11 @@ impl UDPMuxConn {
             .await;
     }
 
-    pub fn remove_address(&self, addr: &SocketAddr) {
+    pub(crate) fn remove_address(&self, addr: &SocketAddr) {
         self.inner.remove_address(addr)
     }
 
-    pub fn contains_address(&self, addr: &SocketAddr) -> bool {
+    pub(crate) fn contains_address(&self, addr: &SocketAddr) -> bool {
         self.inner.contains_address(addr)
     }
 }

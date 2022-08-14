@@ -3,7 +3,7 @@ use std::fmt;
 
 /// ICETransportState represents the current state of the ICE transport.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceTransportState {
+pub(crate) enum RTCIceTransportState {
     Unspecified,
 
     /// ICETransportStateNew indicates the ICETransport is waiting

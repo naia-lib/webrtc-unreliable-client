@@ -5,8 +5,8 @@ use rand::Rng;
 use std::fmt;
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamStateCookie {
-    pub cookie: Bytes,
+pub(crate) struct ParamStateCookie {
+    pub(crate) cookie: Bytes,
 }
 
 /// String makes paramStateCookie printable
@@ -50,7 +50,7 @@ impl Param for ParamStateCookie {
 }
 
 impl ParamStateCookie {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let mut cookie = BytesMut::new();
         cookie.resize(32, 0);
         rand::thread_rng().fill(cookie.as_mut());

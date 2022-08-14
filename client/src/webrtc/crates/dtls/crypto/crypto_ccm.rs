@@ -32,7 +32,7 @@ type AesCcm8 = Ccm<Aes128, U8, U12>;
 type AesCcm = Ccm<Aes128, U16, U12>;
 
 #[derive(Clone)]
-pub enum CryptoCcmTagLen {
+pub(crate) enum CryptoCcmTagLen {
     CryptoCcm8TagLength,
     CryptoCcmTagLength,
 }
@@ -43,7 +43,7 @@ enum CryptoCcmType {
 }
 
 // State needed to handle encrypted input/output
-pub struct CryptoCcm {
+pub(crate) struct CryptoCcm {
     local_ccm: CryptoCcmType,
     remote_ccm: CryptoCcmType,
     local_write_iv: Vec<u8>,
@@ -75,7 +75,7 @@ impl Clone for CryptoCcm {
 }
 
 impl CryptoCcm {
-    pub fn new(
+    pub(crate) fn new(
         tag_len: &CryptoCcmTagLen,
         local_key: &[u8],
         local_write_iv: &[u8],
@@ -104,7 +104,7 @@ impl CryptoCcm {
         }
     }
 
-    pub fn encrypt(&self, pkt_rlh: &RecordLayerHeader, raw: &[u8]) -> Result<Vec<u8>> {
+    pub(crate) fn encrypt(&self, pkt_rlh: &RecordLayerHeader, raw: &[u8]) -> Result<Vec<u8>> {
         let payload = &raw[RECORD_LAYER_HEADER_SIZE..];
         let raw = &raw[..RECORD_LAYER_HEADER_SIZE];
 
@@ -143,7 +143,7 @@ impl CryptoCcm {
         Ok(r)
     }
 
-    pub fn decrypt(&self, r: &[u8]) -> Result<Vec<u8>> {
+    pub(crate) fn decrypt(&self, r: &[u8]) -> Result<Vec<u8>> {
         let mut reader = Cursor::new(r);
         let h = RecordLayerHeader::unmarshal(&mut reader)?;
         if h.content_type == ContentType::ChangeCipherSpec {

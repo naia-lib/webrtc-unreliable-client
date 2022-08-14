@@ -2,7 +2,7 @@ use std::fmt;
 
 /// RTCIceConnectionState indicates signaling state of the ICE Connection.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceConnectionState {
+pub(crate) enum RTCIceConnectionState {
     Unspecified,
 
     /// ICEConnectionStateNew indicates that any of the ICETransports are

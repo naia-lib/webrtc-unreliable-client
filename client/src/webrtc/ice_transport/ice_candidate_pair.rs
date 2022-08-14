@@ -5,7 +5,7 @@ use std::fmt;
 
 /// ICECandidatePair represents an ICE Candidate pair
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct RTCIceCandidatePair {
+pub(crate) struct RTCIceCandidatePair {
     stats_id: String,
     local:  RTCIceCandidate,
     remote: RTCIceCandidate,
@@ -24,7 +24,7 @@ impl RTCIceCandidatePair {
 
     /// returns an initialized ICECandidatePair
     /// for the given pair of ICECandidate instances
-    pub fn new(local: RTCIceCandidate, remote: RTCIceCandidate) -> Self {
+    pub(crate) fn new(local: RTCIceCandidate, remote: RTCIceCandidate) -> Self {
         let stats_id = Self::stats_id(&local.stats_id, &remote.stats_id);
         RTCIceCandidatePair {
             stats_id,

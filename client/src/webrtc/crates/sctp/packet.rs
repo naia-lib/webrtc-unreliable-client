@@ -53,11 +53,11 @@ use std::fmt;
 ///|                           Checksum                            |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug)]
-pub struct Packet {
-    pub source_port: u16,
-    pub destination_port: u16,
-    pub verification_tag: u32,
-    pub chunks: Vec<Box<dyn Chunk + Send + Sync>>,
+pub(crate) struct Packet {
+    pub(crate) source_port: u16,
+    pub(crate) destination_port: u16,
+    pub(crate) verification_tag: u32,
+    pub(crate) chunks: Vec<Box<dyn Chunk + Send + Sync>>,
 }
 
 /// makes packet printable
@@ -78,10 +78,10 @@ impl fmt::Display for Packet {
     }
 }
 
-pub const PACKET_HEADER_SIZE: usize = 12;
+pub(crate) const PACKET_HEADER_SIZE: usize = 12;
 
 impl Packet {
-    pub fn unmarshal(raw: &Bytes) -> Result<Self> {
+    pub(crate) fn unmarshal(raw: &Bytes) -> Result<Self> {
         if raw.len() < PACKET_HEADER_SIZE {
             return Err(Error::ErrPacketRawTooSmall);
         }
@@ -142,7 +142,7 @@ impl Packet {
         })
     }
 
-    pub fn marshal_to(&self, writer: &mut BytesMut) -> Result<usize> {
+    pub(crate) fn marshal_to(&self, writer: &mut BytesMut) -> Result<usize> {
         // Populate static headers
         // 8-12 is Checksum which will be populated when packet is complete
         writer.put_u16(self.source_port);
@@ -177,7 +177,7 @@ impl Packet {
         Ok(writer.len())
     }
 
-    pub fn marshal(&self) -> Result<Bytes> {
+    pub(crate) fn marshal(&self) -> Result<Bytes> {
         let mut buf = BytesMut::with_capacity(PACKET_HEADER_SIZE);
         self.marshal_to(&mut buf)?;
         Ok(buf.freeze())
@@ -185,7 +185,7 @@ impl Packet {
 }
 
 impl Packet {
-    pub fn check_packet(&self) -> Result<()> {
+    pub(crate) fn check_packet(&self) -> Result<()> {
         // All packets must adhere to these rules
 
         // This is the SCTP sender's port number.  It can be used by the

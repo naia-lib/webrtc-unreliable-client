@@ -9,7 +9,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum TimerIdRefresh {
+pub(crate) enum TimerIdRefresh {
     Alloc,
     Perms,
 }
@@ -22,13 +22,13 @@ impl Default for TimerIdRefresh {
 
 // PeriodicTimerTimeoutHandler is a handler called on timeout
 #[async_trait]
-pub trait PeriodicTimerTimeoutHandler {
+pub(crate) trait PeriodicTimerTimeoutHandler {
     async fn on_timeout(&mut self, id: TimerIdRefresh);
 }
 
 // PeriodicTimer is a periodic timer
 #[derive(Default)]
-pub struct PeriodicTimer {
+pub(crate) struct PeriodicTimer {
     id: TimerIdRefresh,
     interval: Duration,
     close_tx: Mutex<Option<mpsc::Sender<()>>>,
@@ -36,7 +36,7 @@ pub struct PeriodicTimer {
 
 impl PeriodicTimer {
     // create a new timer
-    pub fn new(id: TimerIdRefresh, interval: Duration) -> Self {
+    pub(crate) fn new(id: TimerIdRefresh, interval: Duration) -> Self {
         PeriodicTimer {
             id,
             interval,
@@ -45,7 +45,7 @@ impl PeriodicTimer {
     }
 
     // Start starts the timer.
-    pub async fn start<T: 'static + PeriodicTimerTimeoutHandler + std::marker::Send>(
+    pub(crate) async fn start<T: 'static + PeriodicTimerTimeoutHandler + std::marker::Send>(
         &self,
         timeout_handler: Arc<Mutex<T>>,
     ) -> bool {
@@ -85,7 +85,7 @@ impl PeriodicTimer {
     }
 
     // Stop stops the timer.
-    pub async fn stop(&self) {
+    pub(crate) async fn stop(&self) {
         let mut close_tx = self.close_tx.lock().await;
         close_tx.take();
     }

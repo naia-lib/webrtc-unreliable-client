@@ -1,17 +1,17 @@
 
 #[derive(Default, Clone)]
-pub struct EphemeralUDP {
+pub(crate) struct EphemeralUDP {
     port_min: u16,
     port_max: u16,
 }
 
 impl EphemeralUDP {
 
-    pub fn port_min(&self) -> u16 {
+    pub(crate) fn port_min(&self) -> u16 {
         self.port_min
     }
 
-    pub fn port_max(&self) -> u16 {
+    pub(crate) fn port_max(&self) -> u16 {
         self.port_max
     }
 }
@@ -30,7 +30,7 @@ impl EphemeralUDP {
 /// In muxed mode a single UDP socket is used and all connections are muxed over this single socket.
 ///
 #[derive(Clone)]
-pub enum UDPNetwork {
+pub(crate) enum UDPNetwork {
     Ephemeral(EphemeralUDP),
 }
 

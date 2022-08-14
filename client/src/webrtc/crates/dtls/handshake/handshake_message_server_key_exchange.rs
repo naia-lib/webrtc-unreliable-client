@@ -11,22 +11,22 @@ use std::io::{Read, Write};
 
 // Structure supports ECDH and PSK
 #[derive(Clone, Debug, PartialEq)]
-pub struct HandshakeMessageServerKeyExchange {
-    pub identity_hint: Vec<u8>,
+pub(crate) struct HandshakeMessageServerKeyExchange {
+    pub(crate) identity_hint: Vec<u8>,
 
-    pub elliptic_curve_type: EllipticCurveType,
-    pub named_curve: NamedCurve,
-    pub public_key: Vec<u8>,
-    pub algorithm: SignatureHashAlgorithm,
-    pub signature: Vec<u8>,
+    pub(crate) elliptic_curve_type: EllipticCurveType,
+    pub(crate) named_curve: NamedCurve,
+    pub(crate) public_key: Vec<u8>,
+    pub(crate) algorithm: SignatureHashAlgorithm,
+    pub(crate) signature: Vec<u8>,
 }
 
 impl HandshakeMessageServerKeyExchange {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::ServerKeyExchange
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         if !self.identity_hint.is_empty() {
             2 + self.identity_hint.len()
         } else {
@@ -34,7 +34,7 @@ impl HandshakeMessageServerKeyExchange {
         }
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         if !self.identity_hint.is_empty() {
             writer.write_u16::<BigEndian>(self.identity_hint.len() as u16)?;
             writer.write_all(&self.identity_hint)?;
@@ -56,7 +56,7 @@ impl HandshakeMessageServerKeyExchange {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let mut data = vec![];
         reader.read_to_end(&mut data)?;
 

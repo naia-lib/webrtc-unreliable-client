@@ -14,7 +14,7 @@ use crate::webrtc::stun::message::*;
 //
 // RFC 5766 Section 14.6
 #[derive(Default, Debug, PartialEq)]
-pub struct EvenPort {
+pub(crate) struct EvenPort {
     // reserve_port means that the server is requested to reserve
     // the next-higher port number (on the same IP address)
     // for a subsequent allocation.

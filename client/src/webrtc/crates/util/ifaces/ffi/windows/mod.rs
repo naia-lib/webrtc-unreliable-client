@@ -11,8 +11,8 @@ const ZONE_INDICES_LENGTH: usize = 16;
 const MAX_DHCPV6_DUID_LENGTH: usize = 130;
 const MAX_DNS_SUFFIX_STRING_LENGTH: usize = 256;
 
-pub const IP_ADAPTER_IPV4_ENABLED: DWORD = 0x0080;
-pub const IP_ADAPTER_IPV6_ENABLED: DWORD = 0x0100;
+pub(crate) const IP_ADAPTER_IPV4_ENABLED: DWORD = 0x0080;
+pub(crate) const IP_ADAPTER_IPV6_ENABLED: DWORD = 0x0100;
 
 use std::io;
 use std::mem;
@@ -32,7 +32,7 @@ use crate::webrtc::util::ifaces::{Interface, Kind, NextHop};
 
 #[link(name = "iphlpapi")]
 extern "system" {
-    pub fn GetAdaptersAddresses(
+    pub(crate) fn GetAdaptersAddresses(
         family: ULONG,
         flags: ULONG,
         reserved: PVOID,
@@ -42,50 +42,50 @@ extern "system" {
 }
 
 #[repr(C)]
-pub struct IpAdapterAddresses {
-    pub head: IpAdapterAddressesHead,
-    pub all: IpAdaptersAddressesAll,
-    pub xp: IpAdaptersAddressesXp,
-    pub vista: IpAdaptersAddressesVista,
+pub(crate) struct IpAdapterAddresses {
+    pub(crate) head: IpAdapterAddressesHead,
+    pub(crate) all: IpAdaptersAddressesAll,
+    pub(crate) xp: IpAdaptersAddressesXp,
+    pub(crate) vista: IpAdaptersAddressesVista,
 }
 
 #[repr(C)]
-pub struct IpAdapterAddressesHead {
-    pub length: ULONG,
+pub(crate) struct IpAdapterAddressesHead {
+    pub(crate) length: ULONG,
     if_index: DWORD,
 }
 
 /// All Windows & Later
 #[repr(C)]
-pub struct IpAdaptersAddressesAll {
-    pub next: *const IpAdapterAddresses,
-    pub adapter_name: PCHAR,
-    pub first_unicast_address: *const IpAdapterUnicastAddress,
+pub(crate) struct IpAdaptersAddressesAll {
+    pub(crate) next: *const IpAdapterAddresses,
+    pub(crate) adapter_name: PCHAR,
+    pub(crate) first_unicast_address: *const IpAdapterUnicastAddress,
     first_anycast_address: *const IpAdapterAnycastAddress,
     first_multicast_address: *const IpAdapterMulticastAddress,
     first_dns_server_address: *const IpAdapterDnsServerAddress,
     dns_suffix: PWCHAR,
-    pub description: PWCHAR,
+    pub(crate) description: PWCHAR,
     friendly_name: PWCHAR,
-    pub physical_address: [BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
-    pub physical_address_length: DWORD,
-    pub flags: DWORD,
+    pub(crate) physical_address: [BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
+    pub(crate) physical_address_length: DWORD,
+    pub(crate) flags: DWORD,
     mtu: DWORD,
-    pub if_type: DWORD,
+    pub(crate) if_type: DWORD,
     oper_status: IfOperStatus,
 }
 
 /// Windows XP & Later
 #[repr(C)]
-pub struct IpAdaptersAddressesXp {
-    pub ipv6_if_index: DWORD,
-    pub zone_indices: [DWORD; ZONE_INDICES_LENGTH],
+pub(crate) struct IpAdaptersAddressesXp {
+    pub(crate) ipv6_if_index: DWORD,
+    pub(crate) zone_indices: [DWORD; ZONE_INDICES_LENGTH],
     first_prefix: *const IpAdapterPrefix,
 }
 
 /// Windows Vista & Later
 #[repr(C)]
-pub struct IpAdaptersAddressesVista {
+pub(crate) struct IpAdaptersAddressesVista {
     transmit_link_speed: ULONG64,
     receive_link_speed: ULONG64,
     first_wins_server_address: *const IpAdapterWinsServerAddress,
@@ -106,14 +106,14 @@ pub struct IpAdaptersAddressesVista {
 }
 
 #[repr(C)]
-pub struct IpAdapterUnicastAddress {
-    pub length: ULONG,
+pub(crate) struct IpAdapterUnicastAddress {
+    pub(crate) length: ULONG,
     flags: DWORD,
-    pub next: *const IpAdapterUnicastAddress,
-    pub address: SOCKET_ADDRESS,
+    pub(crate) next: *const IpAdapterUnicastAddress,
+    pub(crate) address: SOCKET_ADDRESS,
     prefix_origin: IpPrefixOrigin,
     suffix_origin: IpSuffixOrigin,
-    pub dad_state: IpDadState,
+    pub(crate) dad_state: IpDadState,
     valid_lifetime: ULONG,
     preferred_lifetime: ULONG,
     lease_lifetime: ULONG,
@@ -121,7 +121,7 @@ pub struct IpAdapterUnicastAddress {
 }
 
 #[repr(C)]
-pub struct IpAdapterAnycastAddress {
+pub(crate) struct IpAdapterAnycastAddress {
     length: ULONG,
     flags: DWORD,
     next: *const IpAdapterAnycastAddress,
@@ -129,7 +129,7 @@ pub struct IpAdapterAnycastAddress {
 }
 
 #[repr(C)]
-pub struct IpAdapterMulticastAddress {
+pub(crate) struct IpAdapterMulticastAddress {
     length: ULONG,
     flags: DWORD,
     next: *const IpAdapterMulticastAddress,
@@ -137,7 +137,7 @@ pub struct IpAdapterMulticastAddress {
 }
 
 #[repr(C)]
-pub struct IpAdapterDnsServerAddress {
+pub(crate) struct IpAdapterDnsServerAddress {
     length: ULONG,
     reserved: DWORD,
     next: *const IpAdapterDnsServerAddress,
@@ -145,7 +145,7 @@ pub struct IpAdapterDnsServerAddress {
 }
 
 #[repr(C)]
-pub struct IpAdapterPrefix {
+pub(crate) struct IpAdapterPrefix {
     length: ULONG,
     flags: DWORD,
     next: *const IpAdapterPrefix,
@@ -154,7 +154,7 @@ pub struct IpAdapterPrefix {
 }
 
 #[repr(C)]
-pub struct IpAdapterWinsServerAddress {
+pub(crate) struct IpAdapterWinsServerAddress {
     length: ULONG,
     reserved: DWORD,
     next: *const IpAdapterWinsServerAddress,
@@ -162,7 +162,7 @@ pub struct IpAdapterWinsServerAddress {
 }
 
 #[repr(C)]
-pub struct IpAdapterGatewayAddress {
+pub(crate) struct IpAdapterGatewayAddress {
     length: ULONG,
     reserved: DWORD,
     next: *const IpAdapterGatewayAddress,
@@ -170,7 +170,7 @@ pub struct IpAdapterGatewayAddress {
 }
 
 #[repr(C)]
-pub struct IpAdapterDnsSuffix {
+pub(crate) struct IpAdapterDnsSuffix {
     next: *const IpAdapterDnsSuffix,
     string: [WCHAR; MAX_DNS_SUFFIX_STRING_LENGTH],
 }
@@ -184,7 +184,7 @@ bitflags! {
 }
 
 #[repr(C)]
-pub enum IpPrefixOrigin {
+pub(crate) enum IpPrefixOrigin {
     IpPrefixOriginOther = 0,
     IpPrefixOriginManual,
     IpPrefixOriginWellKnown,
@@ -194,7 +194,7 @@ pub enum IpPrefixOrigin {
 }
 
 #[repr(C)]
-pub enum IpSuffixOrigin {
+pub(crate) enum IpSuffixOrigin {
     IpSuffixOriginOther = 0,
     IpSuffixOriginManual,
     IpSuffixOriginWellKnown,
@@ -206,7 +206,7 @@ pub enum IpSuffixOrigin {
 
 #[derive(PartialEq, Eq)]
 #[repr(C)]
-pub enum IpDadState {
+pub(crate) enum IpDadState {
     IpDadStateInvalid = 0,
     IpDadStateTentative,
     IpDadStateDuplicate,
@@ -215,7 +215,7 @@ pub enum IpDadState {
 }
 
 #[repr(C)]
-pub enum IfOperStatus {
+pub(crate) enum IfOperStatus {
     IfOperStatusUp = 1,
     IfOperStatusDown = 2,
     IfOperStatusTesting = 3,
@@ -226,7 +226,7 @@ pub enum IfOperStatus {
 }
 
 #[repr(C)]
-pub enum NetIfConnectionType {
+pub(crate) enum NetIfConnectionType {
     NetIfConnectionDedicated = 1,
     NetIfConnectionPassive = 2,
     NetIfConnectionDemand = 3,
@@ -234,7 +234,7 @@ pub enum NetIfConnectionType {
 }
 
 #[repr(C)]
-pub enum TunnelType {
+pub(crate) enum TunnelType {
     TunnelTypeNone = 0,
     TunnelTypeOther = 1,
     TunnelTypeDirect = 2,
@@ -361,7 +361,7 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
 }
 
 /// Query the local system for all interface addresses.
-pub fn ifaces() -> Result<Vec<Interface>, ::std::io::Error> {
+pub(crate) fn ifaces() -> Result<Vec<Interface>, ::std::io::Error> {
     let mut adapters_list = Vec::with_capacity(PREALLOC_ADAPTERS_LEN);
     unsafe {
         local_ifaces_with_buffer(&mut adapters_list)?;

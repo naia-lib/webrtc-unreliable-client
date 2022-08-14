@@ -1,5 +1,5 @@
-pub mod data_channel;
+pub(crate) mod data_channel;
 mod error;
-pub mod message;
+pub(crate) mod message;
 
-pub use error::Error;
+pub(crate) use error::Error;

@@ -1,6 +1,6 @@
-pub mod relay_none;
-pub mod relay_range;
-pub mod relay_static;
+pub(crate) mod relay_none;
+pub(crate) mod relay_range;
+pub(crate) mod relay_static;
 
 use crate::webrtc::turn::error::Result;
 
@@ -13,7 +13,7 @@ use std::sync::Arc;
 // RelayAddressGenerator is used to generate a RelayAddress when creating an allocation.
 // You can use one of the provided ones or provide your own.
 #[async_trait]
-pub trait RelayAddressGenerator {
+pub(crate) trait RelayAddressGenerator {
     // validate confirms that the RelayAddressGenerator is properly initialized
     fn validate(&self) -> Result<()>;
 

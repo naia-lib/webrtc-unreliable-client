@@ -15,7 +15,7 @@ use crate::webrtc::stun::message::*;
 //
 // RFC 5766 Section 14.2
 #[derive(Default, Debug, PartialEq)]
-pub struct Lifetime(pub Duration);
+pub(crate) struct Lifetime(pub(crate) Duration);
 
 impl fmt::Display for Lifetime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

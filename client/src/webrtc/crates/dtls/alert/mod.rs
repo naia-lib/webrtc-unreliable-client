@@ -9,7 +9,7 @@ use std::fmt;
 use std::io::{Read, Write};
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum AlertLevel {
+pub(crate) enum AlertLevel {
     Warning = 1,
     Fatal = 2,
     Invalid,
@@ -36,7 +36,7 @@ impl From<u8> for AlertLevel {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum AlertDescription {
+pub(crate) enum AlertDescription {
     CloseNotify = 0,
     UnexpectedMessage = 10,
     BadRecordMac = 20,
@@ -142,9 +142,9 @@ impl From<u8> for AlertDescription {
 // compressed, as specified by the current connection state.
 // https://tools.ietf.org/html/rfc5246#section-7.2
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub struct Alert {
-    pub alert_level: AlertLevel,
-    pub alert_description: AlertDescription,
+pub(crate) struct Alert {
+    pub(crate) alert_level: AlertLevel,
+    pub(crate) alert_description: AlertDescription,
 }
 
 impl fmt::Display for Alert {
@@ -154,22 +154,22 @@ impl fmt::Display for Alert {
 }
 
 impl Alert {
-    pub fn content_type(&self) -> ContentType {
+    pub(crate) fn content_type(&self) -> ContentType {
         ContentType::Alert
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         2
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u8(self.alert_level as u8)?;
         writer.write_u8(self.alert_description as u8)?;
 
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let alert_level = reader.read_u8()?.into();
         let alert_description = reader.read_u8()?.into();
 

@@ -8,13 +8,13 @@ use crate::webrtc::stun::message::*;
 use std::fmt;
 
 // Values for RequestedAddressFamily as defined in RFC 6156 Section 4.1.1.
-pub const REQUESTED_FAMILY_IPV4: RequestedAddressFamily = RequestedAddressFamily(0x01);
-pub const REQUESTED_FAMILY_IPV6: RequestedAddressFamily = RequestedAddressFamily(0x02);
+pub(crate) const REQUESTED_FAMILY_IPV4: RequestedAddressFamily = RequestedAddressFamily(0x01);
+pub(crate) const REQUESTED_FAMILY_IPV6: RequestedAddressFamily = RequestedAddressFamily(0x02);
 
 // RequestedAddressFamily represents the REQUESTED-ADDRESS-FAMILY Attribute as
 // defined in RFC 6156 Section 4.1.1.
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct RequestedAddressFamily(pub u8);
+pub(crate) struct RequestedAddressFamily(pub(crate) u8);
 
 impl fmt::Display for RequestedAddressFamily {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

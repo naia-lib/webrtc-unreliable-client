@@ -6,11 +6,11 @@ use crate::webrtc::ice::error::*;
 use std::fmt;
 use std::net::IpAddr;
 
-pub const UDP: &str = "udp";
-pub const TCP: &str = "tcp";
+pub(crate) const UDP: &str = "udp";
+pub(crate) const TCP: &str = "tcp";
 
 #[must_use]
-pub fn supported_network_types() -> Vec<NetworkType> {
+pub(crate) fn supported_network_types() -> Vec<NetworkType> {
     vec![
         NetworkType::Udp4,
         NetworkType::Udp6,
@@ -21,7 +21,7 @@ pub fn supported_network_types() -> Vec<NetworkType> {
 
 /// Represents the type of network.
 #[derive(PartialEq, Debug, Copy, Clone, Eq, Hash)]
-pub enum NetworkType {
+pub(crate) enum NetworkType {
     Unspecified,
 
     /// Indicates UDP over IPv4.
@@ -72,13 +72,13 @@ impl NetworkType {
 
     /// Returns true when network is TCP4 or TCP6.
     #[must_use]
-    pub fn is_tcp(self) -> bool {
+    pub(crate) fn is_tcp(self) -> bool {
         self == Self::Tcp4 || self == Self::Tcp6
     }
 
     /// Returns the short network description.
     #[must_use]
-    pub fn network_short(self) -> String {
+    pub(crate) fn network_short(self) -> String {
         match self {
             Self::Udp4 | Self::Udp6 => UDP.to_owned(),
             Self::Tcp4 | Self::Tcp6 => TCP.to_owned(),
@@ -88,7 +88,7 @@ impl NetworkType {
 
     /// Returns whether the network type is IPv4 or not.
     #[must_use]
-    pub const fn is_ipv4(self) -> bool {
+    pub(crate) const fn is_ipv4(self) -> bool {
         match self {
             Self::Udp4 | Self::Tcp4 => true,
             Self::Udp6 | Self::Tcp6 | Self::Unspecified => false,
@@ -97,7 +97,7 @@ impl NetworkType {
 
     /// Returns whether the network type is IPv6 or not.
     #[must_use]
-    pub const fn is_ipv6(self) -> bool {
+    pub(crate) const fn is_ipv6(self) -> bool {
         match self {
             Self::Udp6 | Self::Tcp6 => true,
             Self::Udp4 | Self::Tcp4 | Self::Unspecified => false,
@@ -106,7 +106,7 @@ impl NetworkType {
 }
 
 /// Determines the type of network based on the short network string and an IP address.
-pub fn determine_network_type(network: &str, ip: &IpAddr) -> Result<NetworkType> {
+pub(crate) fn determine_network_type(network: &str, ip: &IpAddr) -> Result<NetworkType> {
     let ipv4 = ip.is_ipv4();
     let net = network.to_lowercase();
     if net.starts_with(UDP) {

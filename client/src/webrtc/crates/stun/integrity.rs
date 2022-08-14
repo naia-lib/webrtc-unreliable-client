@@ -11,7 +11,7 @@ use ring::hmac;
 use std::fmt;
 
 // separator for credentials.
-pub const CREDENTIALS_SEP: &str = ":";
+pub(crate) const CREDENTIALS_SEP: &str = ":";
 
 // MessageIntegrity represents MESSAGE-INTEGRITY attribute.
 //
@@ -20,7 +20,7 @@ pub const CREDENTIALS_SEP: &str = ":";
 //
 // RFC 5389 Section 15.4
 #[derive(Default, Clone)]
-pub struct MessageIntegrity(pub Vec<u8>);
+pub(crate) struct MessageIntegrity(pub(crate) Vec<u8>);
 
 fn new_hmac(key: &[u8], message: &[u8]) -> Vec<u8> {
     let mac = hmac::Key::new(hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY, key);
@@ -61,12 +61,12 @@ impl Setter for MessageIntegrity {
     }
 }
 
-pub const MESSAGE_INTEGRITY_SIZE: usize = 20;
+pub(crate) const MESSAGE_INTEGRITY_SIZE: usize = 20;
 
 impl MessageIntegrity {
     // new_long_term_integrity returns new MessageIntegrity with key for long-term
     // credentials. Password, username, and realm must be SASL-prepared.
-    pub fn new_long_term_integrity(username: String, realm: String, password: String) -> Self {
+    pub(crate) fn new_long_term_integrity(username: String, realm: String, password: String) -> Self {
         let s = vec![username, realm, password].join(CREDENTIALS_SEP);
 
         let mut h = Md5::new();
@@ -77,14 +77,14 @@ impl MessageIntegrity {
 
     // new_short_term_integrity returns new MessageIntegrity with key for short-term
     // credentials. Password must be SASL-prepared.
-    pub fn new_short_term_integrity(password: String) -> Self {
+    pub(crate) fn new_short_term_integrity(password: String) -> Self {
         MessageIntegrity(password.as_bytes().to_vec())
     }
 
     // Check checks MESSAGE-INTEGRITY attribute.
     //
     // CPU costly, see BenchmarkMessageIntegrity_Check.
-    pub fn check(&self, m: &mut Message) -> Result<()> {
+    pub(crate) fn check(&self, m: &mut Message) -> Result<()> {
         let v = m.get(ATTR_MESSAGE_INTEGRITY)?;
 
         // Adjusting length in header to match m.Raw that was

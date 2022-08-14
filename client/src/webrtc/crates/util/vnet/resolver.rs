@@ -7,18 +7,18 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Default)]
-pub struct Resolver {
+pub(crate) struct Resolver {
     parent: Option<Arc<Mutex<Resolver>>>,
     hosts: HashMap<String, IpAddr>,
 }
 
 impl Resolver {
 
-    pub fn set_parent(&mut self, p: Arc<Mutex<Resolver>>) {
+    pub(crate) fn set_parent(&mut self, p: Arc<Mutex<Resolver>>) {
         self.parent = Some(p);
     }
 
-    pub fn lookup(
+    pub(crate) fn lookup(
         &self,
         host_name: String,
     ) -> Pin<Box<dyn Future<Output = Option<IpAddr>> + Send + 'static>> {

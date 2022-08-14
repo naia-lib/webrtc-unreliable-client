@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 /// Encodes a u64 value to a lowercase base 36 string.
-pub fn base36(value: impl Into<u64>) -> String {
+pub(crate) fn base36(value: impl Into<u64>) -> String {
     let mut digits: Vec<u8> = vec![];
 
     let mut value = value.into();
@@ -39,14 +39,14 @@ fn assign_chunk_tag() -> String {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub struct TcpFlag(pub u8);
+pub(crate) struct TcpFlag(pub(crate) u8);
 
-pub const TCP_FLAG_ZERO: TcpFlag = TcpFlag(0x00);
-pub const TCP_FLAG_FIN: TcpFlag = TcpFlag(0x01);
-pub const TCP_FLAG_SYN: TcpFlag = TcpFlag(0x02);
-pub const TCP_FLAG_RST: TcpFlag = TcpFlag(0x04);
-pub const TCP_FLAG_PSH: TcpFlag = TcpFlag(0x08);
-pub const TCP_FLAG_ACK: TcpFlag = TcpFlag(0x10);
+pub(crate) const TCP_FLAG_ZERO: TcpFlag = TcpFlag(0x00);
+pub(crate) const TCP_FLAG_FIN: TcpFlag = TcpFlag(0x01);
+pub(crate) const TCP_FLAG_SYN: TcpFlag = TcpFlag(0x02);
+pub(crate) const TCP_FLAG_RST: TcpFlag = TcpFlag(0x04);
+pub(crate) const TCP_FLAG_PSH: TcpFlag = TcpFlag(0x08);
+pub(crate) const TCP_FLAG_ACK: TcpFlag = TcpFlag(0x10);
 
 impl BitOr for TcpFlag {
     type Output = Self;
@@ -90,7 +90,7 @@ impl fmt::Display for TcpFlag {
 }
 
 // Chunk represents a packet passed around in the vnet
-pub trait Chunk: fmt::Display + fmt::Debug {
+pub(crate) trait Chunk: fmt::Display + fmt::Debug {
     fn set_timestamp(&mut self) -> SystemTime; // used by router
     fn get_timestamp(&self) -> SystemTime; // used by router
     fn get_source_ip(&self) -> IpAddr; // used by routee
@@ -107,11 +107,11 @@ pub trait Chunk: fmt::Display + fmt::Debug {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct ChunkIp {
-    pub timestamp: SystemTime,
-    pub source_ip: IpAddr,
-    pub destination_ip: IpAddr,
-    pub tag: String,
+pub(crate) struct ChunkIp {
+    pub(crate) timestamp: SystemTime,
+    pub(crate) source_ip: IpAddr,
+    pub(crate) destination_ip: IpAddr,
+    pub(crate) tag: String,
 }
 
 impl ChunkIp {
@@ -138,11 +138,11 @@ impl ChunkIp {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct ChunkUdp {
-    pub chunk_ip: ChunkIp,
-    pub source_port: u16,
-    pub destination_port: u16,
-    pub user_data: Vec<u8>,
+pub(crate) struct ChunkUdp {
+    pub(crate) chunk_ip: ChunkIp,
+    pub(crate) source_port: u16,
+    pub(crate) destination_port: u16,
+    pub(crate) user_data: Vec<u8>,
 }
 
 impl fmt::Display for ChunkUdp {
@@ -225,7 +225,7 @@ impl Chunk for ChunkUdp {
 }
 
 impl ChunkUdp {
-    pub fn new(src_addr: SocketAddr, dst_addr: SocketAddr) -> Self {
+    pub(crate) fn new(src_addr: SocketAddr, dst_addr: SocketAddr) -> Self {
         ChunkUdp {
             chunk_ip: ChunkIp {
                 timestamp: SystemTime::now(),
@@ -241,7 +241,7 @@ impl ChunkUdp {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct ChunkTcp {
+pub(crate) struct ChunkTcp {
     chunk_ip: ChunkIp,
     source_port: u16,
     destination_port: u16,

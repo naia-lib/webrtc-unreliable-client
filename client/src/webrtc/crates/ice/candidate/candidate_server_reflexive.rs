@@ -7,16 +7,16 @@ use std::sync::atomic::{AtomicU16, AtomicU8};
 
 /// The config required to create a new `CandidateServerReflexive`.
 #[derive(Default)]
-pub struct CandidateServerReflexiveConfig {
-    pub base_config: CandidateBaseConfig,
+pub(crate) struct CandidateServerReflexiveConfig {
+    pub(crate) base_config: CandidateBaseConfig,
 
-    pub rel_addr: String,
-    pub rel_port: u16,
+    pub(crate) rel_addr: String,
+    pub(crate) rel_port: u16,
 }
 
 impl CandidateServerReflexiveConfig {
     /// Creates a new server reflective candidate.
-    pub async fn new_candidate_server_reflexive(self) -> Result<CandidateBase> {
+    pub(crate) async fn new_candidate_server_reflexive(self) -> Result<CandidateBase> {
         let ip: IpAddr = match self.base_config.address.parse() {
             Ok(ip) => ip,
             Err(_) => return Err(Error::ErrAddressParseFailed),

@@ -4,7 +4,7 @@ use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum StateChangeOp {
+pub(crate) enum StateChangeOp {
     SetLocal,
     SetRemote,
 }
@@ -27,7 +27,7 @@ impl fmt::Display for StateChangeOp {
 
 /// SignalingState indicates the signaling state of the offer/answer process.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCSignalingState {
+pub(crate) enum RTCSignalingState {
     Unspecified = 0,
 
     /// SignalingStateStable indicates there is no offer/answer exchange in
@@ -120,7 +120,7 @@ impl From<u8> for RTCSignalingState {
     }
 }
 
-pub fn check_next_signaling_state(
+pub(crate) fn check_next_signaling_state(
     cur: RTCSignalingState,
     next: RTCSignalingState,
     op: StateChangeOp,

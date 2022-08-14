@@ -15,9 +15,9 @@ use crate::webrtc::stun::xoraddr::*;
 //
 // RFC 5766 Section 14.3
 #[derive(PartialEq, Eq, Debug)]
-pub struct PeerAddress {
-    pub ip: IpAddr,
-    pub port: u16,
+pub(crate) struct PeerAddress {
+    pub(crate) ip: IpAddr,
+    pub(crate) port: u16,
 }
 
 impl Default for PeerAddress {

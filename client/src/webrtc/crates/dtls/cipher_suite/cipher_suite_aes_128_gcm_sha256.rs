@@ -3,7 +3,7 @@ use crate::webrtc::dtls::crypto::crypto_gcm::*;
 use crate::webrtc::dtls::prf::*;
 
 #[derive(Clone)]
-pub struct CipherSuiteAes128GcmSha256 {
+pub(crate) struct CipherSuiteAes128GcmSha256 {
     gcm: Option<CryptoGcm>,
     rsa: bool,
 }
@@ -13,7 +13,7 @@ impl CipherSuiteAes128GcmSha256 {
     const PRF_KEY_LEN: usize = 16;
     const PRF_IV_LEN: usize = 4;
 
-    pub fn new(rsa: bool) -> Self {
+    pub(crate) fn new(rsa: bool) -> Self {
         CipherSuiteAes128GcmSha256 { gcm: None, rsa }
     }
 }

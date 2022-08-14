@@ -6,23 +6,23 @@ use std::net::IpAddr;
 use crate::webrtc::util::vnet::net::*;
 
 // RelayAddressGeneratorRanges can be used to only allocate connections inside a defined port range
-pub struct RelayAddressGeneratorRanges {
+pub(crate) struct RelayAddressGeneratorRanges {
     // relay_address is the IP returned to the user when the relay is created
-    pub relay_address: IpAddr,
+    pub(crate) relay_address: IpAddr,
 
     // min_port the minimum port to allocate
-    pub min_port: u16,
+    pub(crate) min_port: u16,
 
     // max_port the maximum (inclusive) port to allocate
-    pub max_port: u16,
+    pub(crate) max_port: u16,
 
     // max_retries the amount of tries to allocate a random port in the defined range
-    pub max_retries: u16,
+    pub(crate) max_retries: u16,
 
     // Address is passed to Listen/ListenPacket when creating the Relay
-    pub address: String,
+    pub(crate) address: String,
 
-    pub net: Arc<Net>,
+    pub(crate) net: Arc<Net>,
 }
 
 #[async_trait]

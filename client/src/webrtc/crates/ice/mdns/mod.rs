@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 /// Represents the different Multicast modes that ICE can run.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum MulticastDnsMode {
+pub(crate) enum MulticastDnsMode {
     Unspecified,
 
     /// Means remote mDNS candidates will be discarded, and local host candidates will use IPs.
@@ -32,14 +32,14 @@ impl Default for MulticastDnsMode {
     }
 }
 
-pub fn generate_multicast_dns_name() -> String {
+pub(crate) fn generate_multicast_dns_name() -> String {
     // https://tools.ietf.org/id/draft-ietf-rtcweb-mdns-ice-candidates-02.html#gathering
     // The unique name MUST consist of a version 4 UUID as defined in [RFC4122], followed by “.local”.
     let u = Uuid::new_v4();
     format!("{}.local", u)
 }
 
-pub fn create_multicast_dns(
+pub(crate) fn create_multicast_dns(
     mdns_mode: MulticastDnsMode,
     mdns_name: &str,
     dest_addr: &str,

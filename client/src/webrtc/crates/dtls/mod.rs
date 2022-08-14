@@ -1,33 +1,33 @@
 
-pub mod alert;
-pub mod application_data;
-pub mod change_cipher_spec;
-pub mod cipher_suite;
-pub mod client_certificate_type;
-pub mod compression_methods;
-pub mod config;
-pub mod conn;
-pub mod content;
-pub mod crypto;
-pub mod curve;
+pub(crate) mod alert;
+pub(crate) mod application_data;
+pub(crate) mod change_cipher_spec;
+pub(crate) mod cipher_suite;
+pub(crate) mod client_certificate_type;
+pub(crate) mod compression_methods;
+pub(crate) mod config;
+pub(crate) mod conn;
+pub(crate) mod content;
+pub(crate) mod crypto;
+pub(crate) mod curve;
 mod error;
-pub mod extension;
-pub mod flight;
-pub mod fragment_buffer;
-pub mod handshake;
-pub mod handshaker;
-pub mod listener;
-pub mod prf;
-pub mod record_layer;
-pub mod signature_hash_algorithm;
-pub mod state;
+pub(crate) mod extension;
+pub(crate) mod flight;
+pub(crate) mod fragment_buffer;
+pub(crate) mod handshake;
+pub(crate) mod handshaker;
+pub(crate) mod listener;
+pub(crate) mod prf;
+pub(crate) mod record_layer;
+pub(crate) mod signature_hash_algorithm;
+pub(crate) mod state;
 
-pub use error::Error;
+pub(crate) use error::Error;
 
 use cipher_suite::*;
 use extension::extension_use_srtp::SrtpProtectionProfile;
 
-pub fn find_matching_srtp_profile(
+pub(crate) fn find_matching_srtp_profile(
     a: &[SrtpProtectionProfile],
     b: &[SrtpProtectionProfile],
 ) -> Result<SrtpProtectionProfile, ()> {
@@ -41,7 +41,7 @@ pub fn find_matching_srtp_profile(
     Err(())
 }
 
-pub fn find_matching_cipher_suite(
+pub(crate) fn find_matching_cipher_suite(
     a: &[CipherSuiteId],
     b: &[CipherSuiteId],
 ) -> Result<CipherSuiteId, ()> {

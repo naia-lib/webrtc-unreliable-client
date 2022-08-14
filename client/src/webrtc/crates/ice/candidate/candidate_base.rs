@@ -16,44 +16,44 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::{broadcast, Mutex};
 
 #[derive(Default)]
-pub struct CandidateBaseConfig {
-    pub candidate_id: String,
-    pub network: String,
-    pub address: String,
-    pub port: u16,
-    pub component: u16,
-    pub priority: u32,
-    pub foundation: String,
-    pub conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
-    pub initialized_ch: Option<broadcast::Receiver<()>>,
+pub(crate) struct CandidateBaseConfig {
+    pub(crate) candidate_id: String,
+    pub(crate) network: String,
+    pub(crate) address: String,
+    pub(crate) port: u16,
+    pub(crate) component: u16,
+    pub(crate) priority: u32,
+    pub(crate) foundation: String,
+    pub(crate) conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
+    pub(crate) initialized_ch: Option<broadcast::Receiver<()>>,
 }
 
-pub struct CandidateBase {
-    pub id: String,
-    pub network_type: AtomicU8,
-    pub candidate_type: CandidateType,
+pub(crate) struct CandidateBase {
+    pub(crate) id: String,
+    pub(crate) network_type: AtomicU8,
+    pub(crate) candidate_type: CandidateType,
 
-    pub component: AtomicU16,
-    pub address: String,
-    pub port: u16,
-    pub related_address: Option<CandidateRelatedAddress>,
-    pub tcp_type: TcpType,
+    pub(crate) component: AtomicU16,
+    pub(crate) address: String,
+    pub(crate) port: u16,
+    pub(crate) related_address: Option<CandidateRelatedAddress>,
+    pub(crate) tcp_type: TcpType,
 
-    pub resolved_addr: Mutex<SocketAddr>,
+    pub(crate) resolved_addr: Mutex<SocketAddr>,
 
-    pub last_sent: AtomicU64,
-    pub last_received: AtomicU64,
+    pub(crate) last_sent: AtomicU64,
+    pub(crate) last_received: AtomicU64,
 
-    pub conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
-    pub closed_ch: Arc<Mutex<Option<broadcast::Sender<()>>>>,
+    pub(crate) conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
+    pub(crate) closed_ch: Arc<Mutex<Option<broadcast::Sender<()>>>>,
 
-    pub foundation_override: String,
-    pub priority_override: u32,
+    pub(crate) foundation_override: String,
+    pub(crate) priority_override: u32,
 
     //CandidateHost
-    pub network: String,
+    pub(crate) network: String,
     //CandidateRelay
-    pub relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
+    pub(crate) relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
 }
 
 impl Default for CandidateBase {
@@ -309,19 +309,19 @@ impl Candidate for CandidateBase {
 }
 
 impl CandidateBase {
-    pub fn set_last_received(&self, d: Duration) {
+    pub(crate) fn set_last_received(&self, d: Duration) {
         #[allow(clippy::cast_possible_truncation)]
         self.last_received
             .store(d.as_nanos() as u64, Ordering::SeqCst);
     }
 
-    pub fn set_last_sent(&self, d: Duration) {
+    pub(crate) fn set_last_sent(&self, d: Duration) {
         #[allow(clippy::cast_possible_truncation)]
         self.last_sent.store(d.as_nanos() as u64, Ordering::SeqCst);
     }
 
     /// Returns the local preference for this candidate.
-    pub fn local_preference(&self) -> u16 {
+    pub(crate) fn local_preference(&self) -> u16 {
         if self.network_type().is_tcp() {
             // RFC 6544, section 4.2
             //
@@ -386,7 +386,7 @@ impl CandidateBase {
 }
 
 /// Creates a Candidate from its string representation.
-pub async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
+pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
     let split: Vec<&str> = raw.split_whitespace().collect();
     if split.len() < 8 {
         return Err(Error::Other(format!(

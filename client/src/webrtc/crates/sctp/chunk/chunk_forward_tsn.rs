@@ -22,17 +22,17 @@ use std::fmt;
 ///|         Stream-N              |       Stream Sequence-N       |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone)]
-pub struct ChunkForwardTsn {
+pub(crate) struct ChunkForwardTsn {
     /// This indicates the new cumulative TSN to the data receiver.  Upon
     /// the reception of this value, the data receiver MUST consider
     /// any missing TSNs earlier than or equal to this value as received,
     /// and stop reporting them as gaps in any subsequent SACKs.
-    pub new_cumulative_tsn: u32,
-    pub streams: Vec<ChunkForwardTsnStream>,
+    pub(crate) new_cumulative_tsn: u32,
+    pub(crate) streams: Vec<ChunkForwardTsnStream>,
 }
 
-pub const NEW_CUMULATIVE_TSN_LENGTH: usize = 4;
-pub const FORWARD_TSN_STREAM_LENGTH: usize = 4;
+pub(crate) const NEW_CUMULATIVE_TSN_LENGTH: usize = 4;
+pub(crate) const FORWARD_TSN_STREAM_LENGTH: usize = 4;
 
 /// makes ChunkForwardTsn printable
 impl fmt::Display for ChunkForwardTsn {
@@ -114,10 +114,10 @@ impl Chunk for ChunkForwardTsn {
 }
 
 #[derive(Debug, Clone)]
-pub struct ChunkForwardTsnStream {
+pub(crate) struct ChunkForwardTsnStream {
     /// This field holds a stream number that was skipped by this
     /// FWD-TSN.
-    pub identifier: u16,
+    pub(crate) identifier: u16,
 
     /// This field holds the sequence number associated with the stream
     /// that was skipped.  The stream sequence field holds the largest
@@ -127,7 +127,7 @@ pub struct ChunkForwardTsnStream {
     /// re-ordering queues.  This field MUST NOT report TSN's corresponding
     /// to DATA chunks that are marked as unordered.  For ordered DATA
     /// chunks this field MUST be filled in.
-    pub sequence: u16,
+    pub(crate) sequence: u16,
 }
 
 /// makes ChunkForwardTsnStream printable

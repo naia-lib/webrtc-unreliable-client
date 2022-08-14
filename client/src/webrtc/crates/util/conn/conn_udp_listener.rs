@@ -9,7 +9,7 @@ use std::pin::Pin;
 use std::sync::atomic::AtomicBool;
 use tokio::sync::{mpsc, watch, Mutex};
 
-pub type AcceptFilterFn =
+pub(crate) type AcceptFilterFn =
     Box<dyn (Fn(&[u8]) -> Pin<Box<dyn Future<Output = bool> + Send + 'static>>) + Send + Sync>;
 
 type AcceptDoneCh = (mpsc::Receiver<Arc<UdpConn>>, watch::Receiver<()>);
@@ -70,22 +70,22 @@ impl Listener for ListenerImpl {
 
 /// ListenConfig stores options for listening to an address.
 #[derive(Default)]
-pub struct ListenConfig {
+pub(crate) struct ListenConfig {
     /// Backlog defines the maximum length of the queue of pending
     /// connections. It is equivalent of the backlog argument of
     /// POSIX listen function.
     /// If a connection request arrives when the queue is full,
     /// the request will be silently discarded, unlike TCP.
     /// Set zero to use default value 128 which is same as Linux default.
-    pub backlog: usize,
+    pub(crate) backlog: usize,
 
     /// AcceptFilter determines whether the new conn should be made for
     /// the incoming packet. If not set, any packet creates new conn.
-    pub accept_filter: Option<AcceptFilterFn>,
+    pub(crate) accept_filter: Option<AcceptFilterFn>,
 }
 
 /// UdpConn augments a connection-oriented connection over a UdpSocket
-pub struct UdpConn {
+pub(crate) struct UdpConn {
     pconn: Arc<dyn Conn + Send + Sync>,
     conns: Arc<Mutex<HashMap<String, Arc<UdpConn>>>>,
     raddr: SocketAddr,

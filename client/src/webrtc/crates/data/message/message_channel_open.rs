@@ -29,9 +29,9 @@ const CHANNEL_OPEN_HEADER_LEN: usize = 11;
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// ```
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct DataChannelOpen {
-    pub label: Vec<u8>,
-    pub protocol: Vec<u8>,
+pub(crate) struct DataChannelOpen {
+    pub(crate) label: Vec<u8>,
+    pub(crate) protocol: Vec<u8>,
 }
 
 impl MarshalSize for DataChannelOpen {

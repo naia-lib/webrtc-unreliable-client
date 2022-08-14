@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 
 use crate::webrtc::util::Error;
 
-pub trait SocketAddrExt {
+pub(crate) trait SocketAddrExt {
     ///Encode a representation of `self` into the buffer and return the length of this encoded
     ///version.
     ///
@@ -21,7 +21,7 @@ const IPV4_ADDRESS_SIZE: usize = 7;
 const IPV6_MARKER: u8 = 6;
 const IPV6_ADDRESS_SIZE: usize = 27;
 
-pub const MAX_ADDR_SIZE: usize = IPV6_ADDRESS_SIZE;
+pub(crate) const MAX_ADDR_SIZE: usize = IPV6_ADDRESS_SIZE;
 
 impl SocketAddrExt for SocketAddr {
     fn encode(&self, buffer: &mut [u8]) -> Result<usize, Error> {

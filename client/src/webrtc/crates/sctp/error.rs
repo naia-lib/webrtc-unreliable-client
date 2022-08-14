@@ -1,11 +1,11 @@
 use std::io;
 use thiserror::Error;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error("raw is too small for a SCTP chunk")]
     ErrChunkHeaderTooSmall,
     #[error("not enough data left in SCTP packet to satisfy requested length")]

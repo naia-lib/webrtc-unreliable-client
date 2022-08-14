@@ -6,8 +6,8 @@ use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 
-pub mod sdp_type;
-pub mod session_description;
+pub(crate) mod sdp_type;
+pub(crate) mod session_description;
 
 use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
 use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
@@ -22,9 +22,9 @@ use std::sync::Arc;
 /// TrackDetails represents any media source that can be represented in a SDP
 /// This isn't keyed by SSRC because it also needs to support rid based sources
 #[derive(Default, Debug, Clone)]
-pub struct TrackDetails;
+pub(crate) struct TrackDetails;
 
-pub async fn add_candidates_to_media_descriptions(
+pub(crate) async fn add_candidates_to_media_descriptions(
     candidates: &[RTCIceCandidate],
     mut m: MediaDescription,
     ice_gathering_state: RTCIceGatheringState,
@@ -64,7 +64,7 @@ pub async fn add_candidates_to_media_descriptions(
     Ok(m.with_property_attribute("end-of-candidates".to_owned()))
 }
 
-pub struct AddDataMediaSectionParams {
+pub(crate) struct AddDataMediaSectionParams {
     should_add_candidates: bool,
     mid_value: String,
     ice_params: RTCIceParameters,
@@ -72,7 +72,7 @@ pub struct AddDataMediaSectionParams {
     ice_gathering_state: RTCIceGatheringState,
 }
 
-pub async fn add_data_media_section(
+pub(crate) async fn add_data_media_section(
     d: SessionDescription,
     dtls_fingerprints: &[RTCDtlsFingerprint],
     candidates: &[RTCIceCandidate],
@@ -126,7 +126,7 @@ pub async fn add_data_media_section(
     Ok(d.with_media(media))
 }
 
-pub async fn populate_local_candidates(
+pub(crate) async fn populate_local_candidates(
     session_description: Option<&session_description::RTCSessionDescription>,
     ice_gatherer: Option<&Arc<RTCIceGatherer>>,
     ice_gathering_state: RTCIceGatheringState,
@@ -168,19 +168,19 @@ pub async fn populate_local_candidates(
 }
 
 #[derive(Default)]
-pub struct MediaSection {
-    pub id: String,
-    pub data: bool,
+pub(crate) struct MediaSection {
+    pub(crate) id: String,
+    pub(crate) data: bool,
 }
 
-pub struct PopulateSdpParams {
-    pub is_icelite: bool,
-    pub connection_role: ConnectionRole,
-    pub ice_gathering_state: RTCIceGatheringState,
+pub(crate) struct PopulateSdpParams {
+    pub(crate) is_icelite: bool,
+    pub(crate) connection_role: ConnectionRole,
+    pub(crate) ice_gathering_state: RTCIceGatheringState,
 }
 
 /// populate_sdp serializes a PeerConnections state into an SDP
-pub async fn populate_sdp(
+pub(crate) async fn populate_sdp(
     mut d: SessionDescription,
     dtls_fingerprints: &[RTCDtlsFingerprint],
     candidates: &[RTCIceCandidate],
@@ -235,7 +235,7 @@ pub async fn populate_sdp(
     Ok(d.with_value_attribute(ATTR_KEY_GROUP.to_owned(), bundle_value))
 }
 
-pub fn get_mid_value(media: &MediaDescription) -> Option<&String> {
+pub(crate) fn get_mid_value(media: &MediaDescription) -> Option<&String> {
     for attr in &media.attributes {
         if attr.key == "mid" {
             return attr.value.as_ref();
@@ -244,7 +244,7 @@ pub fn get_mid_value(media: &MediaDescription) -> Option<&String> {
     None
 }
 
-pub fn description_is_plan_b(
+pub(crate) fn description_is_plan_b(
     desc: Option<&session_description::RTCSessionDescription>,
 ) -> Result<bool> {
     if let Some(desc) = desc {
@@ -264,7 +264,7 @@ pub fn description_is_plan_b(
     Ok(false)
 }
 
-pub fn extract_fingerprint(desc: &SessionDescription) -> Result<(String, String)> {
+pub(crate) fn extract_fingerprint(desc: &SessionDescription) -> Result<(String, String)> {
     let mut fingerprints = vec![];
 
     if let Some(fingerprint) = desc.attribute("fingerprint") {
@@ -295,7 +295,7 @@ pub fn extract_fingerprint(desc: &SessionDescription) -> Result<(String, String)
     Ok((parts[1].to_owned(), parts[0].to_owned()))
 }
 
-pub async fn extract_ice_details(
+pub(crate) async fn extract_ice_details(
     desc: &SessionDescription,
 ) -> Result<(String, String, Vec<RTCIceCandidate>)> {
     let mut candidates = vec![];
@@ -350,7 +350,7 @@ pub async fn extract_ice_details(
     Ok((remote_ufrags[0].clone(), remote_pwds[0].clone(), candidates))
 }
 
-pub fn have_application_media_section(desc: &SessionDescription) -> bool {
+pub(crate) fn have_application_media_section(desc: &SessionDescription) -> bool {
     for m in &desc.media_descriptions {
         if m.media_name.media == MEDIA_SECTION_APPLICATION {
             return true;
@@ -361,7 +361,7 @@ pub fn have_application_media_section(desc: &SessionDescription) -> bool {
 }
 
 /// have_data_channel return MediaDescription with MediaName equal application
-pub fn have_data_channel(
+pub(crate) fn have_data_channel(
     desc: &session_description::RTCSessionDescription,
 ) -> Option<&MediaDescription> {
     if let Some(parsed) = &desc.parsed {
@@ -378,7 +378,7 @@ pub fn have_data_channel(
 /// for subsequent calling, it updates Origin for SessionDescription from saved one
 /// and increments session version by one.
 /// <https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-25#section-5.2.2>
-pub fn update_sdp_origin(origin: &mut Origin, d: &mut SessionDescription) {
+pub(crate) fn update_sdp_origin(origin: &mut Origin, d: &mut SessionDescription) {
     //TODO: if atomic.CompareAndSwapUint64(&origin.SessionVersion, 0, d.Origin.SessionVersion)
     if origin.session_version == 0 {
         // store

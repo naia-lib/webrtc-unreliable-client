@@ -4,7 +4,7 @@ use std::fmt;
 /// SDPSemantics determines which style of SDP offers and answers
 /// can be used
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCSdpSemantics {
+pub(crate) enum RTCSdpSemantics {
     Unspecified = 0,
 
     /// UnifiedPlan uses unified-plan offers and answers

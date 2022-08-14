@@ -4,7 +4,7 @@ use crate::webrtc::stun::message::*;
 
 /// Represents USE-CANDIDATE attribute.
 #[derive(Default)]
-pub struct UseCandidateAttr;
+pub(crate) struct UseCandidateAttr;
 
 impl Setter for UseCandidateAttr {
     /// Adds USE-CANDIDATE attribute to message.

@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 
 use crate::webrtc::util::ifaces;
 
-pub const DEFAULT_DEST_ADDR: &str = "224.0.0.251:5353";
+pub(crate) const DEFAULT_DEST_ADDR: &str = "224.0.0.251:5353";
 
 const INBOUND_BUFFER_SIZE: usize = 512;
 const DEFAULT_QUERY_INTERVAL: Duration = Duration::from_secs(1);
@@ -23,7 +23,7 @@ const MAX_MESSAGE_RECORDS: usize = 3;
 const RESPONSE_TTL: u32 = 120;
 
 // Conn represents a mDNS Server
-pub struct DnsConn {
+pub(crate) struct DnsConn {
     socket: Arc<UdpSocket>,
     dst_addr: SocketAddr,
 
@@ -46,7 +46,7 @@ struct QueryResult {
 
 impl DnsConn {
     /// server establishes a mDNS connection over an existing connection
-    pub fn server(addr: SocketAddr, config: Config) -> Result<Self> {
+    pub(crate) fn server(addr: SocketAddr, config: Config) -> Result<Self> {
         let socket = socket2::Socket::new(
             socket2::Domain::IPV4,
             socket2::Type::DGRAM,
@@ -137,7 +137,7 @@ impl DnsConn {
     }
 
     /// Close closes the mDNS Conn
-    pub async fn close(&self) -> Result<()> {
+    pub(crate) async fn close(&self) -> Result<()> {
         log::info!("Closing connection");
         if self.is_server_closed.load(atomic::Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);
@@ -158,7 +158,7 @@ impl DnsConn {
 
     /// Query sends mDNS Queries for the following name until
     /// either there's a close signal or we get a result
-    pub async fn query(
+    pub(crate) async fn query(
         &self,
         name: &str,
         mut close_query_signal: mpsc::Receiver<()>,

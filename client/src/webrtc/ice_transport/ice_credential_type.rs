@@ -3,7 +3,7 @@ use std::fmt;
 /// ICECredentialType indicates the type of credentials used to connect to
 /// an ICE server.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceCredentialType {
+pub(crate) enum RTCIceCredentialType {
     Unspecified,
 
     /// ICECredential::Password describes username and password based

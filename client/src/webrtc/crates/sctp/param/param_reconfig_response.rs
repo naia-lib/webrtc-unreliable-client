@@ -5,7 +5,7 @@ use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-pub enum ReconfigResult {
+pub(crate) enum ReconfigResult {
     SuccessNop = 0,
     SuccessPerformed = 1,
     Denied = 2,
@@ -72,13 +72,13 @@ impl From<u32> for ReconfigResult {
 ///|                  Receiver's Next TSN (optional)               |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamReconfigResponse {
+pub(crate) struct ParamReconfigResponse {
     /// This value is copied from the request parameter and is used by the
     /// receiver of the Re-configuration Response Parameter to tie the
     /// response to the request.
-    pub reconfig_response_sequence_number: u32,
+    pub(crate) reconfig_response_sequence_number: u32,
     /// This value describes the result of the processing of the request.
-    pub result: ReconfigResult,
+    pub(crate) result: ReconfigResult,
 }
 
 impl fmt::Display for ParamReconfigResponse {

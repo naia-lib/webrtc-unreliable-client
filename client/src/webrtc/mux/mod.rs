@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod mux_test;
 
-pub mod endpoint;
-pub mod mux_func;
+pub(crate) mod endpoint;
+pub(crate) mod mux_func;
 
 use crate::webrtc::error::Result;
 use crate::webrtc::mux::endpoint::Endpoint;
@@ -22,13 +22,13 @@ const MAX_BUFFER_SIZE: usize = 1000 * 1000; // 1MB
 
 /// Config collects the arguments to mux.Mux construction into
 /// a single structure
-pub struct Config {
-    pub conn: Arc<dyn Conn + Send + Sync>,
+pub(crate) struct Config {
+    pub(crate) conn: Arc<dyn Conn + Send + Sync>,
 }
 
 /// Mux allows multiplexing
 #[derive(Clone)]
-pub struct Mux {
+pub(crate) struct Mux {
     id: Arc<AtomicUsize>,
     next_conn: Arc<dyn Conn + Send + Sync>,
     endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
@@ -38,7 +38,7 @@ pub struct Mux {
 }
 
 impl Mux {
-    pub fn new(config: Config) -> Self {
+    pub(crate) fn new(config: Config) -> Self {
         let (closed_ch_tx, closed_ch_rx) = mpsc::channel(1);
         let m = Mux {
             id: Arc::new(AtomicUsize::new(0)),
@@ -57,7 +57,7 @@ impl Mux {
     }
 
     /// creates a new Endpoint
-    pub async fn new_endpoint(&self, f: MatchFunc) -> Arc<Endpoint> {
+    pub(crate) async fn new_endpoint(&self, f: MatchFunc) -> Arc<Endpoint> {
         let mut endpoints = self.endpoints.lock().await;
 
         let id = self.id.fetch_add(1, Ordering::SeqCst);

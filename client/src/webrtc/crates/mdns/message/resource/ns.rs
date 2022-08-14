@@ -3,8 +3,8 @@ use crate::webrtc::mdns::error::Result;
 
 // An NSResource is an NS Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct NsResource {
-    pub ns: Name,
+pub(crate) struct NsResource {
+    pub(crate) ns: Name,
 }
 
 impl fmt::Display for NsResource {

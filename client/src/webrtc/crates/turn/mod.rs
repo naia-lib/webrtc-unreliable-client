@@ -1,8 +1,8 @@
-pub mod allocation;
-pub mod auth;
-pub mod client;
+pub(crate) mod allocation;
+pub(crate) mod auth;
+pub(crate) mod client;
 mod error;
-pub mod proto;
-pub mod relay;
+pub(crate) mod proto;
+pub(crate) mod relay;
 
-pub use error::Error;
+pub(crate) use error::Error;

@@ -13,18 +13,18 @@ use tokio::sync::Mutex;
 type PortMap = Mutex<HashMap<u16, Vec<Arc<UdpConn>>>>;
 
 #[derive(Default)]
-pub struct UdpConnMap {
+pub(crate) struct UdpConnMap {
     port_map: PortMap,
 }
 
 impl UdpConnMap {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         UdpConnMap {
             port_map: Mutex::new(HashMap::new()),
         }
     }
 
-    pub async fn insert(&self, conn: Arc<UdpConn>) -> Result<()> {
+    pub(crate) async fn insert(&self, conn: Arc<UdpConn>) -> Result<()> {
         let addr = conn.local_addr().await?;
 
         let mut port_map = self.port_map.lock().await;
@@ -49,7 +49,7 @@ impl UdpConnMap {
         Ok(())
     }
 
-    pub async fn find(&self, addr: &SocketAddr) -> Option<Arc<UdpConn>> {
+    pub(crate) async fn find(&self, addr: &SocketAddr) -> Option<Arc<UdpConn>> {
         let port_map = self.port_map.lock().await;
         if let Some(conns) = port_map.get(&addr.port()) {
             if addr.ip().is_unspecified() {
@@ -77,7 +77,7 @@ impl UdpConnMap {
         None
     }
 
-    pub async fn delete(&self, addr: &SocketAddr) -> Result<()> {
+    pub(crate) async fn delete(&self, addr: &SocketAddr) -> Result<()> {
         let mut port_map = self.port_map.lock().await;
         let mut new_conns = vec![];
         if let Some(conns) = port_map.get(&addr.port()) {

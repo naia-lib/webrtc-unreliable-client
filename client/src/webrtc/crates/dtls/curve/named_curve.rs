@@ -4,7 +4,7 @@ use crate::webrtc::dtls::error::*;
 
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-8
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum NamedCurve {
+pub(crate) enum NamedCurve {
     P256 = 0x0017,
     P384 = 0x0018,
     X25519 = 0x001d,
@@ -22,15 +22,15 @@ impl From<u16> for NamedCurve {
     }
 }
 
-pub enum NamedCurvePrivateKey {
+pub(crate) enum NamedCurvePrivateKey {
     EphemeralSecretP256(p256::ecdh::EphemeralSecret),
     StaticSecretX25519(x25519_dalek::StaticSecret),
 }
 
-pub struct NamedCurveKeypair {
-    pub curve: NamedCurve,
-    pub public_key: Vec<u8>,
-    pub private_key: NamedCurvePrivateKey,
+pub(crate) struct NamedCurveKeypair {
+    pub(crate) curve: NamedCurve,
+    pub(crate) public_key: Vec<u8>,
+    pub(crate) private_key: NamedCurvePrivateKey,
 }
 
 fn elliptic_curve_keypair(curve: NamedCurve) -> Result<NamedCurveKeypair> {
@@ -63,7 +63,7 @@ fn elliptic_curve_keypair(curve: NamedCurve) -> Result<NamedCurveKeypair> {
 }
 
 impl NamedCurve {
-    pub fn generate_keypair(&self) -> Result<NamedCurveKeypair> {
+    pub(crate) fn generate_keypair(&self) -> Result<NamedCurveKeypair> {
         match *self {
             //TODO: add P384
             NamedCurve::X25519 => elliptic_curve_keypair(NamedCurve::X25519),

@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod sctp_transport_test;
 
-pub mod sctp_transport_capabilities;
-pub mod sctp_transport_state;
+pub(crate) mod sctp_transport_capabilities;
+pub(crate) mod sctp_transport_state;
 
 use sctp_transport_state::RTCSctpTransportState;
 
@@ -20,7 +20,7 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, Notify};
 use crate::webrtc::util::Conn;
 
-pub type OnDataChannelHdlrFn = Box<
+pub(crate) type OnDataChannelHdlrFn = Box<
     dyn (FnMut(Arc<RTCDataChannel>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
@@ -28,14 +28,14 @@ pub type OnDataChannelHdlrFn = Box<
 
 /// SCTPTransport provides details about the SCTP transport.
 #[derive(Default)]
-pub struct RTCSctpTransport {
+pub(crate) struct RTCSctpTransport {
     // removing this causes compile panic, last checked
     #[allow(dead_code)]
     max_message_size: bool,
     #[allow(dead_code)]
     setting_engine: bool,
 
-    pub dtls_transport: Arc<RTCDtlsTransport>,
+    pub(crate) dtls_transport: Arc<RTCDtlsTransport>,
 
     // State represents the current state of the SCTP transport.
     state: AtomicU8, //SCTPTransportState,
@@ -49,15 +49,15 @@ pub struct RTCSctpTransport {
     on_data_channel_handler: Arc<Mutex<Option<OnDataChannelHdlrFn>>>,
 
     // DataChannels
-    pub data_channels: Arc<Mutex<Vec<Arc<RTCDataChannel>>>>,
-    pub data_channels_opened: Arc<AtomicU32>,
-    pub data_channels_requested: Arc<AtomicU32>,
+    pub(crate) data_channels: Arc<Mutex<Vec<Arc<RTCDataChannel>>>>,
+    pub(crate) data_channels_opened: Arc<AtomicU32>,
+    pub(crate) data_channels_requested: Arc<AtomicU32>,
 
     notify_tx: Arc<Notify>,
 }
 
 impl RTCSctpTransport {
-    pub fn new(
+    pub(crate) fn new(
         dtls_transport: Arc<RTCDtlsTransport>
     ) -> Self {
         RTCSctpTransport {
@@ -77,14 +77,14 @@ impl RTCSctpTransport {
     }
 
     /// transport returns the DTLSTransport instance the SCTPTransport is sending over.
-    pub fn transport(&self) -> Arc<RTCDtlsTransport> {
+    pub(crate) fn transport(&self) -> Arc<RTCDtlsTransport> {
         Arc::clone(&self.dtls_transport)
     }
 
     /// Start the SCTPTransport. Since both local and remote parties must mutually
     /// create an SCTPTransport, SCTP SO (Simultaneous Open) is used to establish
     /// a connection over SCTP.
-    pub async fn start(&self, _remote_caps: SCTPTransportCapabilities) -> Result<()> {
+    pub(crate) async fn start(&self, _remote_caps: SCTPTransportCapabilities) -> Result<()> {
         if self.is_started.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -116,7 +116,7 @@ impl RTCSctpTransport {
     }
 
     /// Stop stops the SCTPTransport
-    pub async fn stop(&self) -> Result<()> {
+    pub(crate) async fn stop(&self) -> Result<()> {
         {
             let mut sctp_association = self.sctp_association.lock().await;
             if let Some(sa) = sctp_association.take() {
@@ -134,17 +134,17 @@ impl RTCSctpTransport {
 
     /// on_data_channel sets an event handler which is invoked when a data
     /// channel message arrives from a remote peer.
-    pub async fn on_data_channel(&self, f: OnDataChannelHdlrFn) {
+    pub(crate) async fn on_data_channel(&self, f: OnDataChannelHdlrFn) {
         let mut handler = self.on_data_channel_handler.lock().await;
         *handler = Some(f);
     }
 
     /// state returns the current state of the SCTPTransport
-    pub fn state(&self) -> RTCSctpTransportState {
+    pub(crate) fn state(&self) -> RTCSctpTransportState {
         self.state.load(Ordering::SeqCst).into()
     }
 
-    pub async fn association(&self) -> Option<Arc<Association>> {
+    pub(crate) async fn association(&self) -> Option<Arc<Association>> {
         let sctp_association = self.sctp_association.lock().await;
         sctp_association.clone()
     }

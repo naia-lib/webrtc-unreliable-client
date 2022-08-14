@@ -4,7 +4,7 @@ use std::fmt;
 /// RTCPMuxPolicy affects what ICE candidates are gathered to support
 /// non-multiplexed RTCP.
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCRtcpMuxPolicy {
+pub(crate) enum RTCRtcpMuxPolicy {
     Unspecified = 0,
 
     /// RTCPMuxPolicyNegotiate indicates to gather ICE candidates for both

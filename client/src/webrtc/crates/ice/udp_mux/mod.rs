@@ -29,7 +29,7 @@ fn normalize_socket_addr(target: &SocketAddr, socket_addr: &SocketAddr) -> Socke
 }
 
 #[async_trait]
-pub trait UDPMux {
+pub(crate) trait UDPMux {
     /// Close the muxing.
     async fn close(&self) -> Result<(), Error>;
 
@@ -40,11 +40,11 @@ pub trait UDPMux {
     async fn remove_conn_by_ufrag(&self, ufrag: &str);
 }
 
-pub struct UDPMuxParams {
+pub(crate) struct UDPMuxParams {
     conn: Box<dyn Conn + Send + Sync>,
 }
 
-pub struct UDPMuxDefault {
+pub(crate) struct UDPMuxDefault {
     /// The params this instance is configured with.
     /// Contains the underlying UDP socket in use
     params: UDPMuxParams,
@@ -61,7 +61,7 @@ pub struct UDPMuxDefault {
 
 impl UDPMuxDefault {
 
-    pub async fn is_closed(&self) -> bool {
+    pub(crate) async fn is_closed(&self) -> bool {
         self.closed_watch_tx.lock().await.is_none()
     }
 

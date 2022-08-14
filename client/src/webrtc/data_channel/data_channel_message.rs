@@ -5,7 +5,7 @@ use bytes::Bytes;
 /// message is of the string type. Otherwise the message is of
 /// a binary type.
 #[derive(Default, Debug, Clone)]
-pub struct DataChannelMessage {
-    pub is_string: bool,
-    pub data: Bytes,
+pub(crate) struct DataChannelMessage {
+    pub(crate) is_string: bool,
+    pub(crate) data: Bytes,
 }

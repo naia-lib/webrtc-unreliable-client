@@ -2,15 +2,15 @@ use super::*;
 
 // Header is a representation of a DNS message header.
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
-pub struct Header {
-    pub id: u16,
-    pub response: bool,
-    pub op_code: OpCode,
-    pub authoritative: bool,
-    pub truncated: bool,
-    pub recursion_desired: bool,
-    pub recursion_available: bool,
-    pub rcode: RCode,
+pub(crate) struct Header {
+    pub(crate) id: u16,
+    pub(crate) response: bool,
+    pub(crate) op_code: OpCode,
+    pub(crate) authoritative: bool,
+    pub(crate) truncated: bool,
+    pub(crate) recursion_desired: bool,
+    pub(crate) recursion_available: bool,
+    pub(crate) rcode: RCode,
 }
 
 impl fmt::Display for Header {
@@ -31,7 +31,7 @@ impl fmt::Display for Header {
 }
 
 impl Header {
-    pub fn pack(&self) -> (u16, u16) {
+    pub(crate) fn pack(&self) -> (u16, u16) {
         let id = self.id;
         let mut bits = (self.op_code as u16) << 11 | self.rcode as u16;
         if self.recursion_available {
@@ -55,7 +55,7 @@ impl Header {
 }
 
 #[derive(Copy, Clone, PartialOrd, PartialEq)]
-pub enum Section {
+pub(crate) enum Section {
     NotStarted = 0,
     Header = 1,
     Questions = 2,
@@ -102,17 +102,17 @@ impl fmt::Display for Section {
 
 // header is the wire format for a DNS message header.
 #[derive(Default)]
-pub struct HeaderInternal {
-    pub id: u16,
-    pub bits: u16,
-    pub questions: u16,
-    pub answers: u16,
-    pub authorities: u16,
-    pub additionals: u16,
+pub(crate) struct HeaderInternal {
+    pub(crate) id: u16,
+    pub(crate) bits: u16,
+    pub(crate) questions: u16,
+    pub(crate) answers: u16,
+    pub(crate) authorities: u16,
+    pub(crate) additionals: u16,
 }
 
 impl HeaderInternal {
-    pub fn count(&self, sec: Section) -> u16 {
+    pub(crate) fn count(&self, sec: Section) -> u16 {
         match sec {
             Section::Questions => self.questions,
             Section::Answers => self.answers,
@@ -123,7 +123,7 @@ impl HeaderInternal {
     }
 
     // pack appends the wire format of the header to msg.
-    pub fn pack(&self, mut msg: Vec<u8>) -> Vec<u8> {
+    pub(crate) fn pack(&self, mut msg: Vec<u8>) -> Vec<u8> {
         msg = pack_uint16(msg, self.id);
         msg = pack_uint16(msg, self.bits);
         msg = pack_uint16(msg, self.questions);
@@ -133,7 +133,7 @@ impl HeaderInternal {
         msg
     }
 
-    pub fn unpack(&mut self, msg: &[u8], off: usize) -> Result<usize> {
+    pub(crate) fn unpack(&mut self, msg: &[u8], off: usize) -> Result<usize> {
         let (id, off) = unpack_uint16(msg, off)?;
         self.id = id;
 
@@ -155,7 +155,7 @@ impl HeaderInternal {
         Ok(off)
     }
 
-    pub fn header(&self) -> Header {
+    pub(crate) fn header(&self) -> Header {
         Header {
             id: self.id,
             response: (self.bits & HEADER_BIT_QR) != 0,

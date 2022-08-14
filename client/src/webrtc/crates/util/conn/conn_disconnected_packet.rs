@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 /// Since UDP is connectionless, as a server, it doesn't know how to reply
 /// simply using the `Write` method. So, to make it work, `disconnectedPacketConn`
 /// will infer the last packet that it reads as the reply address for `Write`
-pub struct DisconnectedPacketConn {
+pub(crate) struct DisconnectedPacketConn {
     raddr: Mutex<SocketAddr>,
     pconn: Arc<dyn Conn + Send + Sync>,
 }

@@ -2,8 +2,8 @@ use super::*;
 
 // An AResource is an A Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct AResource {
-    pub a: [u8; 4],
+pub(crate) struct AResource {
+    pub(crate) a: [u8; 4],
 }
 
 impl fmt::Display for AResource {

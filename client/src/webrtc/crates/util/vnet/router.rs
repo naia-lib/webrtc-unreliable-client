@@ -15,36 +15,36 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 
 lazy_static! {
-    pub static ref ROUTER_ID_CTR: AtomicU64 = AtomicU64::new(0);
+    pub(crate) static ref ROUTER_ID_CTR: AtomicU64 = AtomicU64::new(0);
 }
 
 // RouterConfig ...
 #[derive(Default)]
-pub struct RouterConfig {
+pub(crate) struct RouterConfig {
     // name of router. If not specified, a unique name will be assigned.
-    pub name: String,
+    pub(crate) name: String,
     // cidr notation, like "192.0.2.0/24"
-    pub cidr: String,
+    pub(crate) cidr: String,
     // static_ips is an array of static IP addresses to be assigned for this router.
     // If no static IP address is given, the router will automatically assign
     // an IP address.
     // This will be ignored if this router is the root.
-    pub static_ips: Vec<String>,
+    pub(crate) static_ips: Vec<String>,
     // static_ip is deprecated. Use static_ips.
-    pub static_ip: String,
+    pub(crate) static_ip: String,
     // Internal queue size
-    pub queue_size: usize,
+    pub(crate) queue_size: usize,
     // Effective only when this router has a parent router
-    pub nat_type: Option<NatType>,
+    pub(crate) nat_type: Option<NatType>,
     // Minimum Delay
-    pub min_delay: Duration,
+    pub(crate) min_delay: Duration,
     // Max Jitter
-    pub max_jitter: Duration,
+    pub(crate) max_jitter: Duration,
 }
 
 // NIC is a network interface controller that interfaces Router
 #[async_trait]
-pub trait Nic {
+pub(crate) trait Nic {
     async fn get_interface(&self, ifc_name: &str) -> Option<Interface>;
     async fn add_addrs_to_interface(&mut self, ifc_name: &str, addrs: &[IpNet]) -> Result<()>;
     async fn on_inbound_chunk(&self, c: Box<dyn Chunk + Send + Sync>);
@@ -53,22 +53,22 @@ pub trait Nic {
 }
 
 #[derive(Default)]
-pub struct RouterInternal {
-    pub nat_type: Option<NatType>,          // read-only
-    pub parent: Option<Arc<Mutex<Router>>>, // read-only
-    pub nat: NetworkAddressTranslator,      // read-only
+pub(crate) struct RouterInternal {
+    pub(crate) nat_type: Option<NatType>,          // read-only
+    pub(crate) parent: Option<Arc<Mutex<Router>>>, // read-only
+    pub(crate) nat: NetworkAddressTranslator,      // read-only
 }
 
 // Router ...
 #[derive(Default)]
-pub struct Router {
+pub(crate) struct Router {
     name: String,                              // read-only
     queue: Arc<ChunkQueue>,                    // read-only
     interfaces: Vec<Interface>,                // read-only
     static_ips: Vec<IpAddr>,                   // read-only
     static_local_ips: HashMap<String, IpAddr>, // read-only,
     done: Option<mpsc::Sender<()>>,            // requires mutex [x]
-    pub resolver: Arc<Mutex<Resolver>>, // read-only
+    pub(crate) resolver: Arc<Mutex<Resolver>>, // read-only
     push_ch: Option<mpsc::Sender<()>>,         // writer requires mutex
     router_internal: Arc<Mutex<RouterInternal>>,
 }
@@ -184,7 +184,7 @@ impl Nic for Router {
 
 impl Router {
 
-    pub async fn push(&self, mut c: Box<dyn Chunk + Send + Sync>) {
+    pub(crate) async fn push(&self, mut c: Box<dyn Chunk + Send + Sync>) {
         log::debug!("[{}] route {}", self.name, c);
         if self.done.is_some() {
             c.set_timestamp();

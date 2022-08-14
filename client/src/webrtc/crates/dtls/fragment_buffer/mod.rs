@@ -9,13 +9,13 @@ use crate::webrtc::dtls::record_layer::record_layer_header::*;
 use std::collections::HashMap;
 use std::io::{BufWriter, Cursor};
 
-pub struct Fragment {
+pub(crate) struct Fragment {
     record_layer_header: RecordLayerHeader,
     handshake_header: HandshakeHeader,
     data: Vec<u8>,
 }
 
-pub struct FragmentBuffer {
+pub(crate) struct FragmentBuffer {
     // map of MessageSequenceNumbers that hold slices of fragments
     cache: HashMap<u16, Vec<Fragment>>,
 
@@ -23,7 +23,7 @@ pub struct FragmentBuffer {
 }
 
 impl FragmentBuffer {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         FragmentBuffer {
             cache: HashMap::new(),
             current_message_sequence_number: 0,
@@ -33,7 +33,7 @@ impl FragmentBuffer {
     // Attempts to push a DTLS packet to the FragmentBuffer
     // when it returns true it means the FragmentBuffer has inserted and the buffer shouldn't be handled
     // when an error returns it is fatal, and the DTLS connection should be stopped
-    pub fn push(&mut self, mut buf: &[u8]) -> Result<bool> {
+    pub(crate) fn push(&mut self, mut buf: &[u8]) -> Result<bool> {
         let mut reader = Cursor::new(buf);
         let record_layer_header = RecordLayerHeader::unmarshal(&mut reader)?;
 
@@ -74,7 +74,7 @@ impl FragmentBuffer {
         Ok(true)
     }
 
-    pub fn pop(&mut self) -> Result<(Vec<u8>, u16)> {
+    pub(crate) fn pop(&mut self) -> Result<(Vec<u8>, u16)> {
         let seq_num = self.current_message_sequence_number;
         if !self.cache.contains_key(&seq_num) {
             return Err(Error::ErrEmptyFragment);

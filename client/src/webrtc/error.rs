@@ -6,11 +6,11 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 use tokio::sync::mpsc::error::SendError as MpscSendError;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
 
     /// ErrConnectionClosed indicates an operation executed after connection
     /// has already been closed.
@@ -139,7 +139,7 @@ pub enum Error {
     new(String),
 }
 
-pub type OnErrorHdlrFn =
+pub(crate) type OnErrorHdlrFn =
     Box<dyn (FnMut(Error) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
 // Because Tokio SendError is parameterized, we sadly lose the backtrace.

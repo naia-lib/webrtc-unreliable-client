@@ -170,20 +170,20 @@ async fn write_loop(
 }
 
 #[derive(Clone)]
-pub struct SessionAnswer {
-    pub sdp: String,
-    pub type_str: String,
+pub(crate) struct SessionAnswer {
+    pub(crate) sdp: String,
+    pub(crate) type_str: String,
 }
 
-pub struct SessionCandidate {
-    pub candidate: String,
-    pub sdp_m_line_index: u16,
-    pub sdp_mid: String,
+pub(crate) struct SessionCandidate {
+    pub(crate) candidate: String,
+    pub(crate) sdp_m_line_index: u16,
+    pub(crate) sdp_mid: String,
 }
 
-pub struct JsSessionResponse {
-    pub answer: SessionAnswer,
-    pub candidate: SessionCandidate,
+pub(crate) struct JsSessionResponse {
+    pub(crate) answer: SessionAnswer,
+    pub(crate) candidate: SessionCandidate,
 }
 
 fn get_session_response(input: &str) -> JsSessionResponse {

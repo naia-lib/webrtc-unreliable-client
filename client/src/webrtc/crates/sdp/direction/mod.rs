@@ -5,7 +5,7 @@ mod direction_test;
 
 /// Direction is a marker for transmission direction of an endpoint
 #[derive(Debug, PartialEq, Clone)]
-pub enum Direction {
+pub(crate) enum Direction {
     Unspecified = 0,
 }
 

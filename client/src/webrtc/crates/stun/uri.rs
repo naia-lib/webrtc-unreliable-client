@@ -5,10 +5,10 @@ use std::fmt;
 
 // URI as defined in RFC 7064.
 #[derive(PartialEq, Debug)]
-pub struct Uri {
-    pub scheme: String,
-    pub host: String,
-    pub port: Option<u16>,
+pub(crate) struct Uri {
+    pub(crate) scheme: String,
+    pub(crate) host: String,
+    pub(crate) port: Option<u16>,
 }
 
 impl fmt::Display for Uri {

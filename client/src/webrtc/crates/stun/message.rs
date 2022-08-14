@@ -13,34 +13,34 @@ use std::fmt;
 // network byte order.
 //
 // Defined in "STUN Message Structure", section 6.
-pub const MAGIC_COOKIE: u32 = 0x2112A442;
-pub const ATTRIBUTE_HEADER_SIZE: usize = 4;
-pub const MESSAGE_HEADER_SIZE: usize = 20;
+pub(crate) const MAGIC_COOKIE: u32 = 0x2112A442;
+pub(crate) const ATTRIBUTE_HEADER_SIZE: usize = 4;
+pub(crate) const MESSAGE_HEADER_SIZE: usize = 20;
 
 // TRANSACTION_ID_SIZE is length of transaction id array (in bytes).
-pub const TRANSACTION_ID_SIZE: usize = 12; // 96 bit
+pub(crate) const TRANSACTION_ID_SIZE: usize = 12; // 96 bit
 
 // Interfaces that are implemented by message attributes, shorthands for them,
 // or helpers for message fields as type or transaction id.
-pub trait Setter {
+pub(crate) trait Setter {
     // Setter sets *Message attribute.
     fn add_to(&self, m: &mut Message) -> Result<()>;
 }
 
 // Getter parses attribute from *Message.
-pub trait Getter {
+pub(crate) trait Getter {
     fn get_from(&mut self, m: &Message) -> Result<()>;
 }
 
 // Checker checks *Message attribute.
-pub trait Checker {
+pub(crate) trait Checker {
     fn check(&self, m: &Message) -> Result<()>;
 }
 
 // is_message returns true if b looks like STUN message.
 // Useful for multiplexing. is_message does not guarantee
 // that decoding will be successful.
-pub fn is_message(b: &[u8]) -> bool {
+pub(crate) fn is_message(b: &[u8]) -> bool {
     b.len() >= MESSAGE_HEADER_SIZE && u32::from_be_bytes([b[4], b[5], b[6], b[7]]) == MAGIC_COOKIE
 }
 // Message represents a single STUN packet. It uses aggressive internal
@@ -50,12 +50,12 @@ pub fn is_message(b: &[u8]) -> bool {
 // 	Message, its fields, results of m.Get or any attribute a.GetFrom
 //	are valid only until Message.Raw is not modified.
 #[derive(Default, Debug, Clone)]
-pub struct Message {
-    pub typ: MessageType,
-    pub length: u32, // len(Raw) not including header
-    pub transaction_id: TransactionId,
-    pub attributes: Attributes,
-    pub raw: Vec<u8>,
+pub(crate) struct Message {
+    pub(crate) typ: MessageType,
+    pub(crate) length: u32, // len(Raw) not including header
+    pub(crate) transaction_id: TransactionId,
+    pub(crate) attributes: Attributes,
+    pub(crate) raw: Vec<u8>,
 }
 
 impl fmt::Display for Message {
@@ -107,7 +107,7 @@ impl Setter for Message {
 
 impl Message {
     // New returns *Message with pre-allocated Raw.
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Message {
             raw: {
                 let mut raw = Vec::with_capacity(DEFAULT_RAW_CAPACITY);
@@ -119,7 +119,7 @@ impl Message {
     }
 
     // Reset resets Message, attributes and underlying buffer length.
-    pub fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.raw.clear();
         self.length = 0;
         self.attributes.0.clear();
@@ -140,7 +140,7 @@ impl Message {
     //
     // Value of attribute is copied to internal buffer so
     // it is safe to reuse v.
-    pub fn add(&mut self, t: AttrType, v: &[u8]) {
+    pub(crate) fn add(&mut self, t: AttrType, v: &[u8]) {
         // Allocating buffer for TLV (type-length-value).
         // T = t, L = len(v), V = v.
         // m.Raw will look like:
@@ -190,13 +190,13 @@ impl Message {
     }
 
     // WriteLength writes m.Length to m.Raw.
-    pub fn write_length(&mut self) {
+    pub(crate) fn write_length(&mut self) {
         self.grow(4, false);
         self.raw[2..4].copy_from_slice(&(self.length as u16).to_be_bytes());
     }
 
     // WriteHeader writes header to underlying buffer. Not goroutine-safe.
-    pub fn write_header(&mut self) {
+    pub(crate) fn write_header(&mut self) {
         self.grow(MESSAGE_HEADER_SIZE, false);
 
         self.write_type();
@@ -207,25 +207,25 @@ impl Message {
     }
 
     // WriteTransactionID writes m.TransactionID to m.Raw.
-    pub fn write_transaction_id(&mut self) {
+    pub(crate) fn write_transaction_id(&mut self) {
         self.raw[8..MESSAGE_HEADER_SIZE].copy_from_slice(&self.transaction_id.0);
         // transaction ID
     }
 
     // WriteType writes m.Type to m.Raw.
-    pub fn write_type(&mut self) {
+    pub(crate) fn write_type(&mut self) {
         self.grow(2, false);
         self.raw[..2].copy_from_slice(&self.typ.value().to_be_bytes()); // message type
     }
 
     // SetType sets m.Type and writes it to m.Raw.
-    pub fn set_type(&mut self, t: MessageType) {
+    pub(crate) fn set_type(&mut self, t: MessageType) {
         self.typ = t;
         self.write_type();
     }
 
     // Decode decodes m.Raw into m.
-    pub fn decode(&mut self) -> Result<()> {
+    pub(crate) fn decode(&mut self) -> Result<()> {
         // decoding message header
         let buf = &self.raw;
         if buf.len() < MESSAGE_HEADER_SIZE {
@@ -302,7 +302,7 @@ impl Message {
     }
 
     // Contains return true if message contain t attribute.
-    pub fn contains(&self, t: AttrType) -> bool {
+    pub(crate) fn contains(&self, t: AttrType) -> bool {
         for a in &self.attributes.0 {
             if a.typ == t {
                 return true;
@@ -314,7 +314,7 @@ impl Message {
     // get returns byte slice that represents attribute value,
     // if there is no attribute with such type,
     // ErrAttributeNotFound is returned.
-    pub fn get(&self, t: AttrType) -> Result<Vec<u8>> {
+    pub(crate) fn get(&self, t: AttrType) -> Result<Vec<u8>> {
         let (v, ok) = self.attributes.get(t);
         if ok {
             Ok(v.value)
@@ -338,7 +338,7 @@ impl Message {
     //  m.Build(&t, &username, &nonce, &realm) // 0 allocations
     //
     // See BenchmarkBuildOverhead.
-    pub fn build(&mut self, setters: &[Box<dyn Setter>]) -> Result<()> {
+    pub(crate) fn build(&mut self, setters: &[Box<dyn Setter>]) -> Result<()> {
         self.reset();
         self.write_header();
         for s in setters {
@@ -350,13 +350,13 @@ impl Message {
 
 // MessageClass is 8-bit representation of 2-bit class of STUN Message Class.
 #[derive(Default, PartialEq, Eq, Debug, Copy, Clone)]
-pub struct MessageClass(u8);
+pub(crate) struct MessageClass(u8);
 
 // Possible values for message class in STUN Message Type.
-pub const CLASS_REQUEST: MessageClass = MessageClass(0x00); // 0b00
-pub const CLASS_INDICATION: MessageClass = MessageClass(0x01); // 0b01
-pub const CLASS_SUCCESS_RESPONSE: MessageClass = MessageClass(0x02); // 0b10
-pub const CLASS_ERROR_RESPONSE: MessageClass = MessageClass(0x03); // 0b11
+pub(crate) const CLASS_REQUEST: MessageClass = MessageClass(0x00); // 0b00
+pub(crate) const CLASS_INDICATION: MessageClass = MessageClass(0x01); // 0b01
+pub(crate) const CLASS_SUCCESS_RESPONSE: MessageClass = MessageClass(0x02); // 0b10
+pub(crate) const CLASS_ERROR_RESPONSE: MessageClass = MessageClass(0x03); // 0b11
 
 impl fmt::Display for MessageClass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -374,21 +374,21 @@ impl fmt::Display for MessageClass {
 
 // Method is uint16 representation of 12-bit STUN method.
 #[derive(Default, PartialEq, Eq, Debug, Copy, Clone)]
-pub struct Method(u16);
+pub(crate) struct Method(u16);
 
 // Possible methods for STUN Message.
-pub const METHOD_BINDING: Method = Method(0x001);
-pub const METHOD_ALLOCATE: Method = Method(0x003);
-pub const METHOD_REFRESH: Method = Method(0x004);
-pub const METHOD_SEND: Method = Method(0x006);
-pub const METHOD_DATA: Method = Method(0x007);
-pub const METHOD_CREATE_PERMISSION: Method = Method(0x008);
-pub const METHOD_CHANNEL_BIND: Method = Method(0x009);
+pub(crate) const METHOD_BINDING: Method = Method(0x001);
+pub(crate) const METHOD_ALLOCATE: Method = Method(0x003);
+pub(crate) const METHOD_REFRESH: Method = Method(0x004);
+pub(crate) const METHOD_SEND: Method = Method(0x006);
+pub(crate) const METHOD_DATA: Method = Method(0x007);
+pub(crate) const METHOD_CREATE_PERMISSION: Method = Method(0x008);
+pub(crate) const METHOD_CHANNEL_BIND: Method = Method(0x009);
 
 // Methods from RFC 6062.
-pub const METHOD_CONNECT: Method = Method(0x000a);
-pub const METHOD_CONNECTION_BIND: Method = Method(0x000b);
-pub const METHOD_CONNECTION_ATTEMPT: Method = Method(0x000c);
+pub(crate) const METHOD_CONNECT: Method = Method(0x000a);
+pub(crate) const METHOD_CONNECTION_BIND: Method = Method(0x000b);
+pub(crate) const METHOD_CONNECTION_ATTEMPT: Method = Method(0x000c);
 
 impl fmt::Display for Method {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -416,19 +416,19 @@ impl fmt::Display for Method {
 
 // MessageType is STUN Message Type Field.
 #[derive(Default, Debug, PartialEq, Clone, Copy)]
-pub struct MessageType {
-    pub method: Method,      // e.g. binding
-    pub class: MessageClass, // e.g. request
+pub(crate) struct MessageType {
+    pub(crate) method: Method,      // e.g. binding
+    pub(crate) class: MessageClass, // e.g. request
 }
 
 // Common STUN message types.
 // Binding request message type.
-pub const BINDING_REQUEST: MessageType = MessageType {
+pub(crate) const BINDING_REQUEST: MessageType = MessageType {
     method: METHOD_BINDING,
     class: CLASS_REQUEST,
 };
 // Binding success response message type
-pub const BINDING_SUCCESS: MessageType = MessageType {
+pub(crate) const BINDING_SUCCESS: MessageType = MessageType {
     method: METHOD_BINDING,
     class: CLASS_SUCCESS_RESPONSE,
 };
@@ -465,12 +465,12 @@ impl Setter for MessageType {
 
 impl MessageType {
     // NewType returns new message type with provided method and class.
-    pub fn new(method: Method, class: MessageClass) -> Self {
+    pub(crate) fn new(method: Method, class: MessageClass) -> Self {
         MessageType { method, class }
     }
 
     // Value returns bit representation of messageType.
-    pub fn value(&self) -> u16 {
+    pub(crate) fn value(&self) -> u16 {
         //	 0                 1
         //	 2  3  4 5 6 7 8 9 0 1 2 3 4 5
         //	+--+--+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -504,7 +504,7 @@ impl MessageType {
     }
 
     // ReadValue decodes uint16 into MessageType.
-    pub fn read_value(&mut self, value: u16) {
+    pub(crate) fn read_value(&mut self, value: u16) {
         // Decoding class.
         // We are taking first bit from v >> 4 and second from v >> 7.
         let c0 = (value >> CLASS_C0SHIFT) & C0BIT;

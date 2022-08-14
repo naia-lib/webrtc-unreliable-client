@@ -7,7 +7,7 @@ use super::*;
 // https://tools.ietf.org/html/rfc5764#section-4.1.2
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum SrtpProtectionProfile {
+pub(crate) enum SrtpProtectionProfile {
     Srtp_Aes128_Cm_Hmac_Sha1_80 = 0x0001,
     Srtp_Aes128_Cm_Hmac_Sha1_32 = 0x0002,
     Srtp_Aead_Aes_128_Gcm = 0x0007,
@@ -30,20 +30,20 @@ impl From<u16> for SrtpProtectionProfile {
 // https://tools.ietf.org/html/rfc8422
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExtensionUseSrtp {
-    pub protection_profiles: Vec<SrtpProtectionProfile>,
+pub(crate) struct ExtensionUseSrtp {
+    pub(crate) protection_profiles: Vec<SrtpProtectionProfile>,
 }
 
 impl ExtensionUseSrtp {
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         ExtensionValue::UseSrtp
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         2 + 2 + self.protection_profiles.len() * 2 + 1
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u16::<BigEndian>(
             2 + /* MKI Length */ 1 + 2 * self.protection_profiles.len() as u16,
         )?;
@@ -58,7 +58,7 @@ impl ExtensionUseSrtp {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let _ = reader.read_u16::<BigEndian>()?;
 
         let profile_count = reader.read_u16::<BigEndian>()? as usize / 2;

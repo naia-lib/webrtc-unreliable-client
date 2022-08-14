@@ -1,8 +1,8 @@
-pub mod named_curve;
+pub(crate) mod named_curve;
 
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-10
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum EllipticCurveType {
+pub(crate) enum EllipticCurveType {
     NamedCurve = 0x03,
     Unsupported,
 }

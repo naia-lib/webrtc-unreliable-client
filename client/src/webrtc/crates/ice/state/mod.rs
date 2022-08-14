@@ -5,7 +5,7 @@ use std::fmt;
 
 /// An enum showing the state of a ICE Connection List of supported States.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum ConnectionState {
+pub(crate) enum ConnectionState {
     Unspecified,
 
     /// ICE agent is gathering addresses.
@@ -69,7 +69,7 @@ impl From<u8> for ConnectionState {
 
 /// Describes the state of the candidate gathering process.
 #[derive(PartialEq, Copy, Clone)]
-pub enum GatheringState {
+pub(crate) enum GatheringState {
     Unspecified,
 
     /// Indicates candidate gathering is not yet started.

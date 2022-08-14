@@ -8,7 +8,7 @@ use bytes::{
 };
 
 /// A trait for buffers that know their exact length.
-pub trait ExactSizeBuf {
+pub(crate) trait ExactSizeBuf {
     /// Returns the exact length of the buffer.
     fn len(&self) -> usize;
 

@@ -9,7 +9,7 @@ use std::fmt;
 
 /// The type of server used in the ice.URL structure.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SchemeType {
+pub(crate) enum SchemeType {
     /// The URL represents a STUN server.
     Stun,
 
@@ -61,7 +61,7 @@ impl fmt::Display for SchemeType {
 
 /// The transport protocol type that is used in the `ice::url::Url` structure.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum ProtoType {
+pub(crate) enum ProtoType {
     /// The URL uses a UDP transport.
     Udp,
 
@@ -104,13 +104,13 @@ impl fmt::Display for ProtoType {
 
 /// Represents a STUN (rfc7064) or TURN (rfc7065) URL.
 #[derive(Debug, Clone, Default)]
-pub struct Url {
-    pub scheme: SchemeType,
-    pub host: String,
-    pub port: u16,
-    pub username: String,
-    pub password: String,
-    pub proto: ProtoType,
+pub(crate) struct Url {
+    pub(crate) scheme: SchemeType,
+    pub(crate) host: String,
+    pub(crate) port: u16,
+    pub(crate) username: String,
+    pub(crate) password: String,
+    pub(crate) proto: ProtoType,
 }
 
 impl fmt::Display for Url {
@@ -136,7 +136,7 @@ impl Url {
     /// Parses a STUN or TURN urls following the ABNF syntax described in
     /// [IETF rfc-7064](https://tools.ietf.org/html/rfc7064) and
     /// [IETF rfc-7065](https://tools.ietf.org/html/rfc7065) respectively.
-    pub fn parse_url(raw: &str) -> Result<Self> {
+    pub(crate) fn parse_url(raw: &str) -> Result<Self> {
         // work around for url crate
         if raw.contains("//") {
             return Err(Error::ErrInvalidUrl);

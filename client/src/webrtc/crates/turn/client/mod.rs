@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod client_test;
 
-pub mod binding;
-pub mod periodic_timer;
-pub mod permission;
-pub mod relay_conn;
-pub mod transaction;
+pub(crate) mod binding;
+pub(crate) mod periodic_timer;
+pub(crate) mod permission;
+pub(crate) mod relay_conn;
+pub(crate) mod transaction;
 
 use crate::webrtc::turn::error::*;
 use crate::webrtc::turn::proto::{
@@ -45,16 +45,16 @@ const MAX_READ_QUEUE_SIZE: usize = 1024;
 // -: 63500 ms  failed
 
 // ClientConfig is a bag of config parameters for Client.
-pub struct ClientConfig {
-    pub stun_serv_addr: String, // STUN server address (e.g. "stun.abc.com:3478")
-    pub turn_serv_addr: String, // TURN server addrees (e.g. "turn.abc.com:3478")
-    pub username: String,
-    pub password: String,
-    pub realm: String,
-    pub software: String,
-    pub rto_in_ms: u16,
-    pub conn: Arc<dyn Conn + Send + Sync>,
-    pub vnet: Option<Arc<Net>>,
+pub(crate) struct ClientConfig {
+    pub(crate) stun_serv_addr: String, // STUN server address (e.g. "stun.abc.com:3478")
+    pub(crate) turn_serv_addr: String, // TURN server addrees (e.g. "turn.abc.com:3478")
+    pub(crate) username: String,
+    pub(crate) password: String,
+    pub(crate) realm: String,
+    pub(crate) software: String,
+    pub(crate) rto_in_ms: u16,
+    pub(crate) conn: Arc<dyn Conn + Send + Sync>,
+    pub(crate) vnet: Option<Arc<Net>>,
 }
 
 struct ClientInternal {
@@ -530,24 +530,24 @@ impl ClientInternal {
 
 // Client is a STUN server client
 #[derive(Clone)]
-pub struct Client {
+pub(crate) struct Client {
     client_internal: Arc<Mutex<ClientInternal>>,
 }
 
 impl Client {
-    pub async fn new(config: ClientConfig) -> Result<Self> {
+    pub(crate) async fn new(config: ClientConfig) -> Result<Self> {
         let ci = ClientInternal::new(config).await?;
         Ok(Client {
             client_internal: Arc::new(Mutex::new(ci)),
         })
     }
 
-    pub async fn listen(&self) -> Result<()> {
+    pub(crate) async fn listen(&self) -> Result<()> {
         let ci = self.client_internal.lock().await;
         ci.listen().await
     }
 
-    pub async fn allocate(&self) -> Result<impl Conn> {
+    pub(crate) async fn allocate(&self) -> Result<impl Conn> {
         let config = {
             let mut ci = self.client_internal.lock().await;
             ci.allocate().await?
@@ -556,7 +556,7 @@ impl Client {
         Ok(RelayConn::new(Arc::clone(&self.client_internal), config).await)
     }
 
-    pub async fn close(&self) -> Result<()> {
+    pub(crate) async fn close(&self) -> Result<()> {
         let mut ci = self.client_internal.lock().await;
         ci.close().await;
         Ok(())

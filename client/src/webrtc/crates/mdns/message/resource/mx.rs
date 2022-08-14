@@ -3,9 +3,9 @@ use crate::webrtc::mdns::error::Result;
 
 // An MXResource is an mx Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct MxResource {
-    pub pref: u16,
-    pub mx: Name,
+pub(crate) struct MxResource {
+    pub(crate) pref: u16,
+    pub(crate) mx: Name,
 }
 
 impl fmt::Display for MxResource {

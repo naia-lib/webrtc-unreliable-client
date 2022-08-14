@@ -11,7 +11,7 @@ use std::fmt;
 ///|   Type = 14   |Reserved     |T|      Length = 4               |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone)]
-pub struct ChunkShutdownComplete;
+pub(crate) struct ChunkShutdownComplete;
 
 /// makes chunkShutdownComplete printable
 impl fmt::Display for ChunkShutdownComplete {

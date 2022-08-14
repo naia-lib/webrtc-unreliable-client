@@ -8,17 +8,17 @@ use std::sync::Arc;
 
 /// The config required to create a new `CandidateRelay`.
 #[derive(Default)]
-pub struct CandidateRelayConfig {
-    pub base_config: CandidateBaseConfig,
+pub(crate) struct CandidateRelayConfig {
+    pub(crate) base_config: CandidateBaseConfig,
 
-    pub rel_addr: String,
-    pub rel_port: u16,
-    pub relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
+    pub(crate) rel_addr: String,
+    pub(crate) rel_port: u16,
+    pub(crate) relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
 }
 
 impl CandidateRelayConfig {
     /// Creates a new relay candidate.
-    pub async fn new_candidate_relay(self) -> Result<CandidateBase> {
+    pub(crate) async fn new_candidate_relay(self) -> Result<CandidateBase> {
         let mut candidate_id = self.base_config.candidate_id;
         if candidate_id.is_empty() {
             candidate_id = generate_cand_id();

@@ -82,11 +82,11 @@ async fn on_rtx_timeout(
 
 // TransactionResult is a bag of result values of a transaction
 #[derive(Debug)] //Clone
-pub struct TransactionResult {
-    pub msg: Message,
-    pub from: SocketAddr,
-    pub retries: u16,
-    pub err: Option<Error>,
+pub(crate) struct TransactionResult {
+    pub(crate) msg: Message,
+    pub(crate) from: SocketAddr,
+    pub(crate) retries: u16,
+    pub(crate) err: Option<Error>,
 }
 
 impl Default for TransactionResult {
@@ -102,22 +102,22 @@ impl Default for TransactionResult {
 
 // TransactionConfig is a set of config params used by NewTransaction
 #[derive(Default)]
-pub struct TransactionConfig {
-    pub key: String,
-    pub raw: Vec<u8>,
-    pub to: String,
-    pub interval: u16,
-    pub ignore_result: bool, // true to throw away the result of this transaction (it will not be readable using wait_for_result)
+pub(crate) struct TransactionConfig {
+    pub(crate) key: String,
+    pub(crate) raw: Vec<u8>,
+    pub(crate) to: String,
+    pub(crate) interval: u16,
+    pub(crate) ignore_result: bool, // true to throw away the result of this transaction (it will not be readable using wait_for_result)
 }
 
 // Transaction represents a transaction
 #[derive(Debug)]
-pub struct Transaction {
-    pub key: String,
-    pub raw: Vec<u8>,
-    pub to: String,
-    pub n_rtx: Arc<AtomicU16>,
-    pub interval: Arc<AtomicU16>,
+pub(crate) struct Transaction {
+    pub(crate) key: String,
+    pub(crate) raw: Vec<u8>,
+    pub(crate) to: String,
+    pub(crate) n_rtx: Arc<AtomicU16>,
+    pub(crate) interval: Arc<AtomicU16>,
     timer_ch_tx: Option<mpsc::Sender<()>>,
     result_ch_tx: Option<mpsc::Sender<TransactionResult>>,
     result_ch_rx: Option<mpsc::Receiver<TransactionResult>>,
@@ -141,7 +141,7 @@ impl Default for Transaction {
 
 impl Transaction {
     // NewTransaction creates a new instance of Transaction
-    pub fn new(config: TransactionConfig) -> Self {
+    pub(crate) fn new(config: TransactionConfig) -> Self {
         let (result_ch_tx, result_ch_rx) = if !config.ignore_result {
             let (tx, rx) = mpsc::channel(1);
             (Some(tx), Some(rx))
@@ -161,7 +161,7 @@ impl Transaction {
     }
 
     // start_rtx_timer starts the transaction timer
-    pub async fn start_rtx_timer(
+    pub(crate) async fn start_rtx_timer(
         &mut self,
         conn: Arc<dyn Conn + Send + Sync>,
         tr_map: Arc<Mutex<TransactionMap>>,
@@ -198,14 +198,14 @@ impl Transaction {
     }
 
     // stop_rtx_timer stop the transaction timer
-    pub fn stop_rtx_timer(&mut self) {
+    pub(crate) fn stop_rtx_timer(&mut self) {
         if self.timer_ch_tx.is_some() {
             self.timer_ch_tx.take();
         }
     }
 
     // write_result writes the result to the result channel
-    pub async fn write_result(&self, res: TransactionResult) -> bool {
+    pub(crate) async fn write_result(&self, res: TransactionResult) -> bool {
         if let Some(result_ch) = &self.result_ch_tx {
             result_ch.send(res).await.is_ok()
         } else {
@@ -213,59 +213,59 @@ impl Transaction {
         }
     }
 
-    pub fn get_result_channel(&mut self) -> Option<mpsc::Receiver<TransactionResult>> {
+    pub(crate) fn get_result_channel(&mut self) -> Option<mpsc::Receiver<TransactionResult>> {
         self.result_ch_rx.take()
     }
 
     // Close closes the transaction
-    pub fn close(&mut self) {
+    pub(crate) fn close(&mut self) {
         if self.result_ch_tx.is_some() {
             self.result_ch_tx.take();
         }
     }
 
     // retries returns the number of retransmission it has made
-    pub fn retries(&self) -> u16 {
+    pub(crate) fn retries(&self) -> u16 {
         self.n_rtx.load(Ordering::SeqCst)
     }
 }
 
 // TransactionMap is a thread-safe transaction map
 #[derive(Default, Debug)]
-pub struct TransactionMap {
+pub(crate) struct TransactionMap {
     tr_map: HashMap<String, Transaction>,
 }
 
 impl TransactionMap {
     // NewTransactionMap create a new instance of the transaction map
-    pub fn new() -> TransactionMap {
+    pub(crate) fn new() -> TransactionMap {
         TransactionMap {
             tr_map: HashMap::new(),
         }
     }
 
     // Insert inserts a trasaction to the map
-    pub fn insert(&mut self, key: String, tr: Transaction) -> bool {
+    pub(crate) fn insert(&mut self, key: String, tr: Transaction) -> bool {
         self.tr_map.insert(key, tr);
         true
     }
 
     // Find looks up a transaction by its key
-    pub fn find(&self, key: &str) -> Option<&Transaction> {
+    pub(crate) fn find(&self, key: &str) -> Option<&Transaction> {
         self.tr_map.get(key)
     }
 
-    pub fn get(&mut self, key: &str) -> Option<&mut Transaction> {
+    pub(crate) fn get(&mut self, key: &str) -> Option<&mut Transaction> {
         self.tr_map.get_mut(key)
     }
 
     // Delete deletes a transaction by its key
-    pub fn delete(&mut self, key: &str) -> Option<Transaction> {
+    pub(crate) fn delete(&mut self, key: &str) -> Option<Transaction> {
         self.tr_map.remove(key)
     }
 
     // close_and_delete_all closes and deletes all transactions
-    pub fn close_and_delete_all(&mut self) {
+    pub(crate) fn close_and_delete_all(&mut self) {
         for tr in self.tr_map.values_mut() {
             tr.close();
         }

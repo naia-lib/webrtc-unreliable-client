@@ -8,8 +8,8 @@ const NAME_LEN: usize = 255;
 // A Name is a non-encoded domain name. It is used instead of strings to avoid
 // allocations.
 #[derive(Default, PartialEq, Debug, Clone)]
-pub struct Name {
-    pub data: String,
+pub(crate) struct Name {
+    pub(crate) data: String,
 }
 
 // String implements fmt.Stringer.String.
@@ -20,7 +20,7 @@ impl fmt::Display for Name {
 }
 
 impl Name {
-    pub fn new(data: &str) -> Result<Self> {
+    pub(crate) fn new(data: &str) -> Result<Self> {
         if data.len() > NAME_LEN {
             Err(Error::ErrCalcLen)
         } else {
@@ -37,7 +37,7 @@ impl Name {
     //
     // The compression map will be updated with new domain suffixes. If compression
     // is nil, compression will not be used.
-    pub fn pack(
+    pub(crate) fn pack(
         &self,
         mut msg: Vec<u8>,
         compression: &mut Option<HashMap<String, usize>>,
@@ -108,11 +108,11 @@ impl Name {
     }
 
     // unpack unpacks a domain name.
-    pub fn unpack(&mut self, msg: &[u8], off: usize) -> Result<usize> {
+    pub(crate) fn unpack(&mut self, msg: &[u8], off: usize) -> Result<usize> {
         self.unpack_compressed(msg, off, true /* allowCompression */)
     }
 
-    pub fn unpack_compressed(
+    pub(crate) fn unpack_compressed(
         &mut self,
         msg: &[u8],
         off: usize,

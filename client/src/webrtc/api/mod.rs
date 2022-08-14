@@ -1,5 +1,5 @@
 
-pub mod setting_engine;
+pub(crate) mod setting_engine;
 
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
@@ -20,8 +20,8 @@ use std::time::SystemTime;
 /// Some of these functions are also exported globally using the
 /// defaultAPI object. Note that the global version of the API
 /// may be phased out in the future.
-pub struct API {
-    pub setting_engine: Arc<SettingEngine>,
+pub(crate) struct API {
+    pub(crate) setting_engine: Arc<SettingEngine>,
 }
 
 impl API {
@@ -29,7 +29,7 @@ impl API {
     /// new_ice_gatherer creates a new ice gatherer.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub fn new_ice_gatherer(&self, opts: RTCIceGatherOptions) -> Result<RTCIceGatherer> {
+    pub(crate) fn new_ice_gatherer(&self, opts: RTCIceGatherOptions) -> Result<RTCIceGatherer> {
         let mut validated_servers = vec![];
         if !opts.ice_servers.is_empty() {
             for server in &opts.ice_servers {
@@ -48,14 +48,14 @@ impl API {
     /// new_ice_transport creates a new ice transport.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub fn new_ice_transport(&self, gatherer: Arc<RTCIceGatherer>) -> RTCIceTransport {
+    pub(crate) fn new_ice_transport(&self, gatherer: Arc<RTCIceGatherer>) -> RTCIceTransport {
         RTCIceTransport::new(gatherer)
     }
 
     /// new_dtls_transport creates a new dtls_transport transport.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub fn new_dtls_transport(
+    pub(crate) fn new_dtls_transport(
         &self,
         ice_transport: Arc<RTCIceTransport>,
         mut certificates: Vec<RTCCertificate>,
@@ -82,7 +82,7 @@ impl API {
     /// new_sctp_transport creates a new SCTPTransport.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub fn new_sctp_transport(
+    pub(crate) fn new_sctp_transport(
         &self,
         dtls_transport: Arc<RTCDtlsTransport>,
     ) -> Result<RTCSctpTransport> {

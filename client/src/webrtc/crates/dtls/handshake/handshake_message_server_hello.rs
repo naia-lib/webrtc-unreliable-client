@@ -20,13 +20,13 @@ failure alert.
 https://tools.ietf.org/html/rfc5246#section-7.4.1.3
 */
 #[derive(Clone)]
-pub struct HandshakeMessageServerHello {
-    pub version: ProtocolVersion,
-    pub random: HandshakeRandom,
+pub(crate) struct HandshakeMessageServerHello {
+    pub(crate) version: ProtocolVersion,
+    pub(crate) random: HandshakeRandom,
 
-    pub cipher_suite: CipherSuiteId,
-    pub compression_method: CompressionMethodId,
-    pub extensions: Vec<Extension>,
+    pub(crate) cipher_suite: CipherSuiteId,
+    pub(crate) compression_method: CompressionMethodId,
+    pub(crate) extensions: Vec<Extension>,
 }
 
 impl PartialEq for HandshakeMessageServerHello {
@@ -52,11 +52,11 @@ impl fmt::Debug for HandshakeMessageServerHello {
 }
 
 impl HandshakeMessageServerHello {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::ServerHello
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         let mut len = 2 + self.random.size();
 
         // SessionID
@@ -74,7 +74,7 @@ impl HandshakeMessageServerHello {
         len
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u8(self.version.major)?;
         writer.write_u8(self.version.minor)?;
         self.random.marshal(writer)?;
@@ -100,7 +100,7 @@ impl HandshakeMessageServerHello {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
         let random = HandshakeRandom::unmarshal(reader)?;

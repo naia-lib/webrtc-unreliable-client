@@ -7,7 +7,7 @@ use regex::Regex;
 use tokio::sync::Mutex;
 
 // MaybeAddr
-struct MaybeAddr(pub ServerAddr);
+struct MaybeAddr(pub(crate) ServerAddr);
 
 // AddrCell
 #[derive(Clone)]
@@ -43,7 +43,7 @@ pub enum ServerAddr {
     Finding,
 }
 
-pub fn candidate_to_addr(candidate_str: &str) -> ServerAddr {
+pub(crate) fn candidate_to_addr(candidate_str: &str) -> ServerAddr {
     let pattern =
         Regex::new(r"\b(?P<ip_addr>(?:[0-9]{1,3}\.){3}[0-9]{1,3}) (?P<port>[0-9]{1,5})\b")
             .expect("failed to compile regex pattern");

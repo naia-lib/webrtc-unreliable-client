@@ -18,20 +18,20 @@ use crate::webrtc::mdns::message::{DnsClass, DnsType};
 //
 // Note that there is no requirement to fully skip or parse the message.
 #[derive(Default)]
-pub struct Parser<'a> {
-    pub msg: &'a [u8],
-    pub header: HeaderInternal,
+pub(crate) struct Parser<'a> {
+    pub(crate) msg: &'a [u8],
+    pub(crate) header: HeaderInternal,
 
-    pub section: Section,
-    pub off: usize,
-    pub index: usize,
-    pub res_header_valid: bool,
-    pub res_header: ResourceHeader,
+    pub(crate) section: Section,
+    pub(crate) off: usize,
+    pub(crate) index: usize,
+    pub(crate) res_header_valid: bool,
+    pub(crate) res_header: ResourceHeader,
 }
 
 impl<'a> Parser<'a> {
     // start parses the header and enables the parsing of Questions.
-    pub fn start(&mut self, msg: &'a [u8]) -> Result<Header> {
+    pub(crate) fn start(&mut self, msg: &'a [u8]) -> Result<Header> {
         *self = Parser {
             msg,
             ..Default::default()
@@ -72,7 +72,7 @@ impl<'a> Parser<'a> {
     }
 
     // question parses a single question.
-    pub fn question(&mut self) -> Result<Question> {
+    pub(crate) fn question(&mut self) -> Result<Question> {
         self.check_advance(Section::Questions)?;
         let mut name = Name::new("")?;
         let mut off = name.unpack(self.msg, self.off)?;
@@ -86,7 +86,7 @@ impl<'a> Parser<'a> {
     }
 
     // answer_header parses a single answer ResourceHeader.
-    pub fn answer_header(&mut self) -> Result<ResourceHeader> {
+    pub(crate) fn answer_header(&mut self) -> Result<ResourceHeader> {
         self.resource_header(Section::Answers)
     }
 }

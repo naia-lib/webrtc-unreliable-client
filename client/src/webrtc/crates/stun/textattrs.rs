@@ -16,23 +16,23 @@ const MAX_NONCE_B: usize = 763;
 // Username represents USERNAME attribute.
 //
 // RFC 5389 Section 15.3
-pub type Username = TextAttribute;
+pub(crate) type Username = TextAttribute;
 
 // Realm represents REALM attribute.
 //
 // RFC 5389 Section 15.7
-pub type Realm = TextAttribute;
+pub(crate) type Realm = TextAttribute;
 
 // Nonce represents NONCE attribute.
 //
 // RFC 5389 Section 15.8
-pub type Nonce = TextAttribute;
+pub(crate) type Nonce = TextAttribute;
 
 // TextAttribute is helper for adding and getting text attributes.
 #[derive(Clone, Default)]
-pub struct TextAttribute {
-    pub attr: AttrType,
-    pub text: String,
+pub(crate) struct TextAttribute {
+    pub(crate) attr: AttrType,
+    pub(crate) text: String,
 }
 
 impl fmt::Display for TextAttribute {
@@ -69,12 +69,12 @@ impl Getter for TextAttribute {
 }
 
 impl TextAttribute {
-    pub fn new(attr: AttrType, text: String) -> Self {
+    pub(crate) fn new(attr: AttrType, text: String) -> Self {
         TextAttribute { attr, text }
     }
 
     // get_from_as gets t attribute from m and appends its value to reseted v.
-    pub fn get_from_as(m: &Message, attr: AttrType) -> Result<Self> {
+    pub(crate) fn get_from_as(m: &Message, attr: AttrType) -> Result<Self> {
         match attr {
             ATTR_USERNAME => {}
             ATTR_REALM => {}

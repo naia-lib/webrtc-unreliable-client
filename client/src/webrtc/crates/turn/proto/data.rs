@@ -14,7 +14,7 @@ use crate::webrtc::stun::message::*;
 //
 // RFC 5766 Section 14.4
 #[derive(Default, Debug, PartialEq)]
-pub struct Data(pub Vec<u8>);
+pub(crate) struct Data(pub(crate) Vec<u8>);
 
 impl Setter for Data {
     // AddTo adds DATA to message.

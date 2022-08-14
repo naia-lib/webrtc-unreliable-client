@@ -3,8 +3,8 @@ use crate::webrtc::mdns::error::Result;
 
 // A PTRResource is a PTR Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct PtrResource {
-    pub ptr: Name,
+pub(crate) struct PtrResource {
+    pub(crate) ptr: Name,
 }
 
 impl fmt::Display for PtrResource {

@@ -4,12 +4,12 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::fmt;
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamHeader {
-    pub typ: ParamType,
-    pub value_length: u16,
+pub(crate) struct ParamHeader {
+    pub(crate) typ: ParamType,
+    pub(crate) value_length: u16,
 }
 
-pub const PARAM_HEADER_LENGTH: usize = 4;
+pub(crate) const PARAM_HEADER_LENGTH: usize = 4;
 
 /// String makes paramHeader printable
 impl fmt::Display for ParamHeader {

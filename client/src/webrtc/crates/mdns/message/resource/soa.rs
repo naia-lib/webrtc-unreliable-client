@@ -3,18 +3,18 @@ use crate::webrtc::mdns::error::Result;
 
 // An SOAResource is an SOA Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct SoaResource {
-    pub ns: Name,
-    pub mbox: Name,
-    pub serial: u32,
-    pub refresh: u32,
-    pub retry: u32,
-    pub expire: u32,
+pub(crate) struct SoaResource {
+    pub(crate) ns: Name,
+    pub(crate) mbox: Name,
+    pub(crate) serial: u32,
+    pub(crate) refresh: u32,
+    pub(crate) retry: u32,
+    pub(crate) expire: u32,
 
     // min_ttl the is the default TTL of Resources records which did not
     // contain a TTL value and the TTL of negative responses. (RFC 2308
     // Section 4)
-    pub min_ttl: u32,
+    pub(crate) min_ttl: u32,
 }
 
 impl fmt::Display for SoaResource {

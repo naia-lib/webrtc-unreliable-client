@@ -12,21 +12,21 @@ use std::collections::HashMap;
 //	buf, err := b.Finish()
 //	// If err is nil, buf[2:] will contain the built bytes.
 #[derive(Default)]
-pub struct Builder {
+pub(crate) struct Builder {
     // msg is the storage for the message being built.
-    pub msg: Option<Vec<u8>>,
+    pub(crate) msg: Option<Vec<u8>>,
 
     // section keeps track of the current section being built.
-    pub section: Section,
+    pub(crate) section: Section,
 
     // header keeps track of what should go in the header when Finish is
     // called.
-    pub header: HeaderInternal,
+    pub(crate) header: HeaderInternal,
 
     // start is the starting index of the bytes allocated in msg for header.
-    pub start: usize,
+    pub(crate) start: usize,
 
     // compression is a mapping from name suffixes to their starting index
     // in msg.
-    pub compression: Option<HashMap<String, usize>>,
+    pub(crate) compression: Option<HashMap<String, usize>>,
 }

@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod message_test;
 
-pub mod message_channel_ack;
-pub mod message_channel_open;
-pub mod message_type;
+pub(crate) mod message_channel_ack;
+pub(crate) mod message_channel_open;
+pub(crate) mod message_type;
 
 use message_channel_ack::*;
 use message_channel_open::*;
@@ -17,7 +17,7 @@ use bytes::{Buf, BufMut};
 
 /// A parsed DataChannel message
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub enum Message {
+pub(crate) enum Message {
     DataChannelAck(DataChannelAck),
     DataChannelOpen(DataChannelOpen),
 }
@@ -69,7 +69,7 @@ impl Unmarshal for Message {
 }
 
 impl Message {
-    pub fn message_type(&self) -> MessageType {
+    pub(crate) fn message_type(&self) -> MessageType {
         match self {
             Self::DataChannelAck(_) => MessageType::DataChannelAck,
             Self::DataChannelOpen(_) => MessageType::DataChannelOpen,

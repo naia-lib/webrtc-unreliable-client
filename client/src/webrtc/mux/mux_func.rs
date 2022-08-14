@@ -1,8 +1,8 @@
 /// MatchFunc allows custom logic for mapping packets to an Endpoint
-pub type MatchFunc = Box<dyn (Fn(&[u8]) -> bool) + Send + Sync>;
+pub(crate) type MatchFunc = Box<dyn (Fn(&[u8]) -> bool) + Send + Sync>;
 
 /// match_range is a MatchFunc that accepts packets with the first byte in [lower..upper]
-pub fn match_range(lower: u8, upper: u8) -> MatchFunc {
+pub(crate) fn match_range(lower: u8, upper: u8) -> MatchFunc {
     Box::new(move |buf: &[u8]| -> bool {
         if buf.is_empty() {
             return false;
@@ -27,6 +27,6 @@ pub fn match_range(lower: u8, upper: u8) -> MatchFunc {
 ///              +----------------+
 /// match_dtls is a MatchFunc that accepts packets with the first byte in [20..63]
 /// as defied in RFC7983
-pub fn match_dtls(b: &[u8]) -> bool {
+pub(crate) fn match_dtls(b: &[u8]) -> bool {
     match_range(20, 63)(b)
 }

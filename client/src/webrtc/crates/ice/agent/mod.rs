@@ -5,14 +5,14 @@ mod agent_test;
 #[cfg(test)]
 mod agent_transport_test;
 #[cfg(test)]
-pub mod agent_vnet_test;
+pub(crate) mod agent_vnet_test;
 
-pub mod agent_config;
-pub mod agent_gather;
-pub mod agent_internal;
-pub mod agent_selector;
-pub mod agent_stats;
-pub mod agent_transport;
+pub(crate) mod agent_config;
+pub(crate) mod agent_gather;
+pub(crate) mod agent_internal;
+pub(crate) mod agent_selector;
+pub(crate) mod agent_stats;
+pub(crate) mod agent_transport;
 
 use crate::webrtc::ice::candidate::*;
 use crate::webrtc::ice::error::*;
@@ -43,11 +43,11 @@ use tokio::sync::{broadcast, mpsc, Mutex};
 use tokio::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
-pub struct BindingRequest {
-    pub timestamp: Instant,
-    pub transaction_id: TransactionId,
-    pub destination: SocketAddr,
-    pub is_use_candidate: bool,
+pub(crate) struct BindingRequest {
+    pub(crate) timestamp: Instant,
+    pub(crate) transaction_id: TransactionId,
+    pub(crate) destination: SocketAddr,
+    pub(crate) is_use_candidate: bool,
 }
 
 impl Default for BindingRequest {
@@ -61,12 +61,12 @@ impl Default for BindingRequest {
     }
 }
 
-pub type OnConnectionStateChangeHdlrFn = Box<
+pub(crate) type OnConnectionStateChangeHdlrFn = Box<
     dyn (FnMut(ConnectionState) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
 >;
-pub type OnSelectedCandidatePairChangeHdlrFn = Box<
+pub(crate) type OnSelectedCandidatePairChangeHdlrFn = Box<
     dyn (FnMut(
             &Arc<dyn Candidate + Send + Sync>,
             &Arc<dyn Candidate + Send + Sync>,
@@ -74,45 +74,45 @@ pub type OnSelectedCandidatePairChangeHdlrFn = Box<
         + Send
         + Sync,
 >;
-pub type OnCandidateHdlrFn = Box<
+pub(crate) type OnCandidateHdlrFn = Box<
     dyn (FnMut(
             Option<Arc<dyn Candidate + Send + Sync>>,
         ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
 >;
-pub type GatherCandidateCancelFn = Box<dyn Fn() + Send + Sync>;
+pub(crate) type GatherCandidateCancelFn = Box<dyn Fn() + Send + Sync>;
 
-pub struct ChanReceivers {
+pub(crate) struct ChanReceivers {
     chan_state_rx: mpsc::Receiver<ConnectionState>,
     chan_candidate_rx: mpsc::Receiver<Option<Arc<dyn Candidate + Send + Sync>>>,
     chan_candidate_pair_rx: mpsc::Receiver<()>,
 }
 
 /// Represents the ICE agent.
-pub struct Agent {
-    pub internal: Arc<AgentInternal>,
+pub(crate) struct Agent {
+    pub(crate) internal: Arc<AgentInternal>,
 
-    pub udp_network: UDPNetwork,
-    pub interface_filter: Arc<Option<InterfaceFilterFn>>,
-    pub mdns_mode: MulticastDnsMode,
-    pub mdns_name: String,
-    pub mdns_conn: Option<Arc<DnsConn>>,
-    pub net: Arc<Net>,
+    pub(crate) udp_network: UDPNetwork,
+    pub(crate) interface_filter: Arc<Option<InterfaceFilterFn>>,
+    pub(crate) mdns_mode: MulticastDnsMode,
+    pub(crate) mdns_name: String,
+    pub(crate) mdns_conn: Option<Arc<DnsConn>>,
+    pub(crate) net: Arc<Net>,
 
     // 1:1 D-NAT IP address mapping
-    pub ext_ip_mapper: Arc<Option<ExternalIpMapper>>,
-    pub gathering_state: Arc<AtomicU8>, //GatheringState,
-    pub candidate_types: Vec<CandidateType>,
-    pub urls: Vec<Url>,
-    pub network_types: Vec<NetworkType>,
+    pub(crate) ext_ip_mapper: Arc<Option<ExternalIpMapper>>,
+    pub(crate) gathering_state: Arc<AtomicU8>, //GatheringState,
+    pub(crate) candidate_types: Vec<CandidateType>,
+    pub(crate) urls: Vec<Url>,
+    pub(crate) network_types: Vec<NetworkType>,
 
-    pub gather_candidate_cancel: Option<GatherCandidateCancelFn>,
+    pub(crate) gather_candidate_cancel: Option<GatherCandidateCancelFn>,
 }
 
 impl Agent {
     /// Creates a new Agent.
-    pub async fn new(config: AgentConfig) -> Result<Self> {
+    pub(crate) async fn new(config: AgentConfig) -> Result<Self> {
         let mut mdns_name = config.multicast_dns_host_name.clone();
         if mdns_name.is_empty() {
             mdns_name = generate_multicast_dns_name();
@@ -226,14 +226,14 @@ impl Agent {
     }
 
     /// Sets a handler that is fired when the connection state changes.
-    pub async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
+    pub(crate) async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
         let mut on_connection_state_change_hdlr =
             self.internal.on_connection_state_change_hdlr.lock().await;
         *on_connection_state_change_hdlr = Some(f);
     }
 
     /// Sets a handler that is fired when the final candidate pair is selected.
-    pub async fn on_selected_candidate_pair_change(&self, f: OnSelectedCandidatePairChangeHdlrFn) {
+    pub(crate) async fn on_selected_candidate_pair_change(&self, f: OnSelectedCandidatePairChangeHdlrFn) {
         let mut on_selected_candidate_pair_change_hdlr = self
             .internal
             .on_selected_candidate_pair_change_hdlr
@@ -244,13 +244,13 @@ impl Agent {
 
     /// Sets a handler that is fired when new candidates gathered. When the gathering process
     /// complete the last candidate is nil.
-    pub async fn on_candidate(&self, f: OnCandidateHdlrFn) {
+    pub(crate) async fn on_candidate(&self, f: OnCandidateHdlrFn) {
         let mut on_candidate_hdlr = self.internal.on_candidate_hdlr.lock().await;
         *on_candidate_hdlr = Some(f);
     }
 
     /// Adds a new remote candidate.
-    pub async fn add_remote_candidate(&self, c: &Arc<dyn Candidate + Send + Sync>) -> Result<()> {
+    pub(crate) async fn add_remote_candidate(&self, c: &Arc<dyn Candidate + Send + Sync>) -> Result<()> {
         // cannot check for network yet because it might not be applied
         // when mDNS hostame is used.
         if c.tcp_type() == TcpType::Active {
@@ -298,7 +298,7 @@ impl Agent {
     }
 
     /// Returns the local candidates.
-    pub async fn get_local_candidates(&self) -> Result<Vec<Arc<dyn Candidate + Send + Sync>>> {
+    pub(crate) async fn get_local_candidates(&self) -> Result<Vec<Arc<dyn Candidate + Send + Sync>>> {
         let mut res = vec![];
 
         {
@@ -314,13 +314,13 @@ impl Agent {
     }
 
     /// Returns the local user credentials.
-    pub async fn get_local_user_credentials(&self) -> (String, String) {
+    pub(crate) async fn get_local_user_credentials(&self) -> (String, String) {
         let ufrag_pwd = self.internal.ufrag_pwd.lock().await;
         (ufrag_pwd.local_ufrag.clone(), ufrag_pwd.local_pwd.clone())
     }
 
     /// Cleans up the Agent.
-    pub async fn close(&self) -> Result<()> {
+    pub(crate) async fn close(&self) -> Result<()> {
         if let Some(gather_candidate_cancel) = &self.gather_candidate_cancel {
             gather_candidate_cancel();
         }
@@ -334,7 +334,7 @@ impl Agent {
     ///
     /// Restart must only be called when `GatheringState` is `GatheringStateComplete`
     /// a user must then call `GatherCandidates` explicitly to start generating new ones.
-    pub async fn restart(&self, mut ufrag: String, mut pwd: String) -> Result<()> {
+    pub(crate) async fn restart(&self, mut ufrag: String, mut pwd: String) -> Result<()> {
         if ufrag.is_empty() {
             ufrag = generate_ufrag();
         }
@@ -398,7 +398,7 @@ impl Agent {
     }
 
     /// Initiates the trickle based gathering process.
-    pub async fn gather_candidates(&self) -> Result<()> {
+    pub(crate) async fn gather_candidates(&self) -> Result<()> {
         if self.gathering_state.load(Ordering::SeqCst) != GatheringState::New as u8 {
             return Err(Error::ErrMultipleGatherAttempted);
         }

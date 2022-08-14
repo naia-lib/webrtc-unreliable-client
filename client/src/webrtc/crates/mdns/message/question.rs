@@ -7,10 +7,10 @@ use std::fmt;
 
 // A question is a DNS query.
 #[derive(Default, Debug, PartialEq, Clone)]
-pub struct Question {
-    pub name: Name,
-    pub typ: DnsType,
-    pub class: DnsClass,
+pub(crate) struct Question {
+    pub(crate) name: Name,
+    pub(crate) typ: DnsType,
+    pub(crate) class: DnsClass,
 }
 
 impl fmt::Display for Question {
@@ -25,7 +25,7 @@ impl fmt::Display for Question {
 
 impl Question {
     // pack appends the wire format of the question to msg.
-    pub fn pack(
+    pub(crate) fn pack(
         &self,
         mut msg: Vec<u8>,
         compression: &mut Option<HashMap<String, usize>>,

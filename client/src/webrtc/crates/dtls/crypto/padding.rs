@@ -1,6 +1,6 @@
 use block_modes::block_padding::{PadError, Padding, UnpadError};
 
-pub enum DtlsPadding {}
+pub(crate) enum DtlsPadding {}
 /// Reference: RFC5246, 6.2.3.2
 impl Padding for DtlsPadding {
     fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
@@ -49,7 +49,7 @@ fn set(dst: &mut [u8], value: u8) {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
     use rand::Rng;
 
     use super::*;

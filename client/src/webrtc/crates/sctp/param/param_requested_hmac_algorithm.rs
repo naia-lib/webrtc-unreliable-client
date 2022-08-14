@@ -5,7 +5,7 @@ use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-pub enum HmacAlgorithm {
+pub(crate) enum HmacAlgorithm {
     HmacResv1 = 0,
     HmacSha128 = 1,
     HmacResv2 = 2,
@@ -39,8 +39,8 @@ impl From<u16> for HmacAlgorithm {
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamRequestedHmacAlgorithm {
-    pub available_algorithms: Vec<HmacAlgorithm>,
+pub(crate) struct ParamRequestedHmacAlgorithm {
+    pub(crate) available_algorithms: Vec<HmacAlgorithm>,
 }
 
 impl fmt::Display for ParamRequestedHmacAlgorithm {

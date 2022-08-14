@@ -7,8 +7,8 @@ use crate::webrtc::mdns::error::*;
 // The pseudo resource record is part of the extension mechanisms for DNS
 // as defined in RFC 6891.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct OptResource {
-    pub options: Vec<DnsOption>,
+pub(crate) struct OptResource {
+    pub(crate) options: Vec<DnsOption>,
 }
 
 // An Option represents a DNS message option within OPTResource.
@@ -16,9 +16,9 @@ pub struct OptResource {
 // The message option is part of the extension mechanisms for DNS as
 // defined in RFC 6891.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct DnsOption {
-    pub code: u16, // option code
-    pub data: Vec<u8>,
+pub(crate) struct DnsOption {
+    pub(crate) code: u16, // option code
+    pub(crate) data: Vec<u8>,
 }
 
 impl fmt::Display for DnsOption {

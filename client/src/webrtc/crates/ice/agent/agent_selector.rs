@@ -154,7 +154,7 @@ impl AgentInternal {
         }
     }
 
-    pub async fn start(&self) {
+    pub(crate) async fn start(&self) {
         if self.is_controlling.load(Ordering::SeqCst) {
             ControllingSelector::start(self).await;
         } else {
@@ -162,7 +162,7 @@ impl AgentInternal {
         }
     }
 
-    pub async fn contact_candidates(&self) {
+    pub(crate) async fn contact_candidates(&self) {
         if self.is_controlling.load(Ordering::SeqCst) {
             ControllingSelector::contact_candidates(self).await;
         } else {
@@ -170,7 +170,7 @@ impl AgentInternal {
         }
     }
 
-    pub async fn ping_candidate(
+    pub(crate) async fn ping_candidate(
         &self,
         local: &Arc<dyn Candidate + Send + Sync>,
         remote: &Arc<dyn Candidate + Send + Sync>,
@@ -182,7 +182,7 @@ impl AgentInternal {
         }
     }
 
-    pub async fn handle_success_response(
+    pub(crate) async fn handle_success_response(
         &self,
         m: &Message,
         local: &Arc<dyn Candidate + Send + Sync>,
@@ -196,7 +196,7 @@ impl AgentInternal {
         }
     }
 
-    pub async fn handle_binding_request(
+    pub(crate) async fn handle_binding_request(
         &self,
         m: &Message,
         local: &Arc<dyn Candidate + Send + Sync>,

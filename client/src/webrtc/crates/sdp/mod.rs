@@ -1,10 +1,10 @@
-pub mod description;
-pub mod direction;
-pub mod extmap;
-pub mod util;
+pub(crate) mod description;
+pub(crate) mod direction;
+pub(crate) mod extmap;
+pub(crate) mod util;
 
 mod error;
-pub mod lexer;
+pub(crate) mod lexer;
 
-pub use description::{media::MediaDescription, session::SessionDescription};
-pub use error::Error;
+pub(crate) use description::{media::MediaDescription, session::SessionDescription};
+pub(crate) use error::Error;

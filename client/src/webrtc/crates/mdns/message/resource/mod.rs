@@ -1,13 +1,13 @@
-pub mod a;
-pub mod aaaa;
-pub mod cname;
-pub mod mx;
-pub mod ns;
-pub mod opt;
-pub mod ptr;
-pub mod soa;
-pub mod srv;
-pub mod txt;
+pub(crate) mod a;
+pub(crate) mod aaaa;
+pub(crate) mod cname;
+pub(crate) mod mx;
+pub(crate) mod ns;
+pub(crate) mod opt;
+pub(crate) mod ptr;
+pub(crate) mod soa;
+pub(crate) mod srv;
+pub(crate) mod txt;
 
 use super::name::*;
 use super::packer::*;
@@ -21,9 +21,9 @@ use std::fmt;
 
 // A Resource is a DNS resource record.
 #[derive(Default, Debug)]
-pub struct Resource {
-    pub header: ResourceHeader,
-    pub body: Option<Box<dyn ResourceBody>>,
+pub(crate) struct Resource {
+    pub(crate) header: ResourceHeader,
+    pub(crate) body: Option<Box<dyn ResourceBody>>,
 }
 
 impl fmt::Display for Resource {
@@ -43,7 +43,7 @@ impl fmt::Display for Resource {
 
 impl Resource {
     // pack appends the wire format of the Resource to msg.
-    pub fn pack(
+    pub(crate) fn pack(
         &mut self,
         msg: Vec<u8>,
         compression: &mut Option<HashMap<String, usize>>,
@@ -67,28 +67,28 @@ impl Resource {
 // A ResourceHeader is the header of a DNS resource record. There are
 // many types of DNS resource records, but they all share the same header.
 #[derive(Clone, Default, PartialEq, Debug)]
-pub struct ResourceHeader {
+pub(crate) struct ResourceHeader {
     // Name is the domain name for which this resource record pertains.
-    pub name: Name,
+    pub(crate) name: Name,
 
     // Type is the type of DNS resource record.
     //
     // This field will be set automatically during packing.
-    pub typ: DnsType,
+    pub(crate) typ: DnsType,
 
     // Class is the class of network to which this DNS resource record
     // pertains.
-    pub class: DnsClass,
+    pub(crate) class: DnsClass,
 
     // TTL is the length of time (measured in seconds) which this resource
     // record is valid for (time to live). All Resources in a set should
     // have the same TTL (RFC 2181 Section 5.2).
-    pub ttl: u32,
+    pub(crate) ttl: u32,
 
     // Length is the length of data in the resource record after the header.
     //
     // This field will be set automatically during packing.
-    pub length: u16,
+    pub(crate) length: u16,
 }
 
 impl fmt::Display for ResourceHeader {
@@ -105,7 +105,7 @@ impl ResourceHeader {
     // pack appends the wire format of the ResourceHeader to oldMsg.
     //
     // lenOff is the offset in msg where the Length field was packed.
-    pub fn pack(
+    pub(crate) fn pack(
         &self,
         mut msg: Vec<u8>,
         compression: &mut Option<HashMap<String, usize>>,
@@ -120,7 +120,7 @@ impl ResourceHeader {
         Ok((msg, len_off))
     }
 
-    pub fn unpack(&mut self, msg: &[u8], off: usize, _length: usize) -> Result<usize> {
+    pub(crate) fn unpack(&mut self, msg: &[u8], off: usize, _length: usize) -> Result<usize> {
         let mut new_off = off;
         new_off = self.name.unpack(msg, new_off)?;
         new_off = self.typ.unpack(msg, new_off)?;
@@ -139,7 +139,7 @@ impl ResourceHeader {
     // lenOff is the offset of the ResourceHeader.Length field in msg.
     //
     // preLen is the length that msg was before the ResourceBody was packed.
-    pub fn fix_len(&mut self, msg: &mut [u8], len_off: usize, pre_len: usize) -> Result<()> {
+    pub(crate) fn fix_len(&mut self, msg: &mut [u8], len_off: usize, pre_len: usize) -> Result<()> {
         if msg.len() < pre_len || msg.len() > pre_len + u16::MAX as usize {
             return Err(Error::ErrResTooLong);
         }
@@ -156,7 +156,7 @@ impl ResourceHeader {
 }
 
 // A ResourceBody is a DNS resource record minus the header.
-pub trait ResourceBody: fmt::Display + fmt::Debug {
+pub(crate) trait ResourceBody: fmt::Display + fmt::Debug {
     // real_type returns the actual type of the Resource. This is used to
     // fill in the header Type field.
     fn real_type(&self) -> DnsType;

@@ -1,11 +1,11 @@
 use std::string::FromUtf8Error;
 use thiserror::Error;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error(
         "DataChannel message is not long enough to determine type: (expected: {expected}, actual: {actual})"
     )]

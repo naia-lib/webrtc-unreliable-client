@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 /// DTLSParameters holds information relating to DTLS configuration.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct DTLSParameters {
-    pub role: DTLSRole,
-    pub fingerprints: Vec<RTCDtlsFingerprint>,
+pub(crate) struct DTLSParameters {
+    pub(crate) role: DTLSRole,
+    pub(crate) fingerprints: Vec<RTCDtlsFingerprint>,
 }

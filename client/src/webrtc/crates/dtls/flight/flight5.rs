@@ -22,7 +22,7 @@ use std::fmt;
 use std::io::{BufReader, BufWriter};
 
 #[derive(Debug, PartialEq)]
-pub struct Flight5;
+pub(crate) struct Flight5;
 
 impl fmt::Display for Flight5 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

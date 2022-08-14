@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::webrtc::util::conn::*;
 
 /// DTLSListener represents a DTLS listener
-pub struct DTLSListener {
+pub(crate) struct DTLSListener {
     parent: Arc<dyn Listener + Send + Sync>,
     config: Config,
 }

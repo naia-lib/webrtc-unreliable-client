@@ -22,10 +22,10 @@ const CHANNEL_DATA_HEADER_SIZE: usize = CHANNEL_DATA_LENGTH_SIZE + CHANNEL_DATA_
 //
 // See RFC 5766 Section 11.4
 #[derive(Default, Debug)]
-pub struct ChannelData {
-    pub data: Vec<u8>, // can be subslice of Raw
-    pub number: ChannelNumber,
-    pub raw: Vec<u8>,
+pub(crate) struct ChannelData {
+    pub(crate) data: Vec<u8>, // can be subslice of Raw
+    pub(crate) number: ChannelNumber,
+    pub(crate) raw: Vec<u8>,
 }
 
 impl PartialEq for ChannelData {
@@ -45,7 +45,7 @@ impl ChannelData {
     }
 
     // Encode encodes ChannelData Message to Raw.
-    pub fn encode(&mut self) {
+    pub(crate) fn encode(&mut self) {
         self.raw.clear();
         self.write_header();
         self.raw.extend_from_slice(&self.data);
@@ -57,7 +57,7 @@ impl ChannelData {
     }
 
     // Decode decodes The ChannelData Message from Raw.
-    pub fn decode(&mut self) -> Result<()> {
+    pub(crate) fn decode(&mut self) -> Result<()> {
         let buf = &self.raw;
         if buf.len() < CHANNEL_DATA_HEADER_SIZE {
             return Err(Error::ErrUnexpectedEof);
@@ -80,7 +80,7 @@ impl ChannelData {
     }
 
     // WriteHeader writes channel number and length.
-    pub fn write_header(&mut self) {
+    pub(crate) fn write_header(&mut self) {
         if self.raw.len() < CHANNEL_DATA_HEADER_SIZE {
             // Making WriteHeader call valid even when c.Raw
             // is nil or len(c.Raw) is less than needed for header.
@@ -92,7 +92,7 @@ impl ChannelData {
     }
 
     // is_channel_data returns true if buf looks like the ChannelData Message.
-    pub fn is_channel_data(buf: &[u8]) -> bool {
+    pub(crate) fn is_channel_data(buf: &[u8]) -> bool {
         if buf.len() < CHANNEL_DATA_HEADER_SIZE {
             return false;
         }

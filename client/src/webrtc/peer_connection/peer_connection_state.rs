@@ -2,7 +2,7 @@ use std::fmt;
 
 /// PeerConnectionState indicates the state of the PeerConnection.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCPeerConnectionState {
+pub(crate) enum RTCPeerConnectionState {
     Unspecified,
 
     /// PeerConnectionStateNew indicates that any of the ICETransports or
@@ -92,7 +92,7 @@ impl fmt::Display for RTCPeerConnectionState {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum NegotiationNeededState {
+pub(crate) enum NegotiationNeededState {
     /// NegotiationNeededStateEmpty not running and queue is empty
     Empty,
     /// NegotiationNeededStateEmpty running and queue is empty

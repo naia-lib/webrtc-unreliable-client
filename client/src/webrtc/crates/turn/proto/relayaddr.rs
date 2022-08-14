@@ -14,9 +14,9 @@ use crate::webrtc::stun::xoraddr::*;
 //
 // RFC 5766 Section 14.5
 #[derive(PartialEq, Eq, Debug)]
-pub struct RelayedAddress {
-    pub ip: IpAddr,
-    pub port: u16,
+pub(crate) struct RelayedAddress {
+    pub(crate) ip: IpAddr,
+    pub(crate) port: u16,
 }
 
 impl Default for RelayedAddress {

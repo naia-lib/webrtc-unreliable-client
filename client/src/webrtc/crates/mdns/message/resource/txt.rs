@@ -3,8 +3,8 @@ use crate::webrtc::mdns::error::*;
 
 // A TXTResource is a txt Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct TxtResource {
-    pub txt: Vec<String>,
+pub(crate) struct TxtResource {
+    pub(crate) txt: Vec<String>,
 }
 
 impl fmt::Display for TxtResource {

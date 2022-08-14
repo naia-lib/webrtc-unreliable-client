@@ -6,11 +6,11 @@ use url::Url;
 
 /// ExtMap represents the activation of a single RTP header extension
 #[derive(Debug, Clone, Default)]
-pub struct ExtMap {
-    pub value: isize,
-    pub direction: Direction,
-    pub uri: Option<Url>,
-    pub ext_attr: Option<String>,
+pub(crate) struct ExtMap {
+    pub(crate) value: isize,
+    pub(crate) direction: Direction,
+    pub(crate) uri: Option<Url>,
+    pub(crate) ext_attr: Option<String>,
 }
 
 impl fmt::Display for ExtMap {

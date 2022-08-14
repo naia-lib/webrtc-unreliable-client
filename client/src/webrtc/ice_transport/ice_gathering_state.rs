@@ -2,7 +2,7 @@ use std::fmt;
 
 /// ICEGatheringState describes the state of the candidate gathering process.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceGatheringState {
+pub(crate) enum RTCIceGatheringState {
     Unspecified,
 
     /// ICEGatheringStateNew indicates that any of the ICETransports are

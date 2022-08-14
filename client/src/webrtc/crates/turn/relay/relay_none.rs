@@ -5,10 +5,10 @@ use async_trait::async_trait;
 use crate::webrtc::util::vnet::net::*;
 
 // RelayAddressGeneratorNone returns the listener with no modifications
-pub struct RelayAddressGeneratorNone {
+pub(crate) struct RelayAddressGeneratorNone {
     // Address is passed to Listen/ListenPacket when creating the Relay
-    pub address: String,
-    pub net: Arc<Net>,
+    pub(crate) address: String,
+    pub(crate) net: Arc<Net>,
 }
 
 #[async_trait]

@@ -11,8 +11,8 @@ use tokio::sync::mpsc;
 use crate::webrtc::error::Result;
 
 /// Operation is a function
-pub struct Operation(
-    pub Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = bool> + Send + 'static>>) + Send + Sync>,
+pub(crate) struct Operation(
+    pub(crate) Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = bool> + Send + 'static>>) + Send + Sync>,
 );
 
 impl fmt::Debug for Operation {
@@ -23,7 +23,7 @@ impl fmt::Debug for Operation {
 
 /// Operations is a task executor.
 #[derive(Default)]
-pub struct Operations {
+pub(crate) struct Operations {
     length: Arc<AtomicUsize>,
     ops_tx: Option<Arc<mpsc::UnboundedSender<Operation>>>,
     // Removing this causes exceptions
@@ -32,7 +32,7 @@ pub struct Operations {
 }
 
 impl Operations {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let length = Arc::new(AtomicUsize::new(0));
         let (ops_tx, ops_rx) = mpsc::unbounded_channel();
         let (close_tx, close_rx) = mpsc::channel(1);
@@ -52,7 +52,7 @@ impl Operations {
 
     /// enqueue adds a new action to be executed. If there are no actions scheduled,
     /// the execution will start immediately in a new goroutine.
-    pub async fn enqueue(&self, op: Operation) -> Result<()> {
+    pub(crate) async fn enqueue(&self, op: Operation) -> Result<()> {
         if let Some(ops_tx) = &self.ops_tx {
             return Operations::enqueue_inner(op, ops_tx, &self.length);
         }
@@ -72,11 +72,11 @@ impl Operations {
     }
 
     /// is_empty checks if there are tasks in the queue
-    pub async fn is_empty(&self) -> bool {
+    pub(crate) async fn is_empty(&self) -> bool {
         self.length.load(Ordering::SeqCst) == 0
     }
 
-    pub async fn start(
+    pub(crate) async fn start(
         length: Arc<AtomicUsize>,
         ops_tx: Arc<mpsc::UnboundedSender<Operation>>,
         mut ops_rx: mpsc::UnboundedReceiver<Operation>,

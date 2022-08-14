@@ -13,8 +13,8 @@ const CHANNEL_NUMBER_SIZE: usize = 4;
 //
 // 0x4000 through 0x7FFF: These values are the allowed channel
 // numbers (16,383 possible values).
-pub const MIN_CHANNEL_NUMBER: u16 = 0x4000;
-pub const MAX_CHANNEL_NUMBER: u16 = 0x7FFF;
+pub(crate) const MIN_CHANNEL_NUMBER: u16 = 0x4000;
+pub(crate) const MAX_CHANNEL_NUMBER: u16 = 0x7FFF;
 
 // ChannelNumber represents CHANNEL-NUMBER attribute.
 //
@@ -23,7 +23,7 @@ pub const MAX_CHANNEL_NUMBER: u16 = 0x7FFF;
 // RFC 5766 Section 14.1
 // encoded as uint16
 #[derive(Default, Eq, PartialEq, Debug, Copy, Clone, Hash)]
-pub struct ChannelNumber(pub u16);
+pub(crate) struct ChannelNumber(pub(crate) u16);
 
 impl fmt::Display for ChannelNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -63,7 +63,7 @@ impl ChannelNumber {
     }
 
     // Valid returns true if channel number has correct value that complies RFC 5766 Section 11 range.
-    pub fn valid(&self) -> bool {
+    pub(crate) fn valid(&self) -> bool {
         self.is_channel_number_valid()
     }
 }

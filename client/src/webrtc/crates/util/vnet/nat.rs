@@ -19,7 +19,7 @@ const DEFAULT_NAT_MAPPING_LIFE_TIME: Duration = Duration::from_secs(30);
 //  - Filtering behavior
 // See: https://tools.ietf.org/html/rfc4787
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum EndpointDependencyType {
+pub(crate) enum EndpointDependencyType {
     // EndpointIndependent means the behavior is independent of the endpoint's address or port
     EndpointIndependent,
     // EndpointAddrPortDependent means the behavior is dependent on the endpoint's address and port
@@ -34,7 +34,7 @@ impl Default for EndpointDependencyType {
 
 // NATMode defines basic behavior of the NAT
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum NatMode {
+pub(crate) enum NatMode {
     // NATModeNormal means the NAT behaves as a standard NAPT (RFC 2663).
     Normal,
     // NATModeNAT1To1 exhibits 1:1 DNAT where the external IP address is statically mapped to
@@ -52,25 +52,25 @@ impl Default for NatMode {
 
 // NATType has a set of parameters that define the behavior of NAT.
 #[derive(Default, Debug, Copy, Clone)]
-pub struct NatType {
-    pub mode: NatMode,
-    pub mapping_behavior: EndpointDependencyType,
-    pub filtering_behavior: EndpointDependencyType,
-    pub hair_pining: bool,       // Not implemented yet
-    pub port_preservation: bool, // Not implemented yet
-    pub mapping_life_time: Duration,
+pub(crate) struct NatType {
+    pub(crate) mode: NatMode,
+    pub(crate) mapping_behavior: EndpointDependencyType,
+    pub(crate) filtering_behavior: EndpointDependencyType,
+    pub(crate) hair_pining: bool,       // Not implemented yet
+    pub(crate) port_preservation: bool, // Not implemented yet
+    pub(crate) mapping_life_time: Duration,
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct NatConfig {
-    pub name: String,
-    pub nat_type: NatType,
-    pub mapped_ips: Vec<IpAddr>, // mapped IPv4
-    pub local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
+pub(crate) struct NatConfig {
+    pub(crate) name: String,
+    pub(crate) nat_type: NatType,
+    pub(crate) mapped_ips: Vec<IpAddr>, // mapped IPv4
+    pub(crate) local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
 }
 
 #[derive(Debug, Clone)]
-pub struct Mapping {
+pub(crate) struct Mapping {
     proto: String,                        // "udp" or "tcp"
     local: String,                        // "<local-ip>:<local-port>"
     mapped: String,                       // "<mapped-ip>:<mapped-port>"
@@ -93,17 +93,17 @@ impl Default for Mapping {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct NetworkAddressTranslator {
-    pub name: String,
-    pub nat_type: NatType,
-    pub mapped_ips: Vec<IpAddr>, // mapped IPv4
-    pub local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
-    pub outbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<local-ip>:<local-port>[:remote-ip[:remote-port]]
-    pub inbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<mapped-ip>:<mapped-port>"
+pub(crate) struct NetworkAddressTranslator {
+    pub(crate) name: String,
+    pub(crate) nat_type: NatType,
+    pub(crate) mapped_ips: Vec<IpAddr>, // mapped IPv4
+    pub(crate) local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
+    pub(crate) outbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<local-ip>:<local-port>[:remote-ip[:remote-port]]
+    pub(crate) inbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<mapped-ip>:<mapped-port>"
 }
 
 impl NetworkAddressTranslator {
-    pub fn new(config: NatConfig) -> Result<Self> {
+    pub(crate) fn new(config: NatConfig) -> Result<Self> {
         let mut nat_type = config.nat_type;
 
         if nat_type.mode == NatMode::Nat1To1 {
@@ -137,7 +137,7 @@ impl NetworkAddressTranslator {
         })
     }
 
-    pub fn get_paired_local_ip(&self, mapped_ip: &IpAddr) -> Option<&IpAddr> {
+    pub(crate) fn get_paired_local_ip(&self, mapped_ip: &IpAddr) -> Option<&IpAddr> {
         for (i, ip) in self.mapped_ips.iter().enumerate() {
             if ip == mapped_ip {
                 return self.local_ips.get(i);
@@ -146,7 +146,7 @@ impl NetworkAddressTranslator {
         None
     }
 
-    pub async fn translate_inbound(
+    pub(crate) async fn translate_inbound(
         &self,
         from: &(dyn Chunk + Send + Sync),
     ) -> Result<Option<Box<dyn Chunk + Send + Sync>>> {
@@ -221,7 +221,7 @@ impl NetworkAddressTranslator {
     }
 
     // caller must hold the mutex
-    pub async fn find_inbound_mapping(&self, i_key: &str) -> Option<Arc<Mapping>> {
+    pub(crate) async fn find_inbound_mapping(&self, i_key: &str) -> Option<Arc<Mapping>> {
         let mut expired = false;
         let (in_key, out_key) = {
             let inbound_map = self.inbound_map.lock().await;

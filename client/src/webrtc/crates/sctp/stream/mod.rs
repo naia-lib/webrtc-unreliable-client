@@ -19,29 +19,29 @@ use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::{mpsc, Mutex, Notify};
 
-pub type OnBufferedAmountLowFn =
+pub(crate) type OnBufferedAmountLowFn =
     Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
 // TODO: benchmark performance between multiple Atomic+Mutex vs one Mutex<StreamInternal>
 
 /// Stream represents an SCTP stream
 #[derive(Default)]
-pub struct Stream {
-    pub max_payload_size: u32,
-    pub max_message_size: Arc<AtomicU32>, // clone from association
-    pub state: Arc<AtomicU8>,             // clone from association
-    pub awake_write_loop_ch: Option<Arc<mpsc::Sender<()>>>,
-    pub pending_queue: Arc<PendingQueue>,
+pub(crate) struct Stream {
+    pub(crate) max_payload_size: u32,
+    pub(crate) max_message_size: Arc<AtomicU32>, // clone from association
+    pub(crate) state: Arc<AtomicU8>,             // clone from association
+    pub(crate) awake_write_loop_ch: Option<Arc<mpsc::Sender<()>>>,
+    pub(crate) pending_queue: Arc<PendingQueue>,
 
-    pub stream_identifier: u16,
-    pub reassembly_queue: Mutex<ReassemblyQueue>,
-    pub sequence_number: AtomicU16,
-    pub read_notifier: Notify,
-    pub closed: AtomicBool,
-    pub buffered_amount: AtomicUsize,
-    pub buffered_amount_low: AtomicUsize,
-    pub on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
-    pub name: String,
+    pub(crate) stream_identifier: u16,
+    pub(crate) reassembly_queue: Mutex<ReassemblyQueue>,
+    pub(crate) sequence_number: AtomicU16,
+    pub(crate) read_notifier: Notify,
+    pub(crate) closed: AtomicBool,
+    pub(crate) buffered_amount: AtomicUsize,
+    pub(crate) buffered_amount_low: AtomicUsize,
+    pub(crate) on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
+    pub(crate) name: String,
 }
 
 impl fmt::Debug for Stream {
@@ -63,7 +63,7 @@ impl fmt::Debug for Stream {
 }
 
 impl Stream {
-    pub fn new(
+    pub(crate) fn new(
         name: String,
         stream_identifier: u16,
         max_payload_size: u32,
@@ -94,7 +94,7 @@ impl Stream {
     /// read reads a packet of len(p) bytes, dropping the Payload Protocol Identifier.
     /// Returns EOF when the stream is reset or an error if the stream is closed
     /// otherwise.
-    pub async fn read(&self, p: &mut [u8]) -> Result<usize> {
+    pub(crate) async fn read(&self, p: &mut [u8]) -> Result<usize> {
         let (n, _) = self.read_sctp(p).await?;
         Ok(n)
     }
@@ -103,7 +103,7 @@ impl Stream {
     /// Protocol Identifier.
     /// Returns EOF when the stream is reset or an error if the stream is closed
     /// otherwise.
-    pub async fn read_sctp(&self, p: &mut [u8]) -> Result<(usize, PayloadProtocolIdentifier)> {
+    pub(crate) async fn read_sctp(&self, p: &mut [u8]) -> Result<(usize, PayloadProtocolIdentifier)> {
         while !self.closed.load(Ordering::SeqCst) {
             let result = {
                 let mut reassembly_queue = self.reassembly_queue.lock().await;
@@ -124,7 +124,7 @@ impl Stream {
         Err(Error::ErrStreamClosed)
     }
 
-    pub async fn handle_data(&self, pd: ChunkPayloadData) {
+    pub(crate) async fn handle_data(&self, pd: ChunkPayloadData) {
         let readable = {
             let mut reassembly_queue = self.reassembly_queue.lock().await;
             if reassembly_queue.push(pd) {
@@ -143,7 +143,7 @@ impl Stream {
         }
     }
 
-    pub async fn handle_forward_tsn_for_unordered(&self, new_cumulative_tsn: u32) {
+    pub(crate) async fn handle_forward_tsn_for_unordered(&self, new_cumulative_tsn: u32) {
 
         // Remove all chunks older than or equal to the new TSN from
         // the reassembly_queue.
@@ -160,13 +160,13 @@ impl Stream {
     }
 
     /// write writes len(p) bytes from p with the default Payload Protocol Identifier
-    pub async fn write(&self, p: &Bytes) -> Result<usize> {
+    pub(crate) async fn write(&self, p: &Bytes) -> Result<usize> {
         self.write_sctp(p, PayloadProtocolIdentifier::Binary)
             .await
     }
 
     /// write_sctp writes len(p) bytes from p to the DTLS connection
-    pub async fn write_sctp(&self, p: &Bytes, ppi: PayloadProtocolIdentifier) -> Result<usize> {
+    pub(crate) async fn write_sctp(&self, p: &Bytes, ppi: PayloadProtocolIdentifier) -> Result<usize> {
         if p.len() > self.max_message_size.load(Ordering::SeqCst) as usize {
             return Err(Error::ErrOutboundPacketTooLarge);
         }
@@ -243,7 +243,7 @@ impl Stream {
 
     /// Close closes the write-direction of the stream.
     /// Future calls to write are not permitted after calling Close.
-    pub async fn close(&self) -> Result<()> {
+    pub(crate) async fn close(&self) -> Result<()> {
         if !self.closed.load(Ordering::SeqCst) {
             // Reset the outgoing stream
             // https://tools.ietf.org/html/rfc6525
@@ -257,20 +257,20 @@ impl Stream {
 
     /// set_buffered_amount_low_threshold is used to update the threshold.
     /// See buffered_amount_low_threshold().
-    pub fn set_buffered_amount_low_threshold(&self, th: usize) {
+    pub(crate) fn set_buffered_amount_low_threshold(&self, th: usize) {
         self.buffered_amount_low.store(th, Ordering::SeqCst);
     }
 
     /// on_buffered_amount_low sets the callback handler which would be called when the number of
     /// bytes of outgoing data buffered is lower than the threshold.
-    pub async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
+    pub(crate) async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
         let mut on_buffered_amount_low = self.on_buffered_amount_low.lock().await;
         *on_buffered_amount_low = Some(f);
     }
 
     /// This method is called by association's read_loop (go-)routine to notify this stream
     /// of the specified amount of outgoing data has been delivered to the peer.
-    pub async fn on_buffer_released(&self, n_bytes_released: i64) {
+    pub(crate) async fn on_buffer_released(&self, n_bytes_released: i64) {
         if n_bytes_released <= 0 {
             return;
         }
@@ -312,7 +312,7 @@ impl Stream {
 
     /// get_num_bytes_in_reassembly_queue returns the number of bytes of data currently queued to
     /// be read (once chunk is complete).
-    pub async fn get_num_bytes_in_reassembly_queue(&self) -> usize {
+    pub(crate) async fn get_num_bytes_in_reassembly_queue(&self) -> usize {
         // No lock is required as it reads the size with atomic load function.
         let reassembly_queue = self.reassembly_queue.lock().await;
         reassembly_queue.get_num_bytes()
@@ -402,7 +402,7 @@ impl<'a> ReadFut<'a> {
 ///
 /// Both `poll_read` and `poll_write` calls allocate temporary buffers, which results in an
 /// additional overhead.
-pub struct PollStream<'a> {
+pub(crate) struct PollStream<'a> {
     stream: Arc<Stream>,
 
     read_fut: ReadFut<'a>,
@@ -424,7 +424,7 @@ impl PollStream<'_> {
     /// let stream = Arc::new(Stream::default());
     /// let poll_stream = PollStream::new(stream);
     /// ```
-    pub fn new(stream: Arc<Stream>) -> Self {
+    pub(crate) fn new(stream: Arc<Stream>) -> Self {
         Self {
             stream,
             read_fut: ReadFut::Idle,
@@ -435,7 +435,7 @@ impl PollStream<'_> {
     }
 
     /// Obtain a clone of the inner stream.
-    pub fn clone_inner(&self) -> Arc<Stream> {
+    pub(crate) fn clone_inner(&self) -> Arc<Stream> {
         self.stream.clone()
     }
 }

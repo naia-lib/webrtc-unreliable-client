@@ -2,7 +2,7 @@ use std::fmt;
 
 /// ICEGathererState represents the current state of the ICE gatherer.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceGathererState {
+pub(crate) enum RTCIceGathererState {
     Unspecified,
 
     /// ICEGathererStateNew indicates object has been created but

@@ -1,14 +1,14 @@
-pub mod ffi;
-pub use ffi::ifaces;
+pub(crate) mod ffi;
+pub(crate) use ffi::ifaces;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub enum NextHop {
+pub(crate) enum NextHop {
     Broadcast(::std::net::SocketAddr),
     Destination(::std::net::SocketAddr),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub enum Kind {
+pub(crate) enum Kind {
     Packet,
     Link,
     Ipv4,
@@ -17,10 +17,10 @@ pub enum Kind {
 }
 
 #[derive(Debug, Clone)]
-pub struct Interface {
-    pub name: String,
-    pub kind: Kind,
-    pub addr: Option<::std::net::SocketAddr>,
-    pub mask: Option<::std::net::SocketAddr>,
-    pub hop: Option<NextHop>,
+pub(crate) struct Interface {
+    pub(crate) name: String,
+    pub(crate) kind: Kind,
+    pub(crate) addr: Option<::std::net::SocketAddr>,
+    pub(crate) mask: Option<::std::net::SocketAddr>,
+    pub(crate) hop: Option<NextHop>,
 }

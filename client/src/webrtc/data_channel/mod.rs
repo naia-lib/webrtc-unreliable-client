@@ -1,10 +1,8 @@
 #[cfg(test)]
 mod data_channel_test;
 
-pub mod data_channel_message;
-pub mod data_channel_state;
-
-use data_channel_message::*;
+pub(crate) mod data_channel_message;
+pub(crate) mod data_channel_state;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -12,37 +10,28 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 
 use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
-use tokio::sync::{Mutex, Notify};
+use tokio::sync::Mutex;
 
 use data_channel_state::RTCDataChannelState;
 
 use crate::webrtc::error::{Error, OnErrorHdlrFn, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
 
-pub type OnMessageHdlrFn = Box<
-    dyn (FnMut(DataChannelMessage) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
-        + Send
-        + Sync,
->;
-
-pub type OnOpenHdlrFn =
+pub(crate) type OnOpenHdlrFn =
     Box<dyn (FnOnce() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
-
-pub type OnCloseHdlrFn =
-    Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
 /// DataChannel represents a WebRTC DataChannel
 /// The DataChannel interface represents a network channel
 /// which can be used for bidirectional peer-to-peer transfers of arbitrary data
 #[derive(Default)]
-pub struct RTCDataChannel {
+pub(crate) struct RTCDataChannel {
 
     label: String,
     protocol: String,
 
-    pub ready_state: Arc<AtomicU8>, // DataChannelState
-    pub buffered_amount_low_threshold: AtomicUsize,
-    pub detach_called: Arc<AtomicBool>,
+    ready_state: Arc<AtomicU8>, // DataChannelState
+    buffered_amount_low_threshold: AtomicUsize,
+    detach_called: Arc<AtomicBool>,
 
     // The binaryType represents attribute MUST, on getting, return the value to
     // which it was last set. On setting, if the new value is either the string
@@ -51,37 +40,30 @@ pub struct RTCDataChannel {
     // is created, the binaryType attribute MUST be initialized to the string
     // "blob". This attribute controls how binary data is exposed to scripts.
     // binaryType                 string
-    pub on_message_handler: Arc<Mutex<Option<OnMessageHdlrFn>>>,
-    pub on_open_handler: Arc<Mutex<Option<OnOpenHdlrFn>>>,
-    pub on_close_handler: Arc<Mutex<Option<OnCloseHdlrFn>>>,
-    pub on_error_handler: Arc<Mutex<Option<OnErrorHdlrFn>>>,
+    on_open_handler: Arc<Mutex<Option<OnOpenHdlrFn>>>,
+    on_error_handler: Arc<Mutex<Option<OnErrorHdlrFn>>>,
 
-    pub on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
+    on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
 
-    pub sctp_transport: Mutex<Option<Weak<RTCSctpTransport>>>,
-    pub data_channel: Mutex<Option<Arc<crate::webrtc::data::data_channel::DataChannel>>>,
-
-    pub notify_tx: Arc<Notify>,
-
+    sctp_transport: Mutex<Option<Weak<RTCSctpTransport>>>,
+    data_channel: Mutex<Option<Arc<crate::webrtc::data::data_channel::DataChannel>>>,
 }
 
 impl RTCDataChannel {
     // create the DataChannel object before the networking is set up.
-    pub fn new(label: &str, protocol: &str) -> Self {
+    pub(crate) fn new(label: &str, protocol: &str) -> Self {
 
         RTCDataChannel {
             label: label.to_string(),
             protocol: protocol.to_string(),
             ready_state: Arc::new(AtomicU8::new(RTCDataChannelState::Connecting as u8)),
             detach_called: Arc::new(AtomicBool::new(false)),
-
-            notify_tx: Arc::new(Notify::new()),
             ..Default::default()
         }
     }
 
     /// open opens the datachannel over the sctp transport
-    pub async fn open(&self, sctp_transport: Arc<RTCSctpTransport>) -> Result<()> {
+    pub(crate) async fn open(&self, sctp_transport: Arc<RTCSctpTransport>) -> Result<()> {
         if let Some(association) = sctp_transport.association().await {
             {
                 let mut st = self.sctp_transport.lock().await;
@@ -120,7 +102,7 @@ impl RTCDataChannel {
 
     /// on_open sets an event handler which is invoked when
     /// the underlying data transport has been established (or re-established).
-    pub async fn on_open(&self, f: OnOpenHdlrFn) {
+    pub(crate) async fn on_open(&self, f: OnOpenHdlrFn) {
         {
             let mut handler = self.on_open_handler.lock().await;
             *handler = Some(f);
@@ -152,7 +134,7 @@ impl RTCDataChannel {
         });
     }
 
-    pub async fn handle_open(&self, dc: Arc<crate::webrtc::data::data_channel::DataChannel>) {
+    pub(crate) async fn handle_open(&self, dc: Arc<crate::webrtc::data::data_channel::DataChannel>) {
         {
             let mut data_channel = self.data_channel.lock().await;
             *data_channel = Some(Arc::clone(&dc));
@@ -164,7 +146,7 @@ impl RTCDataChannel {
 
     /// on_error sets an event handler which is invoked when
     /// the underlying data transport cannot be read.
-    pub async fn on_error(&self, f: OnErrorHdlrFn) {
+    pub(crate) async fn on_error(&self, f: OnErrorHdlrFn) {
         let mut handler = self.on_error_handler.lock().await;
         *handler = Some(f);
     }
@@ -177,7 +159,7 @@ impl RTCDataChannel {
     /// Please refer to the data-channels-detach example and the
     /// pion/datachannel documentation for the correct way to handle the
     /// resulting DataChannel object.
-    pub async fn detach(&self) -> Result<Arc<crate::webrtc::data::data_channel::DataChannel>> {
+    pub(crate) async fn detach(&self) -> Result<Arc<crate::webrtc::data::data_channel::DataChannel>> {
 
         let data_channel = self.data_channel.lock().await;
         if let Some(dc) = &*data_channel {
@@ -190,11 +172,11 @@ impl RTCDataChannel {
     }
 
     /// ready_state represents the state of the DataChannel object.
-    pub fn ready_state(&self) -> RTCDataChannelState {
+    pub(crate) fn ready_state(&self) -> RTCDataChannelState {
         self.ready_state.load(Ordering::SeqCst).into()
     }
 
-    pub fn set_ready_state(&self, r: RTCDataChannelState) {
+    pub(crate) fn set_ready_state(&self, r: RTCDataChannelState) {
         self.ready_state.store(r as u8, Ordering::SeqCst);
     }
 }

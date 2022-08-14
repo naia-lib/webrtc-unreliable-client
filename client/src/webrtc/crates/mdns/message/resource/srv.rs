@@ -3,11 +3,11 @@ use crate::webrtc::mdns::error::Result;
 
 // An SRVResource is an SRV Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct SrvResource {
-    pub priority: u16,
-    pub weight: u16,
-    pub port: u16,
-    pub target: Name, // Not compressed as per RFC 2782.
+pub(crate) struct SrvResource {
+    pub(crate) priority: u16,
+    pub(crate) weight: u16,
+    pub(crate) port: u16,
+    pub(crate) target: Name, // Not compressed as per RFC 2782.
 }
 
 impl fmt::Display for SrvResource {

@@ -4,7 +4,7 @@ use std::fmt;
 /// ICEProtocol indicates the transport protocol type that is used in the
 /// ice.URL structure.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
-pub enum RTCIceProtocol {
+pub(crate) enum RTCIceProtocol {
     Unspecified,
 
     /// UDP indicates the URL uses a UDP transport.

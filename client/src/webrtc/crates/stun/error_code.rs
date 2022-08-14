@@ -10,9 +10,9 @@ use std::fmt;
 //
 // RFC 5389 Section 15.6
 #[derive(Default)]
-pub struct ErrorCodeAttribute {
-    pub code: ErrorCode,
-    pub reason: Vec<u8>,
+pub(crate) struct ErrorCodeAttribute {
+    pub(crate) code: ErrorCode,
+    pub(crate) reason: Vec<u8>,
 }
 
 impl fmt::Display for ErrorCodeAttribute {
@@ -78,7 +78,7 @@ impl Getter for ErrorCodeAttribute {
 
 // ErrorCode is code for ERROR-CODE attribute.
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Default)]
-pub struct ErrorCode(pub u16);
+pub(crate) struct ErrorCode(pub(crate) u16);
 
 impl Setter for ErrorCode {
     // add_to adds ERROR-CODE with default reason to m. If there
@@ -97,38 +97,38 @@ impl Setter for ErrorCode {
 }
 
 // Possible error codes.
-pub const CODE_TRY_ALTERNATE: ErrorCode = ErrorCode(300);
-pub const CODE_BAD_REQUEST: ErrorCode = ErrorCode(400);
-pub const CODE_UNAUTHORIZED: ErrorCode = ErrorCode(401);
-pub const CODE_UNKNOWN_ATTRIBUTE: ErrorCode = ErrorCode(420);
-pub const CODE_STALE_NONCE: ErrorCode = ErrorCode(438);
-pub const CODE_ROLE_CONFLICT: ErrorCode = ErrorCode(487);
-pub const CODE_SERVER_ERROR: ErrorCode = ErrorCode(500);
+pub(crate) const CODE_TRY_ALTERNATE: ErrorCode = ErrorCode(300);
+pub(crate) const CODE_BAD_REQUEST: ErrorCode = ErrorCode(400);
+pub(crate) const CODE_UNAUTHORIZED: ErrorCode = ErrorCode(401);
+pub(crate) const CODE_UNKNOWN_ATTRIBUTE: ErrorCode = ErrorCode(420);
+pub(crate) const CODE_STALE_NONCE: ErrorCode = ErrorCode(438);
+pub(crate) const CODE_ROLE_CONFLICT: ErrorCode = ErrorCode(487);
+pub(crate) const CODE_SERVER_ERROR: ErrorCode = ErrorCode(500);
 
 // Error codes from RFC 5766.
 //
 // RFC 5766 Section 15
-pub const CODE_FORBIDDEN: ErrorCode = ErrorCode(403); // Forbidden
-pub const CODE_ALLOC_MISMATCH: ErrorCode = ErrorCode(437); // Allocation Mismatch
-pub const CODE_WRONG_CREDENTIALS: ErrorCode = ErrorCode(441); // Wrong Credentials
-pub const CODE_UNSUPPORTED_TRANS_PROTO: ErrorCode = ErrorCode(442); // Unsupported Transport Protocol
-pub const CODE_ALLOC_QUOTA_REACHED: ErrorCode = ErrorCode(486); // Allocation Quota Reached
-pub const CODE_INSUFFICIENT_CAPACITY: ErrorCode = ErrorCode(508); // Insufficient Capacity
+pub(crate) const CODE_FORBIDDEN: ErrorCode = ErrorCode(403); // Forbidden
+pub(crate) const CODE_ALLOC_MISMATCH: ErrorCode = ErrorCode(437); // Allocation Mismatch
+pub(crate) const CODE_WRONG_CREDENTIALS: ErrorCode = ErrorCode(441); // Wrong Credentials
+pub(crate) const CODE_UNSUPPORTED_TRANS_PROTO: ErrorCode = ErrorCode(442); // Unsupported Transport Protocol
+pub(crate) const CODE_ALLOC_QUOTA_REACHED: ErrorCode = ErrorCode(486); // Allocation Quota Reached
+pub(crate) const CODE_INSUFFICIENT_CAPACITY: ErrorCode = ErrorCode(508); // Insufficient Capacity
 
 // Error codes from RFC 6062.
 //
 // RFC 6062 Section 6.3
-pub const CODE_CONN_ALREADY_EXISTS: ErrorCode = ErrorCode(446);
-pub const CODE_CONN_TIMEOUT_OR_FAILURE: ErrorCode = ErrorCode(447);
+pub(crate) const CODE_CONN_ALREADY_EXISTS: ErrorCode = ErrorCode(446);
+pub(crate) const CODE_CONN_TIMEOUT_OR_FAILURE: ErrorCode = ErrorCode(447);
 
 // Error codes from RFC 6156.
 //
 // RFC 6156 Section 10.2
-pub const CODE_ADDR_FAMILY_NOT_SUPPORTED: ErrorCode = ErrorCode(440); // Address Family not Supported
-pub const CODE_PEER_ADDR_FAMILY_MISMATCH: ErrorCode = ErrorCode(443); // Peer Address Family Mismatch
+pub(crate) const CODE_ADDR_FAMILY_NOT_SUPPORTED: ErrorCode = ErrorCode(440); // Address Family not Supported
+pub(crate) const CODE_PEER_ADDR_FAMILY_MISMATCH: ErrorCode = ErrorCode(443); // Peer Address Family Mismatch
 
 lazy_static! {
-    pub static ref ERROR_REASONS:HashMap<ErrorCode, Vec<u8>> =
+    pub(crate) static ref ERROR_REASONS:HashMap<ErrorCode, Vec<u8>> =
         [
             (CODE_TRY_ALTERNATE,     b"Try Alternate".to_vec()),
             (CODE_BAD_REQUEST,       b"Bad Request".to_vec()),

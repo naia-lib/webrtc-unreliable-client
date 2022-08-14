@@ -66,11 +66,11 @@ impl Conn for BridgeConn {
     }
 }
 
-pub type FilterCbFn = Box<dyn Fn(&Bytes) -> bool + Send + Sync>;
+pub(crate) type FilterCbFn = Box<dyn Fn(&Bytes) -> bool + Send + Sync>;
 
 /// Bridge represents a network between the two endpoints.
 #[derive(Default)]
-pub struct Bridge {
+pub(crate) struct Bridge {
     drop_nwrites: [AtomicUsize; 2],
     reorder_nwrites: [AtomicUsize; 2],
 
@@ -82,7 +82,7 @@ pub struct Bridge {
 
 impl Bridge {
 
-    pub async fn push(&self, b: &[u8], id: usize) -> Result<usize> {
+    pub(crate) async fn push(&self, b: &[u8], id: usize) -> Result<usize> {
         // Push rate should be limited as same as Tick rate.
         // Otherwise, queue grows too fast on free running Write.
         tokio::time::sleep(TICK_WAIT).await;
@@ -116,7 +116,7 @@ impl Bridge {
     }
 }
 
-pub fn inverse(s: &mut VecDeque<Bytes>) -> bool {
+pub(crate) fn inverse(s: &mut VecDeque<Bytes>) -> bool {
     if s.len() < 2 {
         return false;
     }

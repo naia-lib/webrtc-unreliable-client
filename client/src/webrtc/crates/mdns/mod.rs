@@ -1,6 +1,6 @@
-pub mod config;
-pub mod conn;
+pub(crate) mod config;
+pub(crate) mod conn;
 mod error;
-pub mod message;
+pub(crate) mod message;
 
-pub use error::Error;
+pub(crate) use error::Error;

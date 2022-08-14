@@ -6,7 +6,7 @@ use std::fmt;
 
 /// DtlsRole indicates the role of the DTLS transport.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
-pub enum DTLSRole {
+pub(crate) enum DTLSRole {
     Unspecified = 0,
 
     /// DTLSRoleAuto defines the DTLS role is determined based on
@@ -27,7 +27,7 @@ pub enum DTLSRole {
 /// The endpoint that is the offerer MUST use the setup attribute
 /// value of setup:actpass and be prepared to receive a client_hello
 /// before it receives the answer.
-pub const DEFAULT_DTLS_ROLE_OFFER: DTLSRole = DTLSRole::Auto;
+pub(crate) const DEFAULT_DTLS_ROLE_OFFER: DTLSRole = DTLSRole::Auto;
 
 impl Default for DTLSRole {
     fn default() -> Self {
@@ -72,7 +72,7 @@ impl From<&SessionDescription> for DTLSRole {
 }
 
 impl DTLSRole {
-    pub fn to_connection_role(self) -> ConnectionRole {
+    pub(crate) fn to_connection_role(self) -> ConnectionRole {
         match self {
             DTLSRole::Client => ConnectionRole::Active,
             DTLSRole::Server => ConnectionRole::Passive,

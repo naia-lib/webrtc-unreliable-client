@@ -12,7 +12,7 @@ impl Agent {
     ///
     /// The operation will be cancelled if `cancel_rx` either receives a message or its channel
     /// closes.
-    pub async fn dial(
+    pub(crate) async fn dial(
         &self,
         mut cancel_rx: mpsc::Receiver<()>,
         remote_ufrag: String,
@@ -47,7 +47,7 @@ impl Agent {
     ///
     /// The operation will be cancelled if `cancel_rx` either receives a message or its channel
     /// closes.
-    pub async fn accept(
+    pub(crate) async fn accept(
         &self,
         mut cancel_rx: mpsc::Receiver<()>,
         remote_ufrag: String,
@@ -79,18 +79,18 @@ impl Agent {
     }
 }
 
-pub struct AgentConn {
-    pub selected_pair: Mutex<Option<Arc<CandidatePair>>>,
-    pub checklist: Mutex<Vec<Arc<CandidatePair>>>,
+pub(crate) struct AgentConn {
+    pub(crate) selected_pair: Mutex<Option<Arc<CandidatePair>>>,
+    pub(crate) checklist: Mutex<Vec<Arc<CandidatePair>>>,
 
-    pub buffer: Buffer,
-    pub bytes_received: AtomicUsize,
-    pub bytes_sent: AtomicUsize,
-    pub done: AtomicBool,
+    pub(crate) buffer: Buffer,
+    pub(crate) bytes_received: AtomicUsize,
+    pub(crate) bytes_sent: AtomicUsize,
+    pub(crate) done: AtomicBool,
 }
 
 impl AgentConn {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             selected_pair: Mutex::new(None),
             checklist: Mutex::new(vec![]),
@@ -103,12 +103,12 @@ impl AgentConn {
             done: AtomicBool::new(false),
         }
     }
-    pub async fn get_selected_pair(&self) -> Option<Arc<CandidatePair>> {
+    pub(crate) async fn get_selected_pair(&self) -> Option<Arc<CandidatePair>> {
         let selected_pair = self.selected_pair.lock().await;
         selected_pair.clone()
     }
 
-    pub async fn get_best_available_candidate_pair(&self) -> Option<Arc<CandidatePair>> {
+    pub(crate) async fn get_best_available_candidate_pair(&self) -> Option<Arc<CandidatePair>> {
         let mut best: Option<&Arc<CandidatePair>> = None;
 
         let checklist = self.checklist.lock().await;
@@ -129,7 +129,7 @@ impl AgentConn {
         best.cloned()
     }
 
-    pub async fn get_best_valid_candidate_pair(&self) -> Option<Arc<CandidatePair>> {
+    pub(crate) async fn get_best_valid_candidate_pair(&self) -> Option<Arc<CandidatePair>> {
         let mut best: Option<&Arc<CandidatePair>> = None;
 
         let checklist = self.checklist.lock().await;

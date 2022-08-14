@@ -4,11 +4,11 @@ use std::io;
 use std::net;
 use std::string::FromUtf8Error;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error("mDNS: failed to join multicast group")]
     ErrJoiningMulticastGroup,
     #[error("mDNS: connection is closed")]
@@ -61,7 +61,7 @@ pub enum Error {
 
 #[derive(Debug, Error)]
 #[error("io error: {0}")]
-pub struct IoError(#[from] pub io::Error);
+pub(crate) struct IoError(#[from] pub(crate) io::Error);
 
 // Workaround for wanting PartialEq for io::Error.
 impl PartialEq for IoError {

@@ -10,9 +10,9 @@ use std::ops::Add;
 use std::time::{Duration, SystemTime};
 
 /// Certificate represents a x509Cert used to authenticate WebRTC communications.
-pub struct RTCCertificate {
-    pub certificate: crate::webrtc::dtls::crypto::Certificate,
-    pub expires: SystemTime,
+pub(crate) struct RTCCertificate {
+    pub(crate) certificate: crate::webrtc::dtls::crypto::Certificate,
+    pub(crate) expires: SystemTime,
 }
 
 /// Equals determines if two certificates are identical by comparing only certificate
@@ -27,7 +27,7 @@ impl RTCCertificate {
     /// by DTLS for encrypting data sent over the wire. This method differs from
     /// generate_certificate by allowing to specify a template x509.Certificate to
     /// be used in order to define certificate parameters.
-    pub fn from_params(mut params: CertificateParams) -> Result<Self> {
+    pub(crate) fn from_params(mut params: CertificateParams) -> Result<Self> {
         let key_pair = if let Some(key_pair) = params.key_pair.take() {
             if !key_pair.is_compatible(params.alg) {
                 return Err(RcgenError::CertificateKeyPairMismatch.into());
@@ -91,13 +91,13 @@ impl RTCCertificate {
     }
 
     /// expires returns the timestamp after which this certificate is no longer valid.
-    pub fn expires(&self) -> SystemTime {
+    pub(crate) fn expires(&self) -> SystemTime {
         self.expires
     }
 
     /// get_fingerprints returns certificate fingerprints, one of which
     /// is computed with the digest algorithm used in the certificate signature.
-    pub fn get_fingerprints(&self) -> Result<Vec<RTCDtlsFingerprint>> {
+    pub(crate) fn get_fingerprints(&self) -> Result<Vec<RTCDtlsFingerprint>> {
         let mut fingerpints = vec![];
 
         for certificate in &self.certificate.certificate {
@@ -117,7 +117,7 @@ impl RTCCertificate {
 
     /// from_key_pair causes the creation of an X.509 certificate and
     /// corresponding private key.
-    pub fn from_key_pair(key_pair: KeyPair) -> Result<Self> {
+    pub(crate) fn from_key_pair(key_pair: KeyPair) -> Result<Self> {
         let mut params = CertificateParams::new(vec![math_rand_alpha(16)]);
 
         if key_pair.is_compatible(&rcgen::PKCS_ED25519) {

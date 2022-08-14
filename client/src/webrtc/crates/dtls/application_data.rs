@@ -9,26 +9,26 @@ use crate::webrtc::dtls::error::Result;
 // layer.
 // https://tools.ietf.org/html/rfc5246#section-10
 #[derive(Clone, PartialEq, Debug)]
-pub struct ApplicationData {
-    pub data: Vec<u8>,
+pub(crate) struct ApplicationData {
+    pub(crate) data: Vec<u8>,
 }
 
 impl ApplicationData {
-    pub fn content_type(&self) -> ContentType {
+    pub(crate) fn content_type(&self) -> ContentType {
         ContentType::ApplicationData
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         self.data.len()
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(&self.data)?;
 
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let mut data: Vec<u8> = vec![];
         reader.read_to_end(&mut data)?;
 

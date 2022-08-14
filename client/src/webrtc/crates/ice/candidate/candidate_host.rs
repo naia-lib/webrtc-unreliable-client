@@ -6,15 +6,15 @@ use std::sync::atomic::{AtomicU16, AtomicU8};
 
 /// The config required to create a new `CandidateHost`.
 #[derive(Default)]
-pub struct CandidateHostConfig {
-    pub base_config: CandidateBaseConfig,
+pub(crate) struct CandidateHostConfig {
+    pub(crate) base_config: CandidateBaseConfig,
 
-    pub tcp_type: TcpType,
+    pub(crate) tcp_type: TcpType,
 }
 
 impl CandidateHostConfig {
     /// Creates a new host candidate.
-    pub async fn new_candidate_host(self) -> Result<CandidateBase> {
+    pub(crate) async fn new_candidate_host(self) -> Result<CandidateBase> {
         let mut candidate_id = self.base_config.candidate_id;
         if candidate_id.is_empty() {
             candidate_id = generate_cand_id();

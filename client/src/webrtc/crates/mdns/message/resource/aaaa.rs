@@ -2,8 +2,8 @@ use super::*;
 
 // An AAAAResource is an aaaa Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct AaaaResource {
-    pub aaaa: [u8; 16],
+pub(crate) struct AaaaResource {
+    pub(crate) aaaa: [u8; 16],
 }
 
 impl fmt::Display for AaaaResource {

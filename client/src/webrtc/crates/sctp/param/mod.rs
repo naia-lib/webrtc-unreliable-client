@@ -1,17 +1,17 @@
 #[cfg(test)]
 mod param_test;
 
-pub mod param_chunk_list;
-pub mod param_forward_tsn_supported;
-pub mod param_header;
-pub mod param_heartbeat_info;
-pub mod param_outgoing_reset_request;
-pub mod param_random;
-pub mod param_reconfig_response;
-pub mod param_requested_hmac_algorithm;
-pub mod param_state_cookie;
-pub mod param_supported_extensions;
-pub mod param_type;
+pub(crate) mod param_chunk_list;
+pub(crate) mod param_forward_tsn_supported;
+pub(crate) mod param_header;
+pub(crate) mod param_heartbeat_info;
+pub(crate) mod param_outgoing_reset_request;
+pub(crate) mod param_random;
+pub(crate) mod param_reconfig_response;
+pub(crate) mod param_requested_hmac_algorithm;
+pub(crate) mod param_state_cookie;
+pub(crate) mod param_supported_extensions;
+pub(crate) mod param_type;
 
 use crate::webrtc::sctp::error::{Error, Result};
 use crate::webrtc::sctp::param::{
@@ -28,7 +28,7 @@ use param_type::*;
 use bytes::{Buf, Bytes, BytesMut};
 use std::{any::Any, fmt};
 
-pub trait Param: fmt::Display + fmt::Debug {
+pub(crate) trait Param: fmt::Display + fmt::Debug {
     fn header(&self) -> ParamHeader;
     fn unmarshal(raw: &Bytes) -> Result<Self>
     where
@@ -52,7 +52,7 @@ impl Clone for Box<dyn Param + Send + Sync> {
     }
 }
 
-pub fn build_param(raw_param: &Bytes) -> Result<Box<dyn Param + Send + Sync>> {
+pub(crate) fn build_param(raw_param: &Bytes) -> Result<Box<dyn Param + Send + Sync>> {
     if raw_param.len() < PARAM_HEADER_LENGTH {
         return Err(Error::ErrParamHeaderTooShort);
     }

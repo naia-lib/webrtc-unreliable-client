@@ -2,15 +2,15 @@ use std::fmt;
 
 /// Information describes the "i=" field which provides textual information
 /// about the session.
-pub type Information = String;
+pub(crate) type Information = String;
 
 /// ConnectionInformation defines the representation for the "c=" field
 /// containing connection data.
 #[derive(Debug, Default, Clone)]
-pub struct ConnectionInformation {
-    pub network_type: String,
-    pub address_type: String,
-    pub address: Option<Address>,
+pub(crate) struct ConnectionInformation {
+    pub(crate) network_type: String,
+    pub(crate) address_type: String,
+    pub(crate) address: Option<Address>,
 }
 
 impl fmt::Display for ConnectionInformation {
@@ -25,10 +25,10 @@ impl fmt::Display for ConnectionInformation {
 
 /// Address describes a structured address token from within the "c=" field.
 #[derive(Debug, Default, Clone)]
-pub struct Address {
-    pub address: String,
-    pub ttl: Option<isize>,
-    pub range: Option<isize>,
+pub(crate) struct Address {
+    pub(crate) address: String,
+    pub(crate) ttl: Option<isize>,
+    pub(crate) range: Option<isize>,
 }
 
 impl fmt::Display for Address {
@@ -47,10 +47,10 @@ impl fmt::Display for Address {
 /// Bandwidth describes an optional field which denotes the proposed bandwidth
 /// to be used by the session or media.
 #[derive(Debug, Default, Clone)]
-pub struct Bandwidth {
-    pub experimental: bool,
-    pub bandwidth_type: String,
-    pub bandwidth: u64,
+pub(crate) struct Bandwidth {
+    pub(crate) experimental: bool,
+    pub(crate) bandwidth_type: String,
+    pub(crate) bandwidth: u64,
 }
 
 impl fmt::Display for Bandwidth {
@@ -61,14 +61,14 @@ impl fmt::Display for Bandwidth {
 }
 
 /// EncryptionKey describes the "k=" which conveys encryption key information.
-pub type EncryptionKey = String;
+pub(crate) type EncryptionKey = String;
 
 /// Attribute describes the "a=" field which represents the primary means for
 /// extending SDP.
 #[derive(Debug, Default, Clone)]
-pub struct Attribute {
-    pub key: String,
-    pub value: Option<String>,
+pub(crate) struct Attribute {
+    pub(crate) key: String,
+    pub(crate) value: Option<String>,
 }
 
 impl fmt::Display for Attribute {
@@ -83,12 +83,12 @@ impl fmt::Display for Attribute {
 
 impl Attribute {
     /// new constructs a new attribute
-    pub fn new(key: String, value: Option<String>) -> Self {
+    pub(crate) fn new(key: String, value: Option<String>) -> Self {
         Attribute { key, value }
     }
 
     /// is_ice_candidate returns true if the attribute key equals "candidate".
-    pub fn is_ice_candidate(&self) -> bool {
+    pub(crate) fn is_ice_candidate(&self) -> bool {
         self.key.as_str() == "candidate"
     }
 }

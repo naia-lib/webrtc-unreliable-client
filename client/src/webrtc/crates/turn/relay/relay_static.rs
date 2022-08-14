@@ -7,14 +7,14 @@ use crate::webrtc::util::vnet::net::*;
 
 // RelayAddressGeneratorStatic can be used to return static IP address each time a relay is created.
 // This can be used when you have a single static IP address that you want to use
-pub struct RelayAddressGeneratorStatic {
+pub(crate) struct RelayAddressGeneratorStatic {
     // RelayAddress is the IP returned to the user when the relay is created
-    pub relay_address: IpAddr,
+    pub(crate) relay_address: IpAddr,
 
     // Address is passed to Listen/ListenPacket when creating the Relay
-    pub address: String,
+    pub(crate) address: String,
 
-    pub net: Arc<Net>,
+    pub(crate) net: Arc<Net>,
 }
 
 #[async_trait]

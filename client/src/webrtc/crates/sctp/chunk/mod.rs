@@ -1,22 +1,22 @@
 #[cfg(test)]
 mod chunk_test;
 
-pub mod chunk_abort;
-pub mod chunk_cookie_ack;
-pub mod chunk_cookie_echo;
-pub mod chunk_error;
-pub mod chunk_forward_tsn;
-pub mod chunk_header;
-pub mod chunk_heartbeat;
-pub mod chunk_heartbeat_ack;
-pub mod chunk_init;
-pub mod chunk_payload_data;
-pub mod chunk_reconfig;
-pub mod chunk_selective_ack;
-pub mod chunk_shutdown;
-pub mod chunk_shutdown_ack;
-pub mod chunk_shutdown_complete;
-pub mod chunk_type;
+pub(crate) mod chunk_abort;
+pub(crate) mod chunk_cookie_ack;
+pub(crate) mod chunk_cookie_echo;
+pub(crate) mod chunk_error;
+pub(crate) mod chunk_forward_tsn;
+pub(crate) mod chunk_header;
+pub(crate) mod chunk_heartbeat;
+pub(crate) mod chunk_heartbeat_ack;
+pub(crate) mod chunk_init;
+pub(crate) mod chunk_payload_data;
+pub(crate) mod chunk_reconfig;
+pub(crate) mod chunk_selective_ack;
+pub(crate) mod chunk_shutdown;
+pub(crate) mod chunk_shutdown_ack;
+pub(crate) mod chunk_shutdown_complete;
+pub(crate) mod chunk_type;
 
 use crate::webrtc::sctp::error::{Error, Result};
 use chunk_header::*;
@@ -25,7 +25,7 @@ use bytes::{Bytes, BytesMut};
 use std::marker::Sized;
 use std::{any::Any, fmt};
 
-pub trait Chunk: fmt::Display + fmt::Debug {
+pub(crate) trait Chunk: fmt::Display + fmt::Debug {
     fn header(&self) -> ChunkHeader;
     fn unmarshal(raw: &Bytes) -> Result<Self>
     where

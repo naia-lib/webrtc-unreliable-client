@@ -5,11 +5,11 @@ use std::net;
 use std::num::ParseIntError;
 use std::time::SystemTimeError;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error("turn: RelayAddressGenerator has invalid ListeningAddress")]
     ErrListeningAddressInvalid,
     #[error("turn: max retries exceeded")]
@@ -64,7 +64,7 @@ pub enum Error {
 
 #[derive(Debug, Error)]
 #[error("io error: {0}")]
-pub struct IoError(#[from] pub io::Error);
+pub(crate) struct IoError(#[from] pub(crate) io::Error);
 
 // Workaround for wanting PartialEq for io::Error.
 impl PartialEq for IoError {

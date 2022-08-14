@@ -2,8 +2,8 @@ use super::*;
 
 // A cnameresource is a cname Resource record.
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct CnameResource {
-    pub cname: Name,
+pub(crate) struct CnameResource {
+    pub(crate) cname: Name,
 }
 
 impl fmt::Display for CnameResource {

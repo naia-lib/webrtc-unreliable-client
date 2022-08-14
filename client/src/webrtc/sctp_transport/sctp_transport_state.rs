@@ -2,7 +2,7 @@ use std::fmt;
 
 /// SCTPTransportState indicates the state of the SCTP transport.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCSctpTransportState {
+pub(crate) enum RTCSctpTransportState {
     Unspecified,
 
     /// SCTPTransportStateConnecting indicates the SCTPTransport is in the

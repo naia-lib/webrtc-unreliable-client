@@ -13,10 +13,10 @@ use std::net::{Ipv4Addr, SocketAddr};
 // stream.  The 5-tuple also uniquely identifies the Allocation on
 // the server.
 #[derive(PartialEq, Clone)]
-pub struct FiveTuple {
-    pub protocol: Protocol,
-    pub src_addr: SocketAddr,
-    pub dst_addr: SocketAddr,
+pub(crate) struct FiveTuple {
+    pub(crate) protocol: Protocol,
+    pub(crate) src_addr: SocketAddr,
+    pub(crate) dst_addr: SocketAddr,
 }
 
 impl Default for FiveTuple {

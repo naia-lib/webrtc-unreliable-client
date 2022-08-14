@@ -4,7 +4,7 @@ use std::fmt;
 /// ICETransportPolicy defines the ICE candidate policy surface the
 /// permitted candidates. Only these candidates are used for connectivity checks.
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCIceTransportPolicy {
+pub(crate) enum RTCIceTransportPolicy {
     Unspecified = 0,
 
     /// ICETransportPolicyAll indicates any type of candidate is used.
