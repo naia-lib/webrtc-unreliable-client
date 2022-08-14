@@ -20,8 +20,6 @@ pub(crate) mod mux;
 pub(crate) mod peer_connection;
 pub(crate) mod sctp_transport;
 
-pub(crate) use error::Error;
-
 pub(crate) const UNSPECIFIED_STR: &str = "Unspecified";
 
 /// Equal to UDP MTU

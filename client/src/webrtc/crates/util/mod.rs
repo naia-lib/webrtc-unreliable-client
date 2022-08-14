@@ -54,9 +54,8 @@ pub(crate) mod vnet;
 pub(crate) mod marshal;
 pub(crate) use crate::webrtc::util::buffer::Buffer;
 pub(crate) use crate::webrtc::util::conn::Conn;
-pub(crate) use crate::webrtc::util::marshal::{exact_size_buf::ExactSizeBuf, Marshal, MarshalSize, Unmarshal};
 
 mod error;
-pub(crate) use error::{Error, Result};
+pub(crate) use error::Error;
 
 pub(crate) mod sync;
