@@ -56,7 +56,6 @@ pub(crate) struct NatType {
     pub(crate) mode: NatMode,
     pub(crate) mapping_behavior: EndpointDependencyType,
     pub(crate) filtering_behavior: EndpointDependencyType,
-    pub(crate) hair_pining: bool,       // Not implemented yet
     pub(crate) port_preservation: bool, // Not implemented yet
     pub(crate) mapping_life_time: Duration,
 }

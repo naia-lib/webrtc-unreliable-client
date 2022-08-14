@@ -172,13 +172,10 @@ async fn write_loop(
 #[derive(Clone)]
 pub(crate) struct SessionAnswer {
     pub(crate) sdp: String,
-    pub(crate) type_str: String,
 }
 
 pub(crate) struct SessionCandidate {
     pub(crate) candidate: String,
-    pub(crate) sdp_m_line_index: u16,
-    pub(crate) sdp_mid: String,
 }
 
 pub(crate) struct JsSessionResponse {
@@ -192,24 +189,13 @@ fn get_session_response(input: &str) -> JsSessionResponse {
     let sdp_opt: Option<&String> = json_obj["answer"]["sdp"].get();
     let sdp: String = sdp_opt.unwrap().clone();
 
-    let type_str_opt: Option<&String> = json_obj["answer"]["type"].get();
-    let type_str: String = type_str_opt.unwrap().clone();
-
     let candidate_opt: Option<&String> = json_obj["candidate"]["candidate"].get();
     let candidate: String = candidate_opt.unwrap().clone();
 
-    let sdp_m_line_index_opt: Option<&f64> = json_obj["candidate"]["sdpMLineIndex"].get();
-    let sdp_m_line_index: u16 = *(sdp_m_line_index_opt.unwrap()) as u16;
-
-    let sdp_mid_opt: Option<&String> = json_obj["candidate"]["sdpMid"].get();
-    let sdp_mid: String = sdp_mid_opt.unwrap().clone();
-
     JsSessionResponse {
-        answer: SessionAnswer { sdp, type_str },
+        answer: SessionAnswer { sdp },
         candidate: SessionCandidate {
-            candidate,
-            sdp_m_line_index,
-            sdp_mid,
+            candidate
         },
     }
 }

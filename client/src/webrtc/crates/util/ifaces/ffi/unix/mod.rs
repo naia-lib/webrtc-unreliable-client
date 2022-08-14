@@ -4,7 +4,7 @@ use std::{net, ptr};
 
 use std::net::IpAddr;
 
-use crate::webrtc::util::ifaces::{Interface, Kind, NextHop};
+use crate::webrtc::util::ifaces::{Interface, Kind};
 
 // https://github.com/Exa-Networks/exaproxy/blob/master/lib/exaproxy/util/interfaces.py
 
@@ -62,14 +62,6 @@ pub(crate) enum SiocgifFlags {
 #[repr(C)]
 pub(crate) struct union_ifa_ifu {
     pub(crate) data: *mut ::std::os::raw::c_void,
-}
-impl union_ifa_ifu {
-    pub(crate) fn ifu_broadaddr(&mut self) -> *mut nix::sys::socket::sockaddr {
-        self.data as *mut nix::sys::socket::sockaddr
-    }
-    pub(crate) fn ifu_dstaddr(&mut self) -> *mut nix::sys::socket::sockaddr {
-        self.data as *mut nix::sys::socket::sockaddr
-    }
 }
 
 #[repr(C)]
@@ -169,17 +161,6 @@ pub(crate) fn ifaces() -> Result<Vec<Interface>, Error> {
 
                 let addr = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_addr });
                 let mask = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_netmask });
-                let hop = unsafe {
-                    if (*item).ifa_flags & SiocgifFlags::Broadcast as ::std::os::raw::c_uint
-                        == SiocgifFlags::Broadcast as ::std::os::raw::c_uint
-                    {
-                        nix_socketaddr_to_sockaddr((*item).ifa_ifu.ifu_broadaddr())
-                            .map(NextHop::Broadcast)
-                    } else {
-                        nix_socketaddr_to_sockaddr((*item).ifa_ifu.ifu_dstaddr())
-                            .map(NextHop::Destination)
-                    }
-                };
 
                 if let Some(kind) = kind {
                     match kind {
@@ -187,10 +168,8 @@ pub(crate) fn ifaces() -> Result<Vec<Interface>, Error> {
                         _ => {
                             ret.push(Interface {
                                 name: name.unwrap(),
-                                kind,
                                 addr,
                                 mask,
-                                hop,
                             });
                         }
                     };

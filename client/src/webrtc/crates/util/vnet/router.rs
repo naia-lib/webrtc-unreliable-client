@@ -18,30 +18,6 @@ lazy_static! {
     pub(crate) static ref ROUTER_ID_CTR: AtomicU64 = AtomicU64::new(0);
 }
 
-// RouterConfig ...
-#[derive(Default)]
-pub(crate) struct RouterConfig {
-    // name of router. If not specified, a unique name will be assigned.
-    pub(crate) name: String,
-    // cidr notation, like "192.0.2.0/24"
-    pub(crate) cidr: String,
-    // static_ips is an array of static IP addresses to be assigned for this router.
-    // If no static IP address is given, the router will automatically assign
-    // an IP address.
-    // This will be ignored if this router is the root.
-    pub(crate) static_ips: Vec<String>,
-    // static_ip is deprecated. Use static_ips.
-    pub(crate) static_ip: String,
-    // Internal queue size
-    pub(crate) queue_size: usize,
-    // Effective only when this router has a parent router
-    pub(crate) nat_type: Option<NatType>,
-    // Minimum Delay
-    pub(crate) min_delay: Duration,
-    // Max Jitter
-    pub(crate) max_jitter: Duration,
-}
-
 // NIC is a network interface controller that interfaces Router
 #[async_trait]
 pub(crate) trait Nic {
@@ -163,7 +139,6 @@ impl Nic for Router {
                 router_internal.nat_type = Some(NatType {
                     mapping_behavior: EndpointDependencyType::EndpointIndependent,
                     filtering_behavior: EndpointDependencyType::EndpointAddrPortDependent,
-                    hair_pining: false,
                     port_preservation: false,
                     mapping_life_time: Duration::from_secs(30),
                     ..Default::default()

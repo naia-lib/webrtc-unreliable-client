@@ -28,7 +28,6 @@ pub(crate) struct Config {
 /// DataChannel represents a data channel
 #[derive(Debug, Default, Clone)]
 pub(crate) struct DataChannel {
-    pub(crate) config: Config,
     stream: Arc<Stream>,
 
     // stats
@@ -39,9 +38,8 @@ pub(crate) struct DataChannel {
 }
 
 impl DataChannel {
-    pub(crate) fn new(stream: Arc<Stream>, config: Config) -> Self {
+    pub(crate) fn new(stream: Arc<Stream>) -> Self {
         Self {
-            config,
             stream,
             ..Default::default()
         }
@@ -73,7 +71,7 @@ impl DataChannel {
             .write_sctp(&msg, PayloadProtocolIdentifier::Dcep)
             .await?;
 
-        Ok(DataChannel::new(stream, config))
+        Ok(DataChannel::new(stream))
     }
 
     /// Read reads a packet of len(p) bytes as binary data
