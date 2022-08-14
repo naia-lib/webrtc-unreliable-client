@@ -489,10 +489,4 @@ impl Association {
         let mut ai = self.association_internal.lock().await;
         ai.open_stream(stream_identifier, default_payload_type)
     }
-
-    /// accept_stream accepts a stream
-    pub async fn accept_stream(&self) -> Option<Arc<Stream>> {
-        let mut accept_ch_rx = self.accept_ch_rx.lock().await;
-        accept_ch_rx.recv().await
-    }
 }

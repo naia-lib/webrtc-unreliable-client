@@ -13,7 +13,6 @@ use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCap
 
 use crate::webrtc::sctp::association::Association;
 
-use crate::webrtc::data::data_channel::DataChannel;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
@@ -32,17 +31,6 @@ pub type OnDataChannelOpenedHdlrFn = Box<
         + Send
         + Sync,
 >;
-
-struct AcceptDataChannelParams {
-    notify_rx: Arc<Notify>,
-    sctp_association: Arc<Association>,
-    data_channels: Arc<Mutex<Vec<Arc<RTCDataChannel>>>>,
-    on_error_handler: Arc<Mutex<Option<OnErrorHdlrFn>>>,
-    on_data_channel_handler: Arc<Mutex<Option<OnDataChannelHdlrFn>>>,
-    on_data_channel_opened_handler: Arc<Mutex<Option<OnDataChannelOpenedHdlrFn>>>,
-    data_channels_opened: Arc<AtomicU32>,
-    data_channels_accepted: Arc<AtomicU32>,
-}
 
 /// SCTPTransport provides details about the SCTP transport.
 #[derive(Default)]
@@ -135,17 +123,6 @@ impl RTCSctpTransport {
             self.state
                 .store(RTCSctpTransportState::Connected as u8, Ordering::SeqCst);
 
-            let param = AcceptDataChannelParams {
-                notify_rx: self.notify_tx.clone(),
-                sctp_association,
-                data_channels: Arc::clone(&self.data_channels),
-                on_error_handler: Arc::clone(&self.on_error_handler),
-                on_data_channel_handler: Arc::clone(&self.on_data_channel_handler),
-                on_data_channel_opened_handler: Arc::clone(&self.on_data_channel_opened_handler),
-                data_channels_opened: Arc::clone(&self.data_channels_opened),
-                data_channels_accepted: Arc::clone(&self.data_channels_accepted),
-            };
-
             Ok(())
         } else {
             Err(Error::ErrSCTPTransportDTLS)
@@ -167,55 +144,6 @@ impl RTCSctpTransport {
         self.notify_tx.notify_waiters();
 
         Ok(())
-    }
-
-    async fn accept_data_channels(param: AcceptDataChannelParams) {
-        loop {
-            let dc = tokio::select! {
-                _ = param.notify_rx.notified() => break,
-                result = DataChannel::accept(
-                    &param.sctp_association,
-                    crate::webrtc::data::data_channel::Config::default(),
-                ) => {
-                    match result {
-                        Ok(dc) => dc,
-                        Err(err) => {
-                            if crate::webrtc::data::Error::ErrStreamClosed == err {
-                                log::error!("Failed to accept data channel: {}", err);
-                                let mut handler = param.on_error_handler.lock().await;
-                                if let Some(f) = &mut *handler {
-                                    f(err.into()).await;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-            };
-
-            let rtc_dc = Arc::new(RTCDataChannel::new());
-
-            {
-                let mut handler = param.on_data_channel_handler.lock().await;
-                if let Some(f) = &mut *handler {
-                    f(Arc::clone(&rtc_dc)).await;
-                    param.data_channels_accepted.fetch_add(1, Ordering::SeqCst);
-
-                    let mut dcs = param.data_channels.lock().await;
-                    dcs.push(Arc::clone(&rtc_dc));
-                }
-            }
-
-            rtc_dc.handle_open(Arc::new(dc)).await;
-
-            {
-                let mut handler = param.on_data_channel_opened_handler.lock().await;
-                if let Some(f) = &mut *handler {
-                    f(rtc_dc).await;
-                    param.data_channels_opened.fetch_add(1, Ordering::SeqCst);
-                }
-            }
-        }
     }
 
     /// on_data_channel sets an event handler which is invoked when a data

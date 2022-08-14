@@ -14,10 +14,6 @@ pub enum Error {
     InvalidMessageType(u8),
     #[error("Unknown ChannelType {0}")]
     InvalidChannelType(u8),
-    #[error("Unknown PayloadProtocolIdentifier {0}")]
-    InvalidPayloadProtocolIdentifier(u8),
-    #[error("Stream closed")]
-    ErrStreamClosed,
 
     #[error("{0}")]
     Util(#[from] crate::webrtc::util::Error),

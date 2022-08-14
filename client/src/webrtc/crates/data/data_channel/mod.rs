@@ -3,7 +3,7 @@ mod data_channel_test;
 
 use crate::webrtc::data::error::Result;
 use crate::webrtc::data::{
-    error::Error, message::message_channel_ack::*, message::message_channel_open::*, message::*,
+    message::message_channel_ack::*, message::message_channel_open::*, message::*,
 };
 
 use crate::webrtc::sctp::{
@@ -15,8 +15,6 @@ use bytes::{Buf, Bytes};
 use derive_builder::Builder;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-
-const RECEIVE_MTU: usize = 8192;
 
 /// Config is used to configure the data channel.
 #[derive(Eq, PartialEq, Default, Clone, Debug, Builder)]
@@ -66,18 +64,6 @@ impl DataChannel {
         Self::client(stream, config).await
     }
 
-    /// Accept is used to accept incoming data channels over SCTP
-    pub async fn accept(association: &Arc<Association>, config: Config) -> Result<Self> {
-        let stream = association
-            .accept_stream()
-            .await
-            .ok_or(Error::ErrStreamClosed)?;
-
-        stream.set_default_payload_type(PayloadProtocolIdentifier::Binary);
-
-        Self::server(stream, config).await
-    }
-
     /// Client opens a data channel over an SCTP stream
     pub async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
         if !config.negotiated {
@@ -95,35 +81,6 @@ impl DataChannel {
                 .await?;
         }
         Ok(DataChannel::new(stream, config))
-    }
-
-    /// Server accepts a data channel over an SCTP stream
-    pub async fn server(stream: Arc<Stream>, mut config: Config) -> Result<Self> {
-        let mut buf = vec![0u8; RECEIVE_MTU];
-
-        let (n, ppi) = stream.read_sctp(&mut buf).await?;
-
-        if ppi != PayloadProtocolIdentifier::Dcep {
-            return Err(Error::InvalidPayloadProtocolIdentifier(ppi as u8));
-        }
-
-        let mut read_buf = &buf[..n];
-        let msg = Message::unmarshal(&mut read_buf)?;
-
-        if let Message::DataChannelOpen(dco) = msg {
-            config.priority = dco.priority;
-            config.label = String::from_utf8(dco.label)?;
-            config.protocol = String::from_utf8(dco.protocol)?;
-        } else {
-            return Err(Error::InvalidMessageType(msg.message_type() as u8));
-        };
-
-        let data_channel = DataChannel::new(stream, config);
-
-        data_channel.write_data_channel_ack().await?;
-        data_channel.commit_reliability_params();
-
-        Ok(data_channel)
     }
 
     /// Read reads a packet of len(p) bytes as binary data
