@@ -1957,38 +1957,16 @@ impl AssociationInternal {
 
         // PR-SCTP
         if let Some(s) = self.streams.get(&c.stream_identifier) {
-            let reliability_type: ReliabilityType =
-                s.reliability_type.load(Ordering::SeqCst).into();
-
-            if reliability_type == ReliabilityType::Rexmit {
-                if s.has_reliability_value.load(Ordering::SeqCst) {
-                    if c.nsent >= s.reliability_value.load(Ordering::SeqCst).into() {
-                        c.set_abandoned(true);
-                        log::trace!(
-                            "[{}] marked as abandoned: tsn={} ppi={} (remix: {})",
-                            self.name,
-                            c.tsn,
-                            c.payload_type,
-                            c.nsent
-                        );
-                    }
-                }
-            } else if reliability_type == ReliabilityType::Timed {
-                if s.has_reliability_value.load(Ordering::SeqCst) {
-                    if let Ok(elapsed) = SystemTime::now().duration_since(c.since) {
-                        if elapsed.as_millis() as u32
-                            >= s.reliability_value.load(Ordering::SeqCst).into()
-                        {
-                            c.set_abandoned(true);
-                            log::trace!(
-                                "[{}] marked as abandoned: tsn={} ppi={} (timed: {:?})",
-                                self.name,
-                                c.tsn,
-                                c.payload_type,
-                                elapsed
-                            );
-                        }
-                    }
+            if s.has_reliability_value.load(Ordering::SeqCst) {
+                if c.nsent >= s.reliability_value.load(Ordering::SeqCst).into() {
+                    c.set_abandoned(true);
+                    log::trace!(
+                        "[{}] marked as abandoned: tsn={} ppi={} (remix: {})",
+                        self.name,
+                        c.tsn,
+                        c.payload_type,
+                        c.nsent
+                    );
                 }
             }
         } else {

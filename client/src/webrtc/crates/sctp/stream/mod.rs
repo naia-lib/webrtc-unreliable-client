@@ -77,7 +77,6 @@ pub struct Stream {
     pub sequence_number: AtomicU16,
     pub read_notifier: Notify,
     pub closed: AtomicBool,
-    pub reliability_type: AtomicU8, //ReliabilityType,
     pub has_reliability_value: AtomicBool,
     pub reliability_value: AtomicU16,
     pub buffered_amount: AtomicUsize,
@@ -98,7 +97,6 @@ impl fmt::Debug for Stream {
             .field("reassembly_queue", &self.reassembly_queue)
             .field("sequence_number", &self.sequence_number)
             .field("closed", &self.closed)
-            .field("reliability_type", &self.reliability_type)
             .field("has_reliability_value", &self.has_reliability_value)
             .field("reliability_value", &self.reliability_value)
             .field("buffered_amount", &self.buffered_amount)
@@ -131,7 +129,6 @@ impl Stream {
             sequence_number: AtomicU16::new(0),
             read_notifier: Notify::new(),
             closed: AtomicBool::new(false),
-            reliability_type: AtomicU8::new(0), //ReliabilityType::Reliable,
             has_reliability_value: AtomicBool::new(false),
             reliability_value: AtomicU16::new(0),
             buffered_amount: AtomicUsize::new(0),
@@ -152,20 +149,16 @@ impl Stream {
         &self,
     ) {
         // Do this next Connor
-        let rel_type = ReliabilityType::Rexmit;
         let rel_val = Some(0);
 
         log::debug!(
-            "[{}] reliability params: type={} value={}",
+            "[{}] reliability params: value={}",
             self.name,
-            rel_type,
             match rel_val {
                 Some(v) => format!("Some({v})"),
                 None => "None".to_string(),
             }
         );
-        self.reliability_type
-            .store(rel_type as u8, Ordering::SeqCst);
         if let Some(v) = rel_val {
             self.has_reliability_value.store(true, Ordering::SeqCst);
             self.reliability_value.store(v, Ordering::SeqCst);
