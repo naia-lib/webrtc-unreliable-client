@@ -10,9 +10,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
-    /// Indicates an error with Unknown info.
-    #[error("Unknown type")]
-    ErrUnknownType,
 
     /// Indicates the scheme type could not be parsed.
     #[error("unknown scheme type")]
@@ -51,10 +48,6 @@ pub enum Error {
     /// Indicates the agent is closed.
     #[error("the agent is closed")]
     ErrClosed,
-
-    /// Indicates agent does not have a valid candidate pair.
-    #[error("no candidate pairs available")]
-    ErrNoCandidatePairs,
 
     /// Indicates agent connection was canceled by the caller.
     #[error("connecting canceled by caller")]
@@ -135,64 +128,20 @@ pub enum Error {
     #[error("ICE Agent can not be restarted when gathering")]
     ErrRestartWhenGathering,
 
-    /// Indicates a run operation was canceled by its individual done.
-    #[error("run was canceled by done")]
-    ErrRunCanceled,
-
-    /// Initialized Indicates TCPMux is not initialized and that invalidTCPMux is used.
-    #[error("TCPMux is not initialized")]
-    ErrTcpMuxNotInitialized,
-
-    /// Indicates we already have the connection with same remote addr.
-    #[error("conn with same remote addr already exists")]
-    ErrTcpRemoteAddrAlreadyExists,
-
-    #[error("failed to send packet")]
-    ErrSendPacket,
     #[error("attribute not long enough to be ICE candidate")]
     ErrAttributeTooShortIceCandidate,
-    #[error("could not parse component")]
-    ErrParseComponent,
-    #[error("could not parse priority")]
-    ErrParsePriority,
-    #[error("could not parse port")]
-    ErrParsePort,
     #[error("could not parse related addresses")]
     ErrParseRelatedAddr,
     #[error("could not parse type")]
     ErrParseType,
     #[error("unknown candidate type")]
     ErrUnknownCandidateType,
-    #[error("failed to get XOR-MAPPED-ADDRESS response")]
-    ErrGetXorMappedAddrResponse,
-    #[error("connection with same remote address already exists")]
-    ErrConnectionAddrAlreadyExist,
-    #[error("error reading streaming packet")]
-    ErrReadingStreamingPacket,
-    #[error("error writing to")]
-    ErrWriting,
-    #[error("error closing connection")]
-    ErrClosingConnection,
     #[error("unable to determine networkType")]
     ErrDetermineNetworkType,
-    #[error("missing protocol scheme")]
-    ErrMissingProtocolScheme,
-    #[error("too many colons in address")]
-    ErrTooManyColonsAddr,
-    #[error("unexpected error trying to read")]
-    ErrRead,
-    #[error("unknown role")]
-    ErrUnknownRole,
     #[error("username mismatch")]
     ErrMismatchUsername,
-    #[error("the ICE conn can't write STUN messages")]
-    ErrIceWriteStunMessage,
     #[error("invalid url")]
     ErrInvalidUrl,
-    #[error("relative URL without a base")]
-    ErrUrlParse,
-    #[error("Candidate IP could not be found")]
-    ErrCandidateIpNotFound,
 
     #[error("parse int: {0}")]
     ParseInt(#[from] ParseIntError),
