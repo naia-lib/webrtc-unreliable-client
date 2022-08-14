@@ -13,7 +13,6 @@ use crate::webrtc::util::marshal::*;
 
 use bytes::{Buf, Bytes};
 use derive_builder::Builder;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 /// Config is used to configure the data channel.
@@ -29,12 +28,6 @@ pub(crate) struct Config {
 #[derive(Debug, Default, Clone)]
 pub(crate) struct DataChannel {
     stream: Arc<Stream>,
-
-    // stats
-    messages_sent: Arc<AtomicUsize>,
-    messages_received: Arc<AtomicUsize>,
-    bytes_sent: Arc<AtomicUsize>,
-    bytes_received: Arc<AtomicUsize>,
 }
 
 impl DataChannel {
@@ -119,9 +112,6 @@ impl DataChannel {
                 _ => {}
             };
 
-            self.messages_received.fetch_add(1, Ordering::SeqCst);
-            self.bytes_received.fetch_add(n, Ordering::SeqCst);
-
             return Ok((n, is_string));
         }
     }
@@ -169,9 +159,6 @@ impl DataChannel {
             (true, 0) => PayloadProtocolIdentifier::StringEmpty,
             (true, _) => PayloadProtocolIdentifier::String,
         };
-
-        self.messages_sent.fetch_add(1, Ordering::SeqCst);
-        self.bytes_sent.fetch_add(data_len, Ordering::SeqCst);
 
         if data_len == 0 {
             let _ = self

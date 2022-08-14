@@ -54,7 +54,6 @@ hmac = "0.10.1"
 elliptic-curve = { version = "0.11.12", features = ["default", "ecdh"] }
 uuid = { version = "0.8.2", features = ["v4"] }
 md-5 = "0.10.0"
-substring = "1.4.5"
 base64 = "0.13.0"
 
 [target.'cfg(not(windows))'.dependencies]
