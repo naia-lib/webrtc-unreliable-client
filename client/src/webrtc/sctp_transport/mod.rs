@@ -145,9 +145,6 @@ impl RTCSctpTransport {
                 data_channels_opened: Arc::clone(&self.data_channels_opened),
                 data_channels_accepted: Arc::clone(&self.data_channels_accepted),
             };
-            tokio::spawn(async move {
-                RTCSctpTransport::accept_data_channels(param).await;
-            });
 
             Ok(())
         } else {

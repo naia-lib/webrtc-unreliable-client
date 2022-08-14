@@ -11,7 +11,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 
-use crate::webrtc::data::message::message_channel_open::ChannelType;
 use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
 use tokio::sync::{Mutex, Notify};
 
@@ -90,9 +89,7 @@ impl RTCDataChannel {
 
             // Do next Connor
             let cfg = crate::webrtc::data::data_channel::Config {
-                channel_type: ChannelType::PartialReliableRexmitUnordered,
                 priority: crate::webrtc::data::message::message_channel_open::CHANNEL_PRIORITY_NORMAL,
-                reliability_parameter: Some(0),
                 label: "data".to_string(),
                 protocol: "".to_string(),
                 negotiated: false,

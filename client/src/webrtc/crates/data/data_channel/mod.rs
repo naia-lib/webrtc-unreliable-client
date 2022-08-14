@@ -22,13 +22,9 @@ const RECEIVE_MTU: usize = 8192;
 #[derive(Eq, PartialEq, Default, Clone, Debug, Builder)]
 pub struct Config {
     #[builder(default)]
-    pub channel_type: ChannelType,
-    #[builder(default)]
     pub negotiated: bool,
     #[builder(default)]
     pub priority: u16,
-    #[builder(default)]
-    pub reliability_parameter: Option<u16>,
     #[builder(default)]
     pub label: String,
     #[builder(default)]
@@ -86,9 +82,9 @@ impl DataChannel {
     pub async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
         if !config.negotiated {
             let msg = Message::DataChannelOpen(DataChannelOpen {
-                channel_type: config.channel_type,
+                channel_type: ChannelType::PartialReliableRexmitUnordered,
                 priority: config.priority,
-                reliability_parameter: config.reliability_parameter,
+                reliability_parameter: Some(0),
                 label: config.label.bytes().collect(),
                 protocol: config.protocol.bytes().collect(),
             })
@@ -115,9 +111,7 @@ impl DataChannel {
         let msg = Message::unmarshal(&mut read_buf)?;
 
         if let Message::DataChannelOpen(dco) = msg {
-            config.channel_type = dco.channel_type;
             config.priority = dco.priority;
-            config.reliability_parameter = dco.reliability_parameter;
             config.label = String::from_utf8(dco.label)?;
             config.protocol = String::from_utf8(dco.protocol)?;
         } else {
@@ -264,14 +258,10 @@ impl DataChannel {
     }
 
     fn commit_reliability_params(&self) {
-        let (unordered, reliability_type) = match self.config.channel_type {
-            ChannelType::PartialReliableRexmitUnordered => (true, ReliabilityType::Rexmit),
-        };
-
         self.stream.set_reliability_params(
-            unordered,
-            reliability_type,
-            self.config.reliability_parameter,
+            true,
+            ReliabilityType::Rexmit,
+            Some(0),
         );
     }
 }
