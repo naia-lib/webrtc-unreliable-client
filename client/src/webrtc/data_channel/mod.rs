@@ -6,7 +6,6 @@ pub mod data_channel_state;
 
 use data_channel_message::*;
 
-use bytes::Bytes;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
@@ -120,12 +119,6 @@ impl RTCDataChannel {
         }
     }
 
-    /// transport returns the SCTPTransport instance the DataChannel is sending over.
-    pub async fn transport(&self) -> Option<Weak<RTCSctpTransport>> {
-        let sctp_transport = self.sctp_transport.lock().await;
-        sctp_transport.clone()
-    }
-
     /// on_open sets an event handler which is invoked when
     /// the underlying data transport has been established (or re-established).
     pub async fn on_open(&self, f: OnOpenHdlrFn) {
@@ -158,24 +151,6 @@ impl RTCDataChannel {
                 }
             }
         });
-    }
-
-    /// on_close sets an event handler which is invoked when
-    /// the underlying data transport has been closed.
-    pub async fn on_close(&self, f: OnCloseHdlrFn) {
-        let mut handler = self.on_close_handler.lock().await;
-        *handler = Some(f);
-    }
-
-    /// on_message sets an event handler which is invoked on a binary
-    /// message arrival over the sctp transport from a remote peer.
-    /// OnMessage can currently receive messages up to 16384 bytes
-    /// in size. Check out the detach API if you want to use larger
-    /// message sizes. Note that browser support for larger messages
-    /// is also limited.
-    pub async fn on_message(&self, f: OnMessageHdlrFn) {
-        let mut handler = self.on_message_handler.lock().await;
-        *handler = Some(f);
     }
 
     pub async fn handle_open(&self, dc: Arc<crate::webrtc::data::data_channel::DataChannel>) {
@@ -215,85 +190,9 @@ impl RTCDataChannel {
         }
     }
 
-    /// Close Closes the DataChannel. It may be called regardless of whether
-    /// the DataChannel object was created by this peer or the remote peer.
-    pub async fn close(&self) -> Result<()> {
-        if self.ready_state() == RTCDataChannelState::Closed {
-            return Ok(());
-        }
-
-        self.set_ready_state(RTCDataChannelState::Closing);
-        self.notify_tx.notify_waiters();
-
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            Ok(dc.close().await?)
-        } else {
-            Ok(())
-        }
-    }
-
     /// ready_state represents the state of the DataChannel object.
     pub fn ready_state(&self) -> RTCDataChannelState {
         self.ready_state.load(Ordering::SeqCst).into()
-    }
-
-    /// buffered_amount represents the number of bytes of application data
-    /// (UTF-8 text and binary data) that have been queued using send(). Even
-    /// though the data transmission can occur in parallel, the returned value
-    /// MUST NOT be decreased before the current task yielded back to the event
-    /// loop to prevent race conditions. The value does not include framing
-    /// overhead incurred by the protocol, or buffering done by the operating
-    /// system or network hardware. The value of buffered_amount slot will only
-    /// increase with each call to the send() method as long as the ready_state is
-    /// open; however, buffered_amount does not reset to zero once the channel
-    /// closes.
-    pub async fn buffered_amount(&self) -> usize {
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            dc.buffered_amount()
-        } else {
-            0
-        }
-    }
-
-    /// buffered_amount_low_threshold represents the threshold at which the
-    /// bufferedAmount is considered to be low. When the bufferedAmount decreases
-    /// from above this threshold to equal or below it, the bufferedamountlow
-    /// event fires. buffered_amount_low_threshold is initially zero on each new
-    /// DataChannel, but the application may change its value at any time.
-    /// The threshold is set to 0 by default.
-    pub async fn buffered_amount_low_threshold(&self) -> usize {
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            dc.buffered_amount_low_threshold()
-        } else {
-            self.buffered_amount_low_threshold.load(Ordering::SeqCst)
-        }
-    }
-
-    /// set_buffered_amount_low_threshold is used to update the threshold.
-    /// See buffered_amount_low_threshold().
-    pub async fn set_buffered_amount_low_threshold(&self, th: usize) {
-        self.buffered_amount_low_threshold
-            .store(th, Ordering::SeqCst);
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            dc.set_buffered_amount_low_threshold(th);
-        }
-    }
-
-    /// on_buffered_amount_low sets an event handler which is invoked when
-    /// the number of bytes of outgoing data becomes lower than the
-    /// buffered_amount_low_threshold.
-    pub async fn on_buffered_amount_low(&self, f: OnBufferedAmountLowFn) {
-        let data_channel = self.data_channel.lock().await;
-        if let Some(dc) = &*data_channel {
-            dc.on_buffered_amount_low(f).await;
-        } else {
-            let mut on_buffered_amount_low = self.on_buffered_amount_low.lock().await;
-            *on_buffered_amount_low = Some(f);
-        }
     }
 
     pub fn set_ready_state(&self, r: RTCDataChannelState) {

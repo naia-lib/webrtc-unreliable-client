@@ -74,14 +74,6 @@ impl Mux {
         e
     }
 
-    /// Close closes the Mux and all associated Endpoints.
-    pub async fn close(&mut self) {
-        self.closed_ch_tx.take();
-
-        let mut endpoints = self.endpoints.lock().await;
-        endpoints.clear();
-    }
-
     async fn read_loop(
         next_conn: Arc<dyn Conn + Send + Sync>,
         mut closed_ch_rx: mpsc::Receiver<()>,

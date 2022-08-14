@@ -97,11 +97,4 @@ impl Operations {
             }
         }
     }
-
-    pub async fn close(&self) -> Result<()> {
-        if let Some(close_tx) = &self.close_tx {
-            let _ = close_tx.send(()).await?;
-        }
-        Ok(())
-    }
 }

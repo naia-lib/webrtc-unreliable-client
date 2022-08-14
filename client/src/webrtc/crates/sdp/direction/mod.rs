@@ -41,16 +41,3 @@ impl Default for Direction {
         Direction::Unspecified
     }
 }
-
-impl Direction {
-    /// new defines a procedure for creating a new direction from a raw string.
-    pub fn new(raw: &str) -> Self {
-        match raw {
-            DIRECTION_SEND_RECV_STR => Direction::SendRecv,
-            DIRECTION_SEND_ONLY_STR => Direction::SendOnly,
-            DIRECTION_RECV_ONLY_STR => Direction::RecvOnly,
-            DIRECTION_INACTIVE_STR => Direction::Inactive,
-            _ => Direction::Unspecified,
-        }
-    }
-}

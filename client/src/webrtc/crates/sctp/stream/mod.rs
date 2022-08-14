@@ -144,11 +144,6 @@ impl Stream {
         }
     }
 
-    /// stream_identifier returns the Stream identifier associated to the stream.
-    pub fn stream_identifier(&self) -> u16 {
-        self.stream_identifier
-    }
-
     /// set_default_payload_type sets the default payload type used by write.
     pub fn set_default_payload_type(&self, default_payload_type: PayloadProtocolIdentifier) {
         self.default_payload_type
@@ -367,17 +362,6 @@ impl Stream {
         self.read_notifier.notify_waiters(); // broadcast regardless
 
         Ok(())
-    }
-
-    /// buffered_amount returns the number of bytes of data currently queued to be sent over this stream.
-    pub fn buffered_amount(&self) -> usize {
-        self.buffered_amount.load(Ordering::SeqCst)
-    }
-
-    /// buffered_amount_low_threshold returns the number of bytes of buffered outgoing data that is
-    /// considered "low." Defaults to 0.
-    pub fn buffered_amount_low_threshold(&self) -> usize {
-        self.buffered_amount_low.load(Ordering::SeqCst)
     }
 
     /// set_buffered_amount_low_threshold is used to update the threshold.

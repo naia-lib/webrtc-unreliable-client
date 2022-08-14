@@ -5,10 +5,8 @@ pub mod sctp_transport_capabilities;
 pub mod sctp_transport_state;
 
 use sctp_transport_state::RTCSctpTransportState;
-use std::collections::HashSet;
 
 use crate::webrtc::data_channel::RTCDataChannel;
-use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 use crate::webrtc::dtls_transport::*;
 use crate::webrtc::error::*;
 use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
@@ -114,13 +112,6 @@ impl RTCSctpTransport {
     /// transport returns the DTLSTransport instance the SCTPTransport is sending over.
     pub fn transport(&self) -> Arc<RTCDtlsTransport> {
         Arc::clone(&self.dtls_transport)
-    }
-
-    /// get_capabilities returns the SCTPCapabilities of the SCTPTransport.
-    pub fn get_capabilities(&self) -> SCTPTransportCapabilities {
-        SCTPTransportCapabilities {
-            max_message_size: 0,
-        }
     }
 
     /// Start the SCTPTransport. Since both local and remote parties must mutually
@@ -237,34 +228,11 @@ impl RTCSctpTransport {
         }
     }
 
-    /// on_error sets an event handler which is invoked when
-    /// the SCTP connection error occurs.
-    pub async fn on_error(&self, f: OnErrorHdlrFn) {
-        let mut handler = self.on_error_handler.lock().await;
-        *handler = Some(f);
-    }
-
     /// on_data_channel sets an event handler which is invoked when a data
     /// channel message arrives from a remote peer.
     pub async fn on_data_channel(&self, f: OnDataChannelHdlrFn) {
         let mut handler = self.on_data_channel_handler.lock().await;
         *handler = Some(f);
-    }
-
-    /// on_data_channel_opened sets an event handler which is invoked when a data
-    /// channel is opened
-    pub async fn on_data_channel_opened(&self, f: OnDataChannelOpenedHdlrFn) {
-        let mut handler = self.on_data_channel_opened_handler.lock().await;
-        *handler = Some(f);
-    }
-
-    /// max_channels is the maximum number of RTCDataChannels that can be open simultaneously.
-    pub fn max_channels(&self) -> u16 {
-        if self.max_channels == 0 {
-            SCTP_MAX_CHANNELS
-        } else {
-            self.max_channels
-        }
     }
 
     /// state returns the current state of the SCTPTransport

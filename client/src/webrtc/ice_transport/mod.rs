@@ -178,41 +178,12 @@ impl RTCIceTransport {
         }
     }
 
-    /// on_selected_candidate_pair_change sets a handler that is invoked when a new
-    /// ICE candidate pair is selected
-    pub async fn on_selected_candidate_pair_change(&self, f: OnSelectedCandidatePairChangeHdlrFn) {
-        let mut on_selected_candidate_pair_change_handler =
-            self.on_selected_candidate_pair_change_handler.lock().await;
-        *on_selected_candidate_pair_change_handler = Some(f);
-    }
-
     /// on_connection_state_change sets a handler that is fired when the ICE
     /// connection state changes.
     pub async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
         let mut on_connection_state_change_handler =
             self.on_connection_state_change_handler.lock().await;
         *on_connection_state_change_handler = Some(f);
-    }
-
-    /// Role indicates the current role of the ICE transport.
-    pub async fn role(&self) -> RTCIceRole {
-        let internal = self.internal.lock().await;
-        internal.role
-    }
-
-    /// set_remote_candidates sets the sequence of candidates associated with the remote ICETransport.
-    pub async fn set_remote_candidates(&self, remote_candidates: &[RTCIceCandidate]) -> Result<()> {
-        self.ensure_gatherer().await?;
-
-        if let Some(agent) = self.gatherer.get_agent().await {
-            for rc in remote_candidates {
-                let c: Arc<dyn Candidate + Send + Sync> = Arc::new(rc.to_ice().await?);
-                agent.add_remote_candidate(&c).await?;
-            }
-            Ok(())
-        } else {
-            Err(Error::ErrICEAgentNotExist)
-        }
     }
 
     /// adds a candidate associated with the remote ICETransport.
@@ -237,10 +208,6 @@ impl RTCIceTransport {
     /// State returns the current ice transport state.
     pub fn state(&self) -> RTCIceTransportState {
         RTCIceTransportState::from(self.state.load(Ordering::SeqCst))
-    }
-
-    pub fn set_state(&self, s: RTCIceTransportState) {
-        self.state.store(s as u8, Ordering::SeqCst)
     }
 
     pub async fn new_endpoint(&self, f: MatchFunc) -> Option<Arc<Endpoint>> {
