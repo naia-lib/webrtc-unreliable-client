@@ -212,7 +212,6 @@ pub struct Config {
 /// association is Closed its TCB SHOULD be removed.
 pub struct Association {
     name: String,
-    accept_ch_rx: Mutex<mpsc::Receiver<Arc<Stream>>>,
     net_conn: Arc<dyn Conn + Send + Sync>,
 
     pub association_internal: Arc<Mutex<AssociationInternal>>,
@@ -249,7 +248,7 @@ impl Association {
         let net_conn = Arc::clone(&config.net_conn);
 
         let (awake_write_loop_ch_tx, awake_write_loop_ch_rx) = mpsc::channel(1);
-        let (accept_ch_tx, accept_ch_rx) = mpsc::channel(ACCEPT_CH_SIZE);
+        let (accept_ch_tx, _accept_ch_rx) = mpsc::channel(ACCEPT_CH_SIZE);
         let (handshake_completed_ch_tx, handshake_completed_ch_rx) = mpsc::channel(1);
         let (close_loop_ch_tx, _) = broadcast::channel(1);
         let (close_loop_ch_rx1, close_loop_ch_rx2) =
@@ -363,7 +362,6 @@ impl Association {
         Ok((
             Association {
                 name,
-                accept_ch_rx: Mutex::new(accept_ch_rx),
                 net_conn,
                 association_internal,
             },

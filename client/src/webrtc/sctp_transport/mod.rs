@@ -26,12 +26,6 @@ pub type OnDataChannelHdlrFn = Box<
         + Sync,
 >;
 
-pub type OnDataChannelOpenedHdlrFn = Box<
-    dyn (FnMut(Arc<RTCDataChannel>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
-        + Send
-        + Sync,
->;
-
 /// SCTPTransport provides details about the SCTP transport.
 #[derive(Default)]
 pub struct RTCSctpTransport {
@@ -52,19 +46,14 @@ pub struct RTCSctpTransport {
 
     sctp_association: Mutex<Option<Arc<Association>>>,
 
-    on_error_handler: Arc<Mutex<Option<OnErrorHdlrFn>>>,
     on_data_channel_handler: Arc<Mutex<Option<OnDataChannelHdlrFn>>>,
-    on_data_channel_opened_handler: Arc<Mutex<Option<OnDataChannelOpenedHdlrFn>>>,
 
     // DataChannels
     pub data_channels: Arc<Mutex<Vec<Arc<RTCDataChannel>>>>,
     pub data_channels_opened: Arc<AtomicU32>,
     pub data_channels_requested: Arc<AtomicU32>,
-    data_channels_accepted: Arc<AtomicU32>,
 
     notify_tx: Arc<Notify>,
-
-
 }
 
 impl RTCSctpTransport {
@@ -79,13 +68,10 @@ impl RTCSctpTransport {
             state: AtomicU8::new(RTCSctpTransportState::Connecting as u8),
             is_started: AtomicBool::new(false),
             sctp_association: Mutex::new(None),
-            on_error_handler: Arc::new(Mutex::new(None)),
             on_data_channel_handler: Arc::new(Mutex::new(None)),
-            on_data_channel_opened_handler: Arc::new(Mutex::new(None)),
             data_channels: Arc::new(Mutex::new(vec![])),
             data_channels_opened: Arc::new(AtomicU32::new(0)),
             data_channels_requested: Arc::new(AtomicU32::new(0)),
-            data_channels_accepted: Arc::new(AtomicU32::new(0)),
             notify_tx: Arc::new(Notify::new()),
         }
     }
