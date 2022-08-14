@@ -157,6 +157,7 @@ pub(crate) enum Error {
     ErrStreamClosed,
     #[error("Short buffer to be filled")]
     ErrShortBuffer,
+    #[allow(dead_code)]
     #[error("Io EOF")]
     ErrEof,
     #[error("Invalid SystemTime")]
