@@ -50,10 +50,6 @@ pub(crate) struct Config {
     /// This should be used only for testing.
     pub(crate) insecure_skip_verify: bool,
 
-    /// insecure_hashes allows the use of hashing algorithms that are known
-    /// to be vulnerable.
-    pub(crate) insecure_hashes: bool,
-
     /// VerifyPeerCertificate, if not nil, is called after normal
     /// certificate verification by either a client or server. It
     /// receives the certificate provided by the peer and also a flag
@@ -106,7 +102,6 @@ impl Default for Config {
             psk: None,
             psk_identity_hint: None,
             insecure_skip_verify: false,
-            insecure_hashes: false,
             verify_peer_certificate: None,
             roots_cas: rustls::RootCertStore::empty(),
             client_cas: rustls::RootCertStore::empty(),

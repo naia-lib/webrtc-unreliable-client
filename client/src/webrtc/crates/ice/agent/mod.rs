@@ -11,7 +11,6 @@ pub(crate) mod agent_config;
 pub(crate) mod agent_gather;
 pub(crate) mod agent_internal;
 pub(crate) mod agent_selector;
-pub(crate) mod agent_stats;
 pub(crate) mod agent_transport;
 
 use crate::webrtc::ice::candidate::*;

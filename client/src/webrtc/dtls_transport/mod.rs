@@ -4,7 +4,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
-use bytes::Bytes;
 use crate::webrtc::dtls::config::ClientAuthType;
 use crate::webrtc::dtls::conn::DTLSConn;
 use tokio::sync::Mutex;
@@ -41,7 +40,6 @@ pub(crate) struct RTCDtlsTransport {
     pub(crate) certificates: Vec<RTCCertificate>,
 
     pub(crate) remote_parameters: Mutex<DTLSParameters>,
-    pub(crate) remote_certificate: Mutex<Bytes>,
     pub(crate) state: AtomicU8, //DTLSTransportState,
     pub(crate) on_state_change_handler: Arc<Mutex<Option<OnDTLSTransportStateChangeHdlrFn>>>,
     pub(crate) conn: Mutex<Option<Arc<DTLSConn>>>,

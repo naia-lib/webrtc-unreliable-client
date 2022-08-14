@@ -1,9 +1,8 @@
-use crate::webrtc::turn::error::*;
 
 use crate::webrtc::stun::message::*;
 
 use std::collections::HashMap;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
@@ -31,11 +30,6 @@ async fn on_rtx_timeout(
         if let Some(tr) = tm.delete(tr_key) {
             if !tr
                 .write_result(TransactionResult {
-                    err: Some(Error::Other(format!(
-                        "{:?} {}",
-                        Error::ErrAllRetransmissionsFailed,
-                        tr_key
-                    ))),
                     ..Default::default()
                 })
                 .await
@@ -62,11 +56,6 @@ async fn on_rtx_timeout(
         if let Some(tr) = tm.delete(tr_key) {
             if !tr
                 .write_result(TransactionResult {
-                    err: Some(Error::Other(format!(
-                        "{:?} {}",
-                        Error::ErrAllRetransmissionsFailed,
-                        tr_key
-                    ))),
                     ..Default::default()
                 })
                 .await
@@ -84,18 +73,12 @@ async fn on_rtx_timeout(
 #[derive(Debug)] //Clone
 pub(crate) struct TransactionResult {
     pub(crate) msg: Message,
-    pub(crate) from: SocketAddr,
-    pub(crate) retries: u16,
-    pub(crate) err: Option<Error>,
 }
 
 impl Default for TransactionResult {
     fn default() -> Self {
         TransactionResult {
             msg: Message::default(),
-            from: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0),
-            retries: 0,
-            err: None,
         }
     }
 }
@@ -222,11 +205,6 @@ impl Transaction {
         if self.result_ch_tx.is_some() {
             self.result_ch_tx.take();
         }
-    }
-
-    // retries returns the number of retransmission it has made
-    pub(crate) fn retries(&self) -> u16 {
-        self.n_rtx.load(Ordering::SeqCst)
     }
 }
 

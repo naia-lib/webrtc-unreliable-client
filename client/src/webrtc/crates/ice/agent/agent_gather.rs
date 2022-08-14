@@ -661,7 +661,6 @@ impl Agent {
                     username: url.username,
                     password: url.password,
                     realm: String::new(),
-                    software: String::new(),
                     rto_in_ms: 0,
                     conn: loc_conn,
                     vnet: Some(Arc::clone(&net2)),

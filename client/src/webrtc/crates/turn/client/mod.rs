@@ -51,7 +51,6 @@ pub(crate) struct ClientConfig {
     pub(crate) username: String,
     pub(crate) password: String,
     pub(crate) realm: String,
-    pub(crate) software: String,
     pub(crate) rto_in_ms: u16,
     pub(crate) conn: Arc<dyn Conn + Send + Sync>,
     pub(crate) vnet: Option<Arc<Net>>,
@@ -280,7 +279,7 @@ impl ClientInternal {
         //  - Non-STUN message from the STUN server
 
         if is_message(data) {
-            ClientInternal::handle_stun_message(tr_map, read_ch_tx, data, from).await
+            ClientInternal::handle_stun_message(tr_map, read_ch_tx, data).await
         } else if ChannelData::is_channel_data(data) {
             ClientInternal::handle_channel_data(binding_mgr, read_ch_tx, data).await
         } else if !stun_serv_str.is_empty() && from.to_string() == *stun_serv_str {
@@ -297,7 +296,6 @@ impl ClientInternal {
         tr_map: &Arc<Mutex<TransactionMap>>,
         read_ch_tx: &Arc<Mutex<Option<mpsc::Sender<InboundData>>>>,
         data: &[u8],
-        mut from: SocketAddr,
     ) -> Result<()> {
         let mut msg = Message::new();
         msg.raw = data.to_vec();
@@ -315,7 +313,7 @@ impl ClientInternal {
             if msg.typ.method == METHOD_DATA {
                 let mut peer_addr = PeerAddress::default();
                 peer_addr.get_from(&msg)?;
-                from = SocketAddr::new(peer_addr.ip, peer_addr.port);
+                let from = SocketAddr::new(peer_addr.ip, peer_addr.port);
 
                 let mut data = Data::default();
                 data.get_from(&msg)?;
@@ -349,8 +347,6 @@ impl ClientInternal {
             if !tr
                 .write_result(TransactionResult {
                     msg,
-                    from,
-                    retries: tr.retries(),
                     ..Default::default()
                 })
                 .await

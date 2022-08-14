@@ -16,23 +16,6 @@ impl Default for EventType {
     }
 }
 
-/// Event is passed to Handler describing the transaction event.
-/// Do not reuse outside Handler.
-#[derive(Debug)] //Clone
-pub(crate) struct Event {
-    pub(crate) event_type: EventType,
-    pub(crate) event_body: Result<Message>,
-}
-
-impl Default for Event {
-    fn default() -> Self {
-        Event {
-            event_type: EventType::default(),
-            event_body: Ok(Message::default()),
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Default, Debug)]
 pub(crate) struct TransactionId(pub(crate) [u8; TRANSACTION_ID_SIZE]);
 

@@ -25,7 +25,6 @@ pub(crate) struct CandidateBaseConfig {
     pub(crate) priority: u32,
     pub(crate) foundation: String,
     pub(crate) conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
-    pub(crate) initialized_ch: Option<broadcast::Receiver<()>>,
 }
 
 pub(crate) struct CandidateBase {

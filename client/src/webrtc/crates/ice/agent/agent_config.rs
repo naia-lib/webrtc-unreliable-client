@@ -142,10 +142,6 @@ pub(crate) struct AgentConfig {
     /// A function that you can use in order to whitelist or blacklist the interfaces which are
     /// used to gather ICE candidates.
     pub(crate) interface_filter: Arc<Option<InterfaceFilterFn>>,
-
-    /// Controls if self-signed certificates are accepted when connecting to TURN servers via TLS or
-    /// DTLS.
-    pub(crate) insecure_skip_verify: bool,
 }
 
 impl AgentConfig {

@@ -20,8 +20,6 @@ pub(crate) enum Error {
     ErrMinPortNotZero,
     #[error("turn: MaxPort less than MinPort")]
     ErrMaxPortLessThanMinPort,
-    #[error("all retransmissions failed")]
-    ErrAllRetransmissionsFailed,
     #[error("no binding found for channel")]
     ErrChannelBindNotFound,
     #[error("only one Allocate() caller is allowed")]

@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod data_channel_test;
 
-pub(crate) mod data_channel_message;
 pub(crate) mod data_channel_state;
 
 use std::future::Future;
