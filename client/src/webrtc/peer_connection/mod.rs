@@ -974,11 +974,6 @@ impl RTCPeerConnection {
 
         let d = Arc::new(RTCDataChannel::new());
 
-        // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #16)
-        if d.max_packet_lifetime.is_some() && d.max_retransmits.is_some() {
-            return Err(Error::ErrRetransmitsOrPacketLifeTime);
-        }
-
         {
             let mut data_channels = self.internal.sctp_transport.data_channels.lock().await;
             data_channels.push(Arc::clone(&d));

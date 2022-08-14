@@ -285,8 +285,8 @@ impl RTCSctpTransport {
         let mut ids_map = HashSet::new();
         {
             let data_channels = self.data_channels.lock().await;
-            for dc in &*data_channels {
-                ids_map.insert(dc.id());
+            if data_channels.len() > 0 {
+                ids_map.insert(0); // the only id configured right now
             }
         }
 

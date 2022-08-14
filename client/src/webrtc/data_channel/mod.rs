@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod data_channel_test;
 
-pub mod data_channel_init;
 pub mod data_channel_message;
 pub mod data_channel_state;
 
@@ -10,7 +9,7 @@ use data_channel_message::*;
 use bytes::Bytes;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 
 use crate::webrtc::data::message::message_channel_open::ChannelType;
@@ -18,7 +17,6 @@ use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
 use tokio::sync::{Mutex, Notify};
 
 use data_channel_state::RTCDataChannelState;
-use crate::webrtc::dtls_transport::dtls_role::DTLSRole;
 
 use crate::webrtc::error::{Error, OnErrorHdlrFn, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -40,17 +38,7 @@ pub type OnCloseHdlrFn =
 /// which can be used for bidirectional peer-to-peer transfers of arbitrary data
 #[derive(Default)]
 pub struct RTCDataChannel {
-    // these fields, when removed, seem to crash compilation...
-    #[allow(dead_code)]
-    pub setting_engine: bool,
 
-    pub label: String,
-    pub max_packet_lifetime: Option<u16>,
-    pub max_retransmits: Option<u16>,
-    pub protocol: String,
-    pub negotiated: bool,
-    pub has_id: AtomicBool,
-    pub id: AtomicU16,
     pub ready_state: Arc<AtomicU8>, // DataChannelState
     pub buffered_amount_low_threshold: AtomicUsize,
     pub detach_called: Arc<AtomicBool>,
@@ -81,17 +69,10 @@ impl RTCDataChannel {
     pub fn new() -> Self {
 
         RTCDataChannel {
-            label: "data".to_string(),
-            protocol: "".to_string(),
-            negotiated: false,
-            has_id: AtomicBool::new(true),
-            id: AtomicU16::new(0),
             ready_state: Arc::new(AtomicU8::new(RTCDataChannelState::Connecting as u8)),
             detach_called: Arc::new(AtomicBool::new(false)),
 
             notify_tx: Arc::new(Notify::new()),
-
-            setting_engine: true,
             ..Default::default()
         }
     }
@@ -108,34 +89,17 @@ impl RTCDataChannel {
                 }
             }
 
-            let channel_type;
-            let reliability_parameter: Option<u16>;
-
-            reliability_parameter = self.max_retransmits;
-            channel_type = ChannelType::PartialReliableRexmitUnordered;
-
+            // Do next Connor
             let cfg = crate::webrtc::data::data_channel::Config {
-                channel_type,
+                channel_type: ChannelType::PartialReliableRexmitUnordered,
                 priority: crate::webrtc::data::message::message_channel_open::CHANNEL_PRIORITY_NORMAL,
-                reliability_parameter,
-                label: self.label.clone(),
-                protocol: self.protocol.clone(),
-                negotiated: self.negotiated,
+                reliability_parameter: Some(0),
+                label: "data".to_string(),
+                protocol: "".to_string(),
+                negotiated: false,
             };
 
-            if !self.has_id.load(Ordering::SeqCst) {
-                self.has_id.store(true, Ordering::SeqCst);
-                self.id.store(
-                    sctp_transport
-                        .generate_and_set_data_channel_id(
-                            DTLSRole::Client
-                        )
-                        .await?,
-                    Ordering::SeqCst,
-                );
-            }
-
-            let dc = crate::webrtc::data::data_channel::DataChannel::dial(&association, self.id(), cfg).await?;
+            let dc = crate::webrtc::data::data_channel::DataChannel::dial(&association, 0, cfg).await?;
 
             // buffered_amount_low_threshold and on_buffered_amount_low might be set earlier
             dc.set_buffered_amount_low_threshold(
@@ -299,47 +263,6 @@ impl RTCDataChannel {
         } else {
             Ok(())
         }
-    }
-
-    /// label represents a label that can be used to distinguish this
-    /// DataChannel object from other DataChannel objects. Scripts are
-    /// allowed to create multiple DataChannel objects with the same label.
-    pub fn label(&self) -> &str {
-        self.label.as_str()
-    }
-
-    /// max_packet_lifetime represents the length of the time window (msec) during
-    /// which transmissions and retransmissions may occur in unreliable mode.
-    pub fn max_packet_lifetime(&self) -> Option<u16> {
-        self.max_packet_lifetime
-    }
-
-    /// max_retransmits represents the maximum number of retransmissions that are
-    /// attempted in unreliable mode.
-    pub fn max_retransmits(&self) -> Option<u16> {
-        self.max_retransmits
-    }
-
-    /// protocol represents the name of the sub-protocol used with this
-    /// DataChannel.
-    pub fn protocol(&self) -> &str {
-        self.protocol.as_str()
-    }
-
-    /// negotiated represents whether this DataChannel was negotiated by the
-    /// application (true), or not (false).
-    pub fn negotiated(&self) -> bool {
-        self.negotiated
-    }
-
-    /// ID represents the ID for this DataChannel. The value is initially
-    /// null, which is what will be returned if the ID was not provided at
-    /// channel creation time, and the DTLS role of the SCTP transport has not
-    /// yet been negotiated. Otherwise, it will return the ID that was either
-    /// selected by the script or generated. After the ID is set to a non-null
-    /// value, it will not change.
-    pub fn id(&self) -> u16 {
-        self.id.load(Ordering::SeqCst)
     }
 
     /// ready_state represents the state of the DataChannel object.
