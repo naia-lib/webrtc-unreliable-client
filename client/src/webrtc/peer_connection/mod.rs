@@ -9,7 +9,6 @@ pub(crate) mod policy;
 pub(crate) mod sdp;
 pub(crate) mod signaling_state;
 
-use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::api::API;
 use crate::webrtc::data_channel::data_channel_state::RTCDataChannelState;
 use crate::webrtc::data_channel::RTCDataChannel;
@@ -145,9 +144,7 @@ impl RTCPeerConnection {
     /// active interceptors, create a MediaEngine and call api.new_peer_connection
     /// instead of this function.
     pub(crate) async fn new() -> Arc<RTCPeerConnection> {
-        let api = API {
-            setting_engine: Arc::new(SettingEngine::new()),
-        };
+        let api = API;
 
         let mut configuration = RTCConfiguration::default();
 

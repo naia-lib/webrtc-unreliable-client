@@ -1,4 +1,3 @@
-use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::*;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
@@ -48,7 +47,6 @@ pub(crate) type OnGatheringCompleteHdlrFn =
 pub(crate) struct RTCIceGatherer {
     pub(crate) validated_servers: Vec<Url>,
     pub(crate) gather_policy: RTCIceTransportPolicy,
-    pub(crate) setting_engine: Arc<SettingEngine>,
 
     pub(crate) state: Arc<AtomicU8>, //ICEGathererState,
     pub(crate) agent: Mutex<Option<Arc<crate::webrtc::ice::agent::Agent>>>,
@@ -64,12 +62,10 @@ impl RTCIceGatherer {
     pub(crate) fn new(
         validated_servers: Vec<Url>,
         gather_policy: RTCIceTransportPolicy,
-        setting_engine: Arc<SettingEngine>,
     ) -> Self {
         RTCIceGatherer {
             gather_policy,
             validated_servers,
-            setting_engine,
             state: Arc::new(AtomicU8::new(RTCIceGathererState::New as u8)),
             ..Default::default()
         }
@@ -111,13 +107,6 @@ impl RTCIceGatherer {
             nat_1to1_ip_candidate_type: CandidateType::Unspecified,
             net: None,
             multicast_dns_mode: mdns_mode,
-            multicast_dns_host_name: self
-                .setting_engine
-                .candidates
-                .multicast_dns_host_name
-                .clone(),
-            local_ufrag: self.setting_engine.candidates.username_fragment.clone(),
-            local_pwd: self.setting_engine.candidates.password.clone(),
             //TODO: TCPMux:                 self.setting_engine.iceTCPMux,
             //TODO: ProxyDialer:            self.setting_engine.iceProxyDialer,
             ..Default::default()

@@ -1,13 +1,9 @@
 
-pub(crate) mod setting_engine;
-
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
-
-use setting_engine::*;
 
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::sctp_transport::RTCSctpTransport;
@@ -20,9 +16,7 @@ use std::time::SystemTime;
 /// Some of these functions are also exported globally using the
 /// defaultAPI object. Note that the global version of the API
 /// may be phased out in the future.
-pub(crate) struct API {
-    pub(crate) setting_engine: Arc<SettingEngine>,
-}
+pub(crate) struct API;
 
 impl API {
 
@@ -41,7 +35,6 @@ impl API {
         Ok(RTCIceGatherer::new(
             validated_servers,
             opts.ice_gather_policy,
-            Arc::clone(&self.setting_engine),
         ))
     }
 
