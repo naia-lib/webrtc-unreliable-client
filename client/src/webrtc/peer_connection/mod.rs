@@ -873,8 +873,8 @@ impl RTCPeerConnection {
             // If both or neither agents are lite the offering agent is controlling.
             // RFC 8445 S6.1.1
             let ice_role = if (we_offer
-                && remote_is_lite == self.internal.setting_engine.candidates.ice_lite)
-                || (remote_is_lite && !self.internal.setting_engine.candidates.ice_lite)
+                && !remote_is_lite)
+                || remote_is_lite
             {
                 RTCIceRole::Controlling
             } else {

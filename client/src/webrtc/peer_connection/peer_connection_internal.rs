@@ -43,9 +43,6 @@ pub(crate) struct PeerConnectionInternal {
     pub(crate) current_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
     pub(crate) pending_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
     pub(crate) pending_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-
-    // A reference to the associated API state used by this connection
-    pub(crate) setting_engine: Arc<SettingEngine>,
 }
 
 impl PeerConnectionInternal {
@@ -77,8 +74,6 @@ impl PeerConnectionInternal {
             current_remote_description: Arc::new(Default::default()),
             pending_local_description: Arc::new(Default::default()),
             peer_connection_state: Arc::new(AtomicU8::new(RTCPeerConnectionState::New as u8)),
-
-            setting_engine: Arc::clone(&api.setting_engine),
             on_peer_connection_state_change_handler: Arc::new(Default::default()),
             pending_remote_description: Arc::new(Default::default()),
         };
@@ -296,7 +291,7 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            is_icelite: self.setting_engine.candidates.ice_lite,
+            is_icelite: false,
             connection_role: DEFAULT_DTLS_ROLE_OFFER.to_connection_role(),
             ice_gathering_state: self.ice_gathering_state(),
         };
@@ -369,7 +364,7 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            is_icelite: self.setting_engine.candidates.ice_lite,
+            is_icelite: false,
             connection_role,
             ice_gathering_state: self.ice_gathering_state(),
         };

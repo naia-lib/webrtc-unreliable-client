@@ -84,9 +84,7 @@ impl RTCIceGatherer {
         }
 
         let mut candidate_types = vec![];
-        if self.setting_engine.candidates.ice_lite {
-            candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Host);
-        } else if self.gather_policy == RTCIceTransportPolicy::Relay {
+        if self.gather_policy == RTCIceTransportPolicy::Relay {
             candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Relay);
         }
 
@@ -106,7 +104,7 @@ impl RTCIceGatherer {
 
         let mut config = crate::webrtc::ice::agent::agent_config::AgentConfig {
             udp_network: UDPNetwork::Ephemeral(Default::default()),
-            lite: self.setting_engine.candidates.ice_lite,
+            lite: false,
             urls: self.validated_servers.clone(),
             disconnected_timeout: None,
             failed_timeout: None,
@@ -133,12 +131,7 @@ impl RTCIceGatherer {
             ..Default::default()
         };
 
-        let requested_network_types = if self.setting_engine.candidates.ice_network_types.is_empty()
-        {
-            crate::webrtc::ice::network_type::supported_network_types()
-        } else {
-            self.setting_engine.candidates.ice_network_types.clone()
-        };
+        let requested_network_types = crate::webrtc::ice::network_type::supported_network_types();
 
         config.network_types.extend(requested_network_types);
 
