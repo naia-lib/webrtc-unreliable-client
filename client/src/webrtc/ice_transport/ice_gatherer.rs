@@ -1,7 +1,6 @@
 use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::*;
-use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 use crate::webrtc::ice_transport::ice_server::RTCIceServer;
@@ -17,6 +16,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 use crate::webrtc::ice::udp_network::UDPNetwork;
 use tokio::sync::Mutex;
+use crate::webrtc::ice::mdns::MulticastDnsMode;
 
 /// ICEGatherOptions provides options relating to the gathering of ICE candidates.
 #[derive(Default, Debug, Clone)]
@@ -88,13 +88,7 @@ impl RTCIceGatherer {
             candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Relay);
         }
 
-        let nat_1to1_cand_type = match self.setting_engine.candidates.nat_1to1_ip_candidate_type {
-            RTCIceCandidateType::Host => CandidateType::Host,
-            RTCIceCandidateType::Srflx => CandidateType::ServerReflexive,
-            _ => CandidateType::Unspecified,
-        };
-
-        let mut mdns_mode = self.setting_engine.candidates.multicast_dns_mode;
+        let mut mdns_mode = MulticastDnsMode::Unspecified;
         if mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::Disabled
             && mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::QueryAndGather
         {
@@ -114,9 +108,7 @@ impl RTCIceGatherer {
             srflx_acceptance_min_wait: None,
             prflx_acceptance_min_wait: None,
             relay_acceptance_min_wait: None,
-            interface_filter: self.setting_engine.candidates.interface_filter.clone(),
-            nat_1to1_ips: self.setting_engine.candidates.nat_1to1_ips.clone(),
-            nat_1to1_ip_candidate_type: nat_1to1_cand_type,
+            nat_1to1_ip_candidate_type: CandidateType::Unspecified,
             net: None,
             multicast_dns_mode: mdns_mode,
             multicast_dns_host_name: self

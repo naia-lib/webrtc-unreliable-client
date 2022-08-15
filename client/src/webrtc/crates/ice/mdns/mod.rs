@@ -26,7 +26,7 @@ pub(crate) enum MulticastDnsMode {
 
 impl Default for MulticastDnsMode {
     fn default() -> Self {
-        Self::Unspecified
+        MulticastDnsMode::Unspecified
     }
 }
 
