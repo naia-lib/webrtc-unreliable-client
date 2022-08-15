@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod external_ip_mapper_test;
 
 use crate::webrtc::ice::candidate::*;
 use crate::webrtc::ice::error::*;

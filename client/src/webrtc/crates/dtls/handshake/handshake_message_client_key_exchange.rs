@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_client_key_exchange_test;
 
 use super::*;
 

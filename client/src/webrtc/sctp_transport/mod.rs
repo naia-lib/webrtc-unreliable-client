@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod sctp_transport_test;
 
 pub(crate) mod sctp_transport_capabilities;
 pub(crate) mod sctp_transport_state;

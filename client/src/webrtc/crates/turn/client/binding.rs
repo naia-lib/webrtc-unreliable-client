@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod binding_test;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;

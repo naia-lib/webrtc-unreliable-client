@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod fragment_buffer_test;
 
 use crate::webrtc::dtls::content::*;
 use crate::webrtc::dtls::error::*;

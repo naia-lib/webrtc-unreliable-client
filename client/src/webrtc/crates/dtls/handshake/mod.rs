@@ -12,9 +12,6 @@ pub(crate) mod handshake_message_server_hello_done;
 pub(crate) mod handshake_message_server_key_exchange;
 pub(crate) mod handshake_random;
 
-#[cfg(test)]
-mod handshake_test;
-
 use std::fmt;
 use std::io::{Read, Write};
 

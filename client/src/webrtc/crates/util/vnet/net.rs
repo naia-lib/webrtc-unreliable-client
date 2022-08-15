@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod net_test;
 
 use super::conn_map::*;
 use super::interface::*;

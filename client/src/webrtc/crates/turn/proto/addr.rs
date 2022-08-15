@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod addr_test;
 
 use super::*;
 

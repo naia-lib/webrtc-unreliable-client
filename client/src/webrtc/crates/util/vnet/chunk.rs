@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod chunk_test;
 
 use super::net::*;
 use crate::webrtc::util::error::Result;

@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod data_channel_test;
 
 use crate::webrtc::data::error::Result;
 use crate::webrtc::data::{

@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_certificate_verify_test;
 
 use super::*;
 use crate::webrtc::dtls::signature_hash_algorithm::*;

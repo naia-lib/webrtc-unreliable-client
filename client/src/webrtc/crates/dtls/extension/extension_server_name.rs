@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod extension_server_name_test;
 
 use super::*;
 

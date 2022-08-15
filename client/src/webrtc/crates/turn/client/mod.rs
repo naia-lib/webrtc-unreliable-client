@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod client_test;
 
 pub(crate) mod binding;
 pub(crate) mod periodic_timer;

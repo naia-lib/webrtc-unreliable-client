@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod mux_test;
 
 pub(crate) mod endpoint;
 pub(crate) mod mux_func;

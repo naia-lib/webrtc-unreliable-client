@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod operation_test;
 
 use std::fmt;
 use std::future::Future;

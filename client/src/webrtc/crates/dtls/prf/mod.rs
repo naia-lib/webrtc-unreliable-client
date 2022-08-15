@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod prf_test;
 
 use std::convert::TryInto;
 use std::fmt;

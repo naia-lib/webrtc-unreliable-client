@@ -59,21 +59,3 @@ pub(crate) fn candidate_to_addr(candidate_str: &str) -> ServerAddr {
 
     ServerAddr::Found(SocketAddr::new(IpAddr::V4(ip_addr), *port))
 }
-
-#[cfg(test)]
-mod tests {
-
-    use super::{candidate_to_addr, ServerAddr};
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-    #[test]
-    fn candidate_to_addr_works() {
-        assert_eq!(
-            candidate_to_addr("candidate:1 1 UDP 1755993416 127.0.0.1 14192 typ host"),
-            ServerAddr::Found(SocketAddr::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                14192
-            ))
-        );
-    }
-}

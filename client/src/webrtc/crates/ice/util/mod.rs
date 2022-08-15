@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod util_test;
 
 use crate::webrtc::ice::agent::agent_config::InterfaceFilterFn;
 use crate::webrtc::ice::error::*;

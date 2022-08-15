@@ -4,18 +4,6 @@ pub(crate) mod conn_pipe;
 pub(crate) mod conn_udp;
 pub(crate) mod conn_udp_listener;
 
-#[cfg(test)]
-mod conn_bridge_test;
-#[cfg(test)]
-mod conn_pipe_test;
-#[cfg(test)]
-mod conn_test;
-
-//TODO: remove this conditional test
-#[cfg(not(target_os = "windows"))]
-#[cfg(test)]
-mod conn_udp_listener_test;
-
 use async_trait::async_trait;
 use std::net::SocketAddr;
 use std::sync::Arc;

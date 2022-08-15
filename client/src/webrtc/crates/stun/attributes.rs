@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod attributes_test;
 
 use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;

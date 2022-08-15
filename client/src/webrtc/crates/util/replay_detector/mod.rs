@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod replay_detector_test;
 
 use super::fixed_big_int::*;
 

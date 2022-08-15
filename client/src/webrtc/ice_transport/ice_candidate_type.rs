@@ -85,39 +85,3 @@ impl fmt::Display for RTCIceCandidateType {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_ice_candidate_type() {
-        let tests = vec![
-            ("Unspecified", RTCIceCandidateType::Unspecified),
-            ("host", RTCIceCandidateType::Host),
-            ("srflx", RTCIceCandidateType::Srflx),
-            ("prflx", RTCIceCandidateType::Prflx),
-            ("relay", RTCIceCandidateType::Relay),
-        ];
-
-        for (type_string, expected_type) in tests {
-            let actual = RTCIceCandidateType::from(type_string);
-            assert_eq!(expected_type, actual);
-        }
-    }
-
-    #[test]
-    fn test_ice_candidate_type_string() {
-        let tests = vec![
-            (RTCIceCandidateType::Unspecified, "Unspecified"),
-            (RTCIceCandidateType::Host, "host"),
-            (RTCIceCandidateType::Srflx, "srflx"),
-            (RTCIceCandidateType::Prflx, "prflx"),
-            (RTCIceCandidateType::Relay, "relay"),
-        ];
-
-        for (ctype, expected_string) in tests {
-            assert_eq!(expected_string, ctype.to_string());
-        }
-    }
-}

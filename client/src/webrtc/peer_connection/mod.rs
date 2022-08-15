@@ -1,5 +1,3 @@
-#[cfg(test)]
-pub(crate) mod peer_connection_test;
 
 pub(crate) mod certificate;
 pub(crate) mod configuration;

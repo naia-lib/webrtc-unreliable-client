@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod fixed_big_int_test;
 
 use std::fmt;
 

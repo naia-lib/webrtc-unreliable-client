@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod channnum_test;
 
 use std::fmt;
 use crate::webrtc::stun::attributes::*;

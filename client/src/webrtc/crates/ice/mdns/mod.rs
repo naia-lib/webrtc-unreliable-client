@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod mdns_test;
 
 use crate::webrtc::ice::error::Result;
 

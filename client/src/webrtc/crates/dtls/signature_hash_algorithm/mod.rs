@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod signature_hash_algorithm_test;
 
 use std::fmt;
 

@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod tcp_type_test;
 
 use std::fmt;
 

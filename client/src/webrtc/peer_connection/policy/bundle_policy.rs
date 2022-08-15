@@ -63,36 +63,3 @@ impl fmt::Display for RTCBundlePolicy {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_bundle_policy() {
-        let tests = vec![
-            ("Unspecified", RTCBundlePolicy::Unspecified),
-            ("balanced", RTCBundlePolicy::Balanced),
-            ("max-compat", RTCBundlePolicy::MaxCompat),
-            ("max-bundle", RTCBundlePolicy::MaxBundle),
-        ];
-
-        for (policy_string, expected_policy) in tests {
-            assert_eq!(expected_policy, RTCBundlePolicy::from(policy_string));
-        }
-    }
-
-    #[test]
-    fn test_bundle_policy_string() {
-        let tests = vec![
-            (RTCBundlePolicy::Unspecified, "Unspecified"),
-            (RTCBundlePolicy::Balanced, "balanced"),
-            (RTCBundlePolicy::MaxCompat, "max-compat"),
-            (RTCBundlePolicy::MaxBundle, "max-bundle"),
-        ];
-
-        for (policy, expected_string) in tests {
-            assert_eq!(expected_string, policy.to_string());
-        }
-    }
-}

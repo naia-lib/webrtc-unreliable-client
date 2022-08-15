@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod data_channel_test;
 
 pub(crate) mod data_channel_state;
 

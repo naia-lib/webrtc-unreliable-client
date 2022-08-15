@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod url_test;
 
 use crate::webrtc::ice::error::*;
 

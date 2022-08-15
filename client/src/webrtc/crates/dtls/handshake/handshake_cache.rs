@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_cache_test;
 
 use crate::webrtc::dtls::cipher_suite::*;
 use crate::webrtc::dtls::handshake::*;

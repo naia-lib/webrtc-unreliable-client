@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod integrity_test;
 
 use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::checks::*;

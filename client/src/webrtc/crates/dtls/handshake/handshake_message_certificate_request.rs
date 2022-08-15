@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_certificate_request_test;
 
 use super::*;
 use crate::webrtc::dtls::client_certificate_type::*;

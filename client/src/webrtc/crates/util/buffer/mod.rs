@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod buffer_test;
 
 use crate::webrtc::util::error::{Error, Result};
 

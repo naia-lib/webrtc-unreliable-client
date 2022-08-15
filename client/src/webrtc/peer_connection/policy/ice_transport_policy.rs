@@ -47,32 +47,3 @@ impl fmt::Display for RTCIceTransportPolicy {
         write!(f, "{}", s)
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_transport_policy() {
-        let tests = vec![
-            ("relay", RTCIceTransportPolicy::Relay),
-            ("all", RTCIceTransportPolicy::All),
-        ];
-
-        for (policy_string, expected_policy) in tests {
-            assert_eq!(expected_policy, RTCIceTransportPolicy::from(policy_string));
-        }
-    }
-
-    #[test]
-    fn test_ice_transport_policy_string() {
-        let tests = vec![
-            (RTCIceTransportPolicy::Relay, "relay"),
-            (RTCIceTransportPolicy::All, "all"),
-        ];
-
-        for (policy, expected_string) in tests {
-            assert_eq!(expected_string, policy.to_string());
-        }
-    }
-}

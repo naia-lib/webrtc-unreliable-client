@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod periodic_timer_test;
 
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;

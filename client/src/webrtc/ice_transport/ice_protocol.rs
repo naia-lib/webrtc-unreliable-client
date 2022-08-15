@@ -47,37 +47,3 @@ impl fmt::Display for RTCIceProtocol {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_protocol() {
-        let tests = vec![
-            ("Unspecified", RTCIceProtocol::Unspecified),
-            ("udp", RTCIceProtocol::Udp),
-            ("tcp", RTCIceProtocol::Tcp),
-            ("UDP", RTCIceProtocol::Udp),
-            ("TCP", RTCIceProtocol::Tcp),
-        ];
-
-        for (proto_string, expected_proto) in tests {
-            let actual = RTCIceProtocol::from(proto_string);
-            assert_eq!(expected_proto, actual);
-        }
-    }
-
-    #[test]
-    fn test_ice_protocol_string() {
-        let tests = vec![
-            (RTCIceProtocol::Unspecified, "Unspecified"),
-            (RTCIceProtocol::Udp, "udp"),
-            (RTCIceProtocol::Tcp, "tcp"),
-        ];
-
-        for (proto, expected_string) in tests {
-            assert_eq!(expected_string, proto.to_string());
-        }
-    }
-}

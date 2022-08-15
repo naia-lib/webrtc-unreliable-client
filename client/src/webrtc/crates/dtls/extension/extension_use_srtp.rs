@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod extension_use_srtp_test;
 
 use super::*;
 

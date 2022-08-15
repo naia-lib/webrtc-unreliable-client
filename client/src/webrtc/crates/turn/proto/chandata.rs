@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod chandata_test;
 
 use super::channum::*;
 use crate::webrtc::turn::error::*;

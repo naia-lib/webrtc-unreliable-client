@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod queue_test;
 
 pub(crate) mod control_queue;
 pub(crate) mod payload_queue;

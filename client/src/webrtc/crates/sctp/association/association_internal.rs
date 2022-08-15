@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod association_internal_test;
 
 use std::sync::atomic::AtomicBool;
 

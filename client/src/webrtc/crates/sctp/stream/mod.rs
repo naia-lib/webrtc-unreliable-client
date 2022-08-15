@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod stream_test;
 
 use crate::webrtc::sctp::association::AssociationState;
 use crate::webrtc::sctp::chunk::chunk_payload_data::{ChunkPayloadData, PayloadProtocolIdentifier};

@@ -68,38 +68,3 @@ impl fmt::Display for RTCSdpType {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_sdp_type() {
-        let tests = vec![
-            ("Unspecified", RTCSdpType::Unspecified),
-            ("offer", RTCSdpType::Offer),
-            ("pranswer", RTCSdpType::Pranswer),
-            ("answer", RTCSdpType::Answer),
-            ("rollback", RTCSdpType::Rollback),
-        ];
-
-        for (sdp_type_string, expected_sdp_type) in tests {
-            assert_eq!(expected_sdp_type, RTCSdpType::from(sdp_type_string));
-        }
-    }
-
-    #[test]
-    fn test_sdp_type_string() {
-        let tests = vec![
-            (RTCSdpType::Unspecified, "Unspecified"),
-            (RTCSdpType::Offer, "offer"),
-            (RTCSdpType::Pranswer, "pranswer"),
-            (RTCSdpType::Answer, "answer"),
-            (RTCSdpType::Rollback, "rollback"),
-        ];
-
-        for (sdp_type, expected_string) in tests {
-            assert_eq!(expected_string, sdp_type.to_string());
-        }
-    }
-}

@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod peeraddr_test;
 
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr};

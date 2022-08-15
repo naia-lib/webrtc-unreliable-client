@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod reqtrans_test;
 
 use super::*;
 

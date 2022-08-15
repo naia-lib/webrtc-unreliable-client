@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod five_tuple_test;
 
 use crate::webrtc::turn::proto::*;
 

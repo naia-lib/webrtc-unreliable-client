@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod auth_test;
 
 use crate::webrtc::turn::error::*;
 

@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod conn_test;
 
 use crate::webrtc::util::conn::Conn;
 use crate::webrtc::util::error::*;

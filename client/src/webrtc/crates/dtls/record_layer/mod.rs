@@ -1,8 +1,5 @@
 pub(crate) mod record_layer_header;
 
-#[cfg(test)]
-mod record_layer_test;
-
 use super::content::*;
 use super::error::*;
 use crate::webrtc::dtls::alert::Alert;

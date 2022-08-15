@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod chunk_test;
 
 pub(crate) mod chunk_abort;
 pub(crate) mod chunk_cookie_ack;

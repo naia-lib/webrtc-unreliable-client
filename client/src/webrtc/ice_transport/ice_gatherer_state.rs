@@ -71,23 +71,3 @@ impl fmt::Display for RTCIceGathererState {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_ice_gatherer_state_string() {
-        let tests = vec![
-            (RTCIceGathererState::Unspecified, "Unspecified"),
-            (RTCIceGathererState::New, "new"),
-            (RTCIceGathererState::Gathering, "gathering"),
-            (RTCIceGathererState::Complete, "complete"),
-            (RTCIceGathererState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string());
-        }
-    }
-}

@@ -3,9 +3,6 @@ use super::*;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
 
-#[cfg(test)]
-mod handshake_message_certificate_test;
-
 const HANDSHAKE_MESSAGE_CERTIFICATE_LENGTH_FIELD_SIZE: usize = 3;
 
 #[derive(PartialEq, Debug, Clone)]

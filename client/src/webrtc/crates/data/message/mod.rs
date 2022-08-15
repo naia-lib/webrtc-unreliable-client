@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod message_test;
 
 pub(crate) mod message_channel_ack;
 pub(crate) mod message_channel_open;

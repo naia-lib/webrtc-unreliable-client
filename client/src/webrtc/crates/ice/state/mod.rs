@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod state_test;
 
 use std::fmt;
 

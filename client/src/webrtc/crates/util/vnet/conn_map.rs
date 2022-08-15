@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod conn_map_test;
 
 use crate::webrtc::util::error::*;
 use crate::webrtc::util::vnet::conn::UdpConn;

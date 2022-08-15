@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod crypto_test;
 
 pub(crate) mod crypto_cbc;
 pub(crate) mod crypto_ccm;

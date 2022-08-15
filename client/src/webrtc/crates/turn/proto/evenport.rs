@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod evenport_test;
 
 use std::fmt;
 use crate::webrtc::stun::attributes::*;

@@ -44,34 +44,3 @@ impl fmt::Display for RTCIceCredentialType {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_credential_type() {
-        let tests = vec![
-            ("Unspecified", RTCIceCredentialType::Unspecified),
-            ("password", RTCIceCredentialType::Password),
-            ("oauth", RTCIceCredentialType::Oauth),
-        ];
-
-        for (ct_str, expected_ct) in tests {
-            assert_eq!(expected_ct, RTCIceCredentialType::from(ct_str));
-        }
-    }
-
-    #[test]
-    fn test_ice_credential_type_string() {
-        let tests = vec![
-            (RTCIceCredentialType::Unspecified, "Unspecified"),
-            (RTCIceCredentialType::Password, "password"),
-            (RTCIceCredentialType::Oauth, "oauth"),
-        ];
-
-        for (ct, expected_string) in tests {
-            assert_eq!(expected_string, ct.to_string());
-        }
-    }
-}

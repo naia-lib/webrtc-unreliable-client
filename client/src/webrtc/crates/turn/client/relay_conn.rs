@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod relay_conn_test;
 
 // client implements the API for a TURN client
 use super::binding::*;

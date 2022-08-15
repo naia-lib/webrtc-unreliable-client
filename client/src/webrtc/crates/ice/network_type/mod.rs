@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod network_type_test;
 
 use crate::webrtc::ice::error::*;
 

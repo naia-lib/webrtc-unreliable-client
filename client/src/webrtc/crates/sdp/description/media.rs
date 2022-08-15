@@ -117,31 +117,3 @@ impl fmt::Display for MediaName {
         write!(f, "{}", s.join(" "))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::MediaDescription;
-
-    #[test]
-    fn test_attribute_missing() {
-        let media_description = MediaDescription::default();
-
-        assert_eq!(media_description.attribute("recvonly"), None);
-    }
-
-    #[test]
-    fn test_attribute_present_with_no_value() {
-        let media_description =
-            MediaDescription::default().with_property_attribute("recvonly".to_owned());
-
-        assert_eq!(media_description.attribute("recvonly"), Some(None));
-    }
-
-    #[test]
-    fn test_attribute_present_with_value() {
-        let media_description =
-            MediaDescription::default().with_value_attribute("ptime".to_owned(), "1".to_owned());
-
-        assert_eq!(media_description.attribute("ptime"), Some(Some("1")));
-    }
-}

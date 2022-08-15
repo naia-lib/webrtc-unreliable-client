@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_finished_test;
 
 use super::*;
 

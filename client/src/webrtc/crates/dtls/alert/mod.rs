@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod alert_test;
 
 use super::content::*;
 use crate::webrtc::dtls::error::Result;
