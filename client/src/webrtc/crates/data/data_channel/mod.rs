@@ -1,7 +1,7 @@
 
 use crate::webrtc::data::error::Result;
 use crate::webrtc::data::{
-    message::message_channel_ack::*, message::message_channel_open::*, message::*,
+    message::message_channel_open::*, message::*,
 };
 
 use crate::webrtc::sctp::{
@@ -121,14 +121,13 @@ impl DataChannel {
         let msg = Message::unmarshal(data)?;
 
         match msg {
-            Message::DataChannelOpen(_) => {
-                // Note: DATA_CHANNEL_OPEN message is handled inside Server() method.
-                // Therefore, the message will not reach here.
-                log::debug!("Received DATA_CHANNEL_OPEN");
-                let _ = self.write_data_channel_ack().await?;
-            }
             Message::DataChannelAck(_) => {
                 log::debug!("Received DATA_CHANNEL_ACK");
+            }
+            _ => {
+                // Note: DATA_CHANNEL_OPEN message is handled inside Server() method.
+                // Therefore, the message will not reach here.
+                panic!("client should only ever receive a DataChannelAck message");
             }
         };
 
@@ -167,14 +166,6 @@ impl DataChannel {
         } else {
             Ok(self.stream.write_sctp(data, ppi).await?)
         }
-    }
-
-    async fn write_data_channel_ack(&self) -> Result<usize> {
-        let ack = Message::DataChannelAck(DataChannelAck {}).marshal()?;
-        Ok(self
-            .stream
-            .write_sctp(&ack, PayloadProtocolIdentifier::Dcep)
-            .await?)
     }
 
     /// SetBufferedAmountLowThreshold is used to update the threshold.

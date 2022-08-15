@@ -59,8 +59,8 @@ impl Unmarshal for Message {
 
         match MessageType::unmarshal(buf)? {
             MessageType::DataChannelAck => Ok(Self::DataChannelAck(DataChannelAck {})),
-            MessageType::DataChannelOpen => {
-                Ok(Self::DataChannelOpen(DataChannelOpen::unmarshal(buf)?))
+            _ => {
+                panic!("should never need to unmarshal anything other than a DataChannelAck");
             }
         }
     }
