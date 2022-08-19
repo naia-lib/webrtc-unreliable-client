@@ -12,15 +12,12 @@ pub(crate) struct PeerConnectionInternal {
     pub(crate) last_offer: Mutex<String>,
     pub(crate) last_answer: Mutex<String>,
 
-    pub(crate) on_negotiation_needed_handler: Arc<Mutex<Option<OnNegotiationNeededHdlrFn>>>,
     pub(crate) is_closed: Arc<AtomicBool>,
 
     /// ops is an operations queue which will ensure the enqueued actions are
     /// executed in order. It is used for asynchronously, but serially processing
     /// remote and local descriptions
     pub(crate) ops: Arc<Operations>,
-    pub(crate) negotiation_needed_state: Arc<AtomicU8>,
-    pub(crate) is_negotiation_needed: Arc<AtomicBool>,
     pub(crate) signaling_state: Arc<AtomicU8>,
 
     pub(crate) ice_transport: Arc<RTCIceTransport>,
@@ -55,12 +52,8 @@ impl PeerConnectionInternal {
             sdp_origin: Mutex::new(Default::default()),
             last_offer: Mutex::new("".to_owned()),
             last_answer: Mutex::new("".to_owned()),
-
-            on_negotiation_needed_handler: Arc::new(Default::default()),
             ops: Arc::new(Operations::new()),
             is_closed: Arc::new(AtomicBool::new(false)),
-            is_negotiation_needed: Arc::new(AtomicBool::new(false)),
-            negotiation_needed_state: Arc::new(AtomicU8::new(NegotiationNeededState::Empty as u8)),
             signaling_state: Arc::new(AtomicU8::new(RTCSignalingState::Stable as u8)),
             ice_transport: Arc::new(Default::default()),
             dtls_transport: Arc::new(Default::default()),

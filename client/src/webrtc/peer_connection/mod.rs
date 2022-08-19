@@ -33,9 +33,7 @@ use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 use crate::webrtc::peer_connection::configuration::RTCConfiguration;
 use crate::webrtc::peer_connection::operation::{Operation, Operations};
-use crate::webrtc::peer_connection::peer_connection_state::{
-    NegotiationNeededState, RTCPeerConnectionState,
-};
+use crate::webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
 use crate::webrtc::peer_connection::policy::sdp_semantics::RTCSdpSemantics;
 use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use crate::webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
@@ -103,26 +101,6 @@ pub(crate) type OnDataChannelHdlrFn = Box<
         + Send
         + Sync,
 >;
-
-pub(crate) type OnNegotiationNeededHdlrFn =
-    Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
-
-#[derive(Clone)]
-struct CheckNegotiationNeededParams {
-    sctp_transport: Arc<RTCSctpTransport>,
-    current_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-}
-
-#[derive(Clone)]
-struct NegotiationNeededParams {
-    on_negotiation_needed_handler: Arc<Mutex<Option<OnNegotiationNeededHdlrFn>>>,
-    is_closed: Arc<AtomicBool>,
-    ops: Arc<Operations>,
-    negotiation_needed_state: Arc<AtomicU8>,
-    is_negotiation_needed: Arc<AtomicBool>,
-    signaling_state: Arc<AtomicU8>,
-    check_negotiation_needed_params: CheckNegotiationNeededParams,
-}
 
 /// PeerConnection represents a WebRTC connection that establishes a
 /// peer-to-peer communications with another PeerConnection instance in a
@@ -198,139 +176,6 @@ impl RTCPeerConnection {
         let mut handler = self.internal.on_signaling_state_change_handler.lock().await;
         if let Some(f) = &mut *handler {
             f(new_state).await;
-        }
-    }
-
-    fn do_negotiation_needed_inner(params: &NegotiationNeededParams) -> bool {
-        // https://w3c.github.io/webrtc-pc/#updating-the-negotiation-needed-flag
-        // non-canon step 1
-        let state: NegotiationNeededState = params
-            .negotiation_needed_state
-            .load(Ordering::SeqCst)
-            .into();
-        if state == NegotiationNeededState::Run {
-            params
-                .negotiation_needed_state
-                .store(NegotiationNeededState::Queue as u8, Ordering::SeqCst);
-            false
-        } else if state == NegotiationNeededState::Queue {
-            false
-        } else {
-            params
-                .negotiation_needed_state
-                .store(NegotiationNeededState::Run as u8, Ordering::SeqCst);
-            true
-        }
-    }
-
-    /// do_negotiation_needed enqueues negotiation_needed_op if necessary
-    /// caller of this method should hold `pc.mu` lock
-    async fn do_negotiation_needed(params: NegotiationNeededParams) {
-        if !RTCPeerConnection::do_negotiation_needed_inner(&params) {
-            return;
-        }
-
-        let params2 = params.clone();
-        let _ = params
-            .ops
-            .enqueue(Operation(Box::new(move || {
-                let params3 = params2.clone();
-                Box::pin(async move { RTCPeerConnection::negotiation_needed_op(params3).await })
-            })))
-            .await;
-    }
-
-    async fn after_negotiation_needed_op(params: NegotiationNeededParams) -> bool {
-        let old_negotiation_needed_state = params.negotiation_needed_state.load(Ordering::SeqCst);
-
-        params
-            .negotiation_needed_state
-            .store(NegotiationNeededState::Empty as u8, Ordering::SeqCst);
-
-        if old_negotiation_needed_state == NegotiationNeededState::Queue as u8 {
-            RTCPeerConnection::do_negotiation_needed_inner(&params)
-        } else {
-            false
-        }
-    }
-
-    async fn negotiation_needed_op(params: NegotiationNeededParams) -> bool {
-        // Don't run NegotiatedNeeded checks if on_negotiation_needed is not set
-        {
-            let handler = params.on_negotiation_needed_handler.lock().await;
-            if handler.is_none() {
-                return false;
-            }
-        }
-
-        // https://www.w3.org/TR/webrtc/#updating-the-negotiation-needed-flag
-        // Step 2.1
-        if params.is_closed.load(Ordering::SeqCst) {
-            return false;
-        }
-        // non-canon step 2.2
-        if !params.ops.is_empty().await {
-            //enqueue negotiation_needed_op again by return true
-            return true;
-        }
-
-        // non-canon, run again if there was a request
-        // starting defer(after_do_negotiation_needed(params).await);
-
-        // Step 2.3
-        if params.signaling_state.load(Ordering::SeqCst) != RTCSignalingState::Stable as u8 {
-            return RTCPeerConnection::after_negotiation_needed_op(params).await;
-        }
-
-        // Step 2.4
-        if !RTCPeerConnection::check_negotiation_needed(&params.check_negotiation_needed_params)
-            .await
-        {
-            params.is_negotiation_needed.store(false, Ordering::SeqCst);
-            return RTCPeerConnection::after_negotiation_needed_op(params).await;
-        }
-
-        // Step 2.5
-        if params.is_negotiation_needed.load(Ordering::SeqCst) {
-            return RTCPeerConnection::after_negotiation_needed_op(params).await;
-        }
-
-        // Step 2.6
-        params.is_negotiation_needed.store(true, Ordering::SeqCst);
-
-        // Step 2.7
-        {
-            let mut handler = params.on_negotiation_needed_handler.lock().await;
-            if let Some(f) = &mut *handler {
-                f().await;
-            }
-        }
-
-        RTCPeerConnection::after_negotiation_needed_op(params).await
-    }
-
-    async fn check_negotiation_needed(params: &CheckNegotiationNeededParams) -> bool {
-        // To check if negotiation is needed for connection, perform the following checks:
-        // Skip 1, 2 steps
-        // Step 3
-        let current_local_description = {
-            let current_local_description = params.current_local_description.lock().await;
-            current_local_description.clone()
-        };
-
-        if let Some(local_desc) = &current_local_description {
-            let len_data_channel = {
-                let data_channels = params.sctp_transport.data_channels.lock().await;
-                data_channels.len()
-            };
-
-            if len_data_channel != 0 && have_data_channel(local_desc).is_none() {
-                return true;
-            }
-
-            false
-        } else {
-            true
         }
     }
 
@@ -736,31 +581,6 @@ impl RTCPeerConnection {
                 self.internal
                     .signaling_state
                     .store(next_state as u8, Ordering::SeqCst);
-                if self.signaling_state() == RTCSignalingState::Stable {
-                    self.internal
-                        .is_negotiation_needed
-                        .store(false, Ordering::SeqCst);
-                    RTCPeerConnection::do_negotiation_needed(NegotiationNeededParams {
-                        on_negotiation_needed_handler: Arc::clone(
-                            &self.internal.on_negotiation_needed_handler,
-                        ),
-                        is_closed: Arc::clone(&self.internal.is_closed),
-                        ops: Arc::clone(&self.internal.ops),
-                        negotiation_needed_state: Arc::clone(
-                            &self.internal.negotiation_needed_state,
-                        ),
-                        is_negotiation_needed: Arc::clone(&self.internal.is_negotiation_needed),
-                        signaling_state: Arc::clone(&self.internal.signaling_state),
-                        check_negotiation_needed_params: CheckNegotiationNeededParams {
-                            sctp_transport: Arc::clone(&self.internal.sctp_transport),
-                            current_local_description: self
-                                .internal
-                                .current_local_description
-                                .clone(),
-                        },
-                    })
-                    .await;
-                }
                 self.do_signaling_state_change(next_state).await;
                 Ok(())
             }
@@ -975,20 +795,6 @@ impl RTCPeerConnection {
         if self.internal.sctp_transport.state() == RTCSctpTransportState::Connected {
             d.open(Arc::clone(&self.internal.sctp_transport)).await?;
         }
-
-        RTCPeerConnection::do_negotiation_needed(NegotiationNeededParams {
-            on_negotiation_needed_handler: Arc::clone(&self.internal.on_negotiation_needed_handler),
-            is_closed: Arc::clone(&self.internal.is_closed),
-            ops: Arc::clone(&self.internal.ops),
-            negotiation_needed_state: Arc::clone(&self.internal.negotiation_needed_state),
-            is_negotiation_needed: Arc::clone(&self.internal.is_negotiation_needed),
-            signaling_state: Arc::clone(&self.internal.signaling_state),
-            check_negotiation_needed_params: CheckNegotiationNeededParams {
-                sctp_transport: Arc::clone(&self.internal.sctp_transport),
-                current_local_description: self.internal.current_local_description.clone(),
-            },
-        })
-        .await;
 
         Ok(d)
     }

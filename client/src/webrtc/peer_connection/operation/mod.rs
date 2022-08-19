@@ -69,11 +69,6 @@ impl Operations {
         Ok(())
     }
 
-    /// is_empty checks if there are tasks in the queue
-    pub(crate) async fn is_empty(&self) -> bool {
-        self.length.load(Ordering::SeqCst) == 0
-    }
-
     pub(crate) async fn start(
         length: Arc<AtomicUsize>,
         ops_tx: Arc<mpsc::UnboundedSender<Operation>>,
