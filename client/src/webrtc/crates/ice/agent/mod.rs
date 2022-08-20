@@ -86,7 +86,6 @@ pub(crate) struct Agent {
     pub(crate) interface_filter: Arc<Option<InterfaceFilterFn>>,
     pub(crate) mdns_mode: MulticastDnsMode,
     pub(crate) mdns_name: String,
-    pub(crate) mdns_conn: Option<Arc<DnsConn>>,
     pub(crate) net: Arc<Net>,
 
     // 1:1 D-NAT IP address mapping
@@ -116,17 +115,6 @@ impl Agent {
             mdns_mode = MulticastDnsMode::QueryOnly;
         }
 
-        let mdns_conn =
-            match create_multicast_dns(mdns_mode, &mdns_name, &config.multicast_dns_dest_addr) {
-                Ok(c) => c,
-                Err(err) => {
-                    // Opportunistic mDNS: If we can't open the connection, that's ok: we
-                    // can continue without it.
-                    log::warn!("Failed to initialize mDNS {}: {}", mdns_name, err);
-                    None
-                }
-            };
-
         let (mut ai, chan_receivers) = AgentInternal::new(&config);
         let (chan_state_rx, chan_candidate_rx, chan_candidate_pair_rx) = (
             chan_receivers.chan_state_rx,
@@ -145,7 +133,6 @@ impl Agent {
         if ai.lite.load(Ordering::SeqCst)
             && (candidate_types.len() != 1 || candidate_types[0] != CandidateType::Host)
         {
-            Self::close_multicast_conn(&mdns_conn).await;
             return Err(Error::ErrLiteUsingNonHostCandidates);
         }
 
@@ -153,14 +140,12 @@ impl Agent {
             && !contains_candidate_type(CandidateType::ServerReflexive, &candidate_types)
             && !contains_candidate_type(CandidateType::Relay, &candidate_types)
         {
-            Self::close_multicast_conn(&mdns_conn).await;
             return Err(Error::ErrUselessUrlsProvided);
         }
 
         let ext_ip_mapper = match config.init_ext_ip_mapping(mdns_mode, &candidate_types) {
             Ok(ext_ip_mapper) => ext_ip_mapper,
             Err(err) => {
-                Self::close_multicast_conn(&mdns_conn).await;
                 return Err(err);
             }
         };
@@ -183,7 +168,6 @@ impl Agent {
             interface_filter: Arc::clone(&config.interface_filter),
             mdns_mode,
             mdns_name,
-            mdns_conn,
             net,
             ext_ip_mapper: Arc::new(ext_ip_mapper),
             gathering_state: Arc::new(AtomicU8::new(0)), //GatheringState::New,
@@ -205,7 +189,6 @@ impl Agent {
 
         // Restart is also used to initialize the agent for the first time
         if let Err(err) = agent.restart(config.local_ufrag, config.local_pwd).await {
-            Self::close_multicast_conn(&agent.mdns_conn).await;
             let _ = agent.close().await;
             return Err(err);
         }
@@ -264,16 +247,16 @@ impl Agent {
 
             let ai = Arc::clone(&self.internal);
             let host_candidate = Arc::clone(c);
-            let mdns_conn = self.mdns_conn.clone();
-            tokio::spawn(async move {
-                if let Some(mdns_conn) = mdns_conn {
-                    if let Ok(candidate) =
-                        Self::resolve_and_add_multicast_candidate(mdns_conn, host_candidate).await
-                    {
-                        ai.add_remote_candidate(&candidate).await;
-                    }
-                }
-            });
+            // let mdns_conn = self.mdns_conn.clone();
+            // tokio::spawn(async move {
+            //     if let Some(mdns_conn) = mdns_conn {
+            //         if let Ok(candidate) =
+            //             Self::resolve_and_add_multicast_candidate(mdns_conn, host_candidate).await
+            //         {
+            //             ai.add_remote_candidate(&candidate).await;
+            //         }
+            //     }
+            // });
         } else {
             let ai = Arc::clone(&self.internal);
             let candidate = Arc::clone(c);
