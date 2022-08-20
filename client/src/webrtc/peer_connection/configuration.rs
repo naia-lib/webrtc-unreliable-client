@@ -1,6 +1,5 @@
 
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
-use crate::webrtc::peer_connection::policy::ice_transport_policy::RTCIceTransportPolicy;
 use crate::webrtc::peer_connection::policy::sdp_semantics::RTCSdpSemantics;
 
 /// A Configuration defines how peer-to-peer communication via PeerConnection
@@ -10,10 +9,6 @@ use crate::webrtc::peer_connection::policy::sdp_semantics::RTCSdpSemantics;
 /// they are safe for concurrent use.
 #[derive(Default)]
 pub(crate) struct RTCConfiguration {
-
-    /// icetransport_policy indicates which candidates the ICEAgent is allowed
-    /// to use.
-    pub(crate) ice_transport_policy: RTCIceTransportPolicy,
 
     /// Certificates describes a set of certificates that the PeerConnection
     /// uses to authenticate. Valid values for this parameter are created

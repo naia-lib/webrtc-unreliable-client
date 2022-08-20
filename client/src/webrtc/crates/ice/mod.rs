@@ -10,7 +10,6 @@ pub(crate) mod rand;
 pub(crate) mod state;
 pub(crate) mod tcp_type;
 pub(crate) mod udp_mux;
-pub(crate) mod udp_network;
 pub(crate) mod url;
 pub(crate) mod use_candidate;
 mod util;

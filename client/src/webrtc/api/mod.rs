@@ -1,6 +1,5 @@
 
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
-use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
@@ -23,10 +22,8 @@ impl API {
     /// new_ice_gatherer creates a new ice gatherer.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub(crate) fn new_ice_gatherer(&self, opts: RTCIceGatherOptions) -> Result<RTCIceGatherer> {
-        Ok(RTCIceGatherer::new(
-            opts.ice_gather_policy,
-        ))
+    pub(crate) fn new_ice_gatherer(&self) -> Result<RTCIceGatherer> {
+        Ok(RTCIceGatherer::new())
     }
 
     /// new_ice_transport creates a new ice transport.

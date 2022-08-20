@@ -72,9 +72,7 @@ impl PeerConnectionInternal {
         };
 
         // Create the ice gatherer
-        pc.ice_gatherer = Arc::new(api.new_ice_gatherer(RTCIceGatherOptions {
-            ice_gather_policy: configuration.ice_transport_policy,
-        })?);
+        pc.ice_gatherer = Arc::new(api.new_ice_gatherer()?);
 
         // Create the ice transport
         pc.ice_transport = pc.create_ice_transport(api).await;

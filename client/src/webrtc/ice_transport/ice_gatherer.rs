@@ -2,7 +2,6 @@ use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::*;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::peer_connection::policy::ice_transport_policy::RTCIceTransportPolicy;
 
 use crate::webrtc::ice::agent::Agent;
 use crate::webrtc::ice::candidate::{Candidate, CandidateType};
@@ -11,15 +10,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
-use crate::webrtc::ice::udp_network::UDPNetwork;
 use tokio::sync::Mutex;
 use crate::webrtc::ice::mdns::MulticastDnsMode;
-
-/// ICEGatherOptions provides options relating to the gathering of ICE candidates.
-#[derive(Default, Debug, Clone)]
-pub(crate) struct RTCIceGatherOptions {
-    pub(crate) ice_gather_policy: RTCIceTransportPolicy,
-}
 
 pub(crate) type OnLocalCandidateHdlrFn = Box<
     dyn (FnMut(Option<RTCIceCandidate>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
@@ -42,7 +34,6 @@ pub(crate) type OnGatheringCompleteHdlrFn =
 /// exchanged in signaling.
 #[derive(Default)]
 pub(crate) struct RTCIceGatherer {
-    pub(crate) gather_policy: RTCIceTransportPolicy,
 
     pub(crate) state: Arc<AtomicU8>, //ICEGathererState,
     pub(crate) agent: Mutex<Option<Arc<crate::webrtc::ice::agent::Agent>>>,
@@ -55,11 +46,8 @@ pub(crate) struct RTCIceGatherer {
 }
 
 impl RTCIceGatherer {
-    pub(crate) fn new(
-        gather_policy: RTCIceTransportPolicy,
-    ) -> Self {
+    pub(crate) fn new() -> Self {
         RTCIceGatherer {
-            gather_policy,
             state: Arc::new(AtomicU8::new(RTCIceGathererState::New as u8)),
             ..Default::default()
         }
@@ -73,11 +61,6 @@ impl RTCIceGatherer {
             }
         }
 
-        let mut candidate_types = vec![];
-        if self.gather_policy == RTCIceTransportPolicy::Relay {
-            candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Relay);
-        }
-
         let mut mdns_mode = MulticastDnsMode::Unspecified;
         if mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::Disabled
             && mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::QueryAndGather
@@ -87,12 +70,11 @@ impl RTCIceGatherer {
         }
 
         let mut config = crate::webrtc::ice::agent::agent_config::AgentConfig {
-            udp_network: UDPNetwork::Ephemeral(Default::default()),
             lite: false,
             disconnected_timeout: None,
             failed_timeout: None,
             keepalive_interval: None,
-            candidate_types,
+            candidate_types: Vec::new(),
             host_acceptance_min_wait:  None,
             srflx_acceptance_min_wait: None,
             prflx_acceptance_min_wait: None,

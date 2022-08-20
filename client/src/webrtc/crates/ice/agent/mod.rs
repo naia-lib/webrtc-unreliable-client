@@ -11,7 +11,6 @@ use crate::webrtc::ice::external_ip_mapper::*;
 use crate::webrtc::ice::mdns::*;
 use crate::webrtc::ice::network_type::*;
 use crate::webrtc::ice::state::*;
-use crate::webrtc::ice::udp_network::UDPNetwork;
 use crate::webrtc::ice::url::*;
 use agent_config::*;
 use agent_internal::*;
@@ -84,7 +83,6 @@ pub(crate) struct ChanReceivers {
 pub(crate) struct Agent {
     pub(crate) internal: Arc<AgentInternal>,
 
-    pub(crate) udp_network: UDPNetwork,
     pub(crate) interface_filter: Arc<Option<InterfaceFilterFn>>,
     pub(crate) mdns_mode: MulticastDnsMode,
     pub(crate) mdns_name: String,
@@ -181,7 +179,6 @@ impl Agent {
         };
 
         let agent = Self {
-            udp_network: config.udp_network,
             internal: Arc::new(ai),
             interface_filter: Arc::clone(&config.interface_filter),
             mdns_mode,
@@ -408,7 +405,6 @@ impl Agent {
         //TODO: a.gatherCandidateCancel = cancel
 
         let params = GatherCandidatesInternalParams {
-            udp_network: self.udp_network.clone(),
             candidate_types: self.candidate_types.clone(),
             urls: self.urls.clone(),
             network_types: self.network_types.clone(),

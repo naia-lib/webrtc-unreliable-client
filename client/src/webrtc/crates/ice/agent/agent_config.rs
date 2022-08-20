@@ -2,7 +2,6 @@ use super::*;
 use crate::webrtc::ice::error::*;
 use crate::webrtc::ice::mdns::*;
 use crate::webrtc::ice::network_type::*;
-use crate::webrtc::ice::udp_network::UDPNetwork;
 use crate::webrtc::ice::url::*;
 
 use crate::webrtc::util::vnet::net::*;
@@ -57,10 +56,6 @@ pub(crate) type InterfaceFilterFn = Box<dyn (Fn(&str) -> bool) + Send + Sync>;
 #[derive(Default)]
 pub(crate) struct AgentConfig {
     pub(crate) urls: Vec<Url>,
-
-    /// Controls how the UDP network stack works.
-    /// See [`UDPNetwork`]
-    pub(crate) udp_network: UDPNetwork,
 
     /// It is used to perform connectivity checks. The values MUST be unguessable, with at least
     /// 128 bits of random number generator output used to generate the password, and at least 24

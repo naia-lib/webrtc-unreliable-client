@@ -21,7 +21,6 @@ use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 use crate::webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
-use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherOptions;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
 use crate::webrtc::ice_transport::ice_gathering_state::RTCIceGatheringState;

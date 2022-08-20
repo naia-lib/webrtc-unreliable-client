@@ -1,7 +1,6 @@
 use super::*;
 use crate::webrtc::ice::error::*;
 use crate::webrtc::ice::network_type::*;
-use crate::webrtc::ice::udp_network::UDPNetwork;
 use crate::webrtc::ice::url::{ProtoType, SchemeType, Url};
 use crate::webrtc::ice::util::*;
 
@@ -20,7 +19,6 @@ use waitgroup::WaitGroup;
 const STUN_GATHER_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub(crate) struct GatherCandidatesInternalParams {
-    pub(crate) udp_network: UDPNetwork,
     pub(crate) candidate_types: Vec<CandidateType>,
     pub(crate) urls: Vec<Url>,
     pub(crate) network_types: Vec<NetworkType>,
@@ -35,7 +33,6 @@ pub(crate) struct GatherCandidatesInternalParams {
 }
 
 struct GatherCandidatesLocalParams {
-    udp_network: UDPNetwork,
     network_types: Vec<NetworkType>,
     mdns_mode: MulticastDnsMode,
     mdns_name: String,
@@ -47,8 +44,6 @@ struct GatherCandidatesLocalParams {
 
 struct GatherCandidatesSrflxMappedParasm {
     network_types: Vec<NetworkType>,
-    port_max: u16,
-    port_min: u16,
     ext_ip_mapper: Arc<Option<ExternalIpMapper>>,
     net: Arc<Net>,
     agent_internal: Arc<AgentInternal>,
@@ -57,8 +52,6 @@ struct GatherCandidatesSrflxMappedParasm {
 struct GatherCandidatesSrflxParams {
     urls: Vec<Url>,
     network_types: Vec<NetworkType>,
-    port_max: u16,
-    port_min: u16,
     net: Arc<Net>,
     agent_internal: Arc<AgentInternal>,
 }
@@ -78,7 +71,6 @@ impl Agent {
             match t {
                 CandidateType::Host => {
                     let local_params = GatherCandidatesLocalParams {
-                        udp_network: params.udp_network.clone(),
                         network_types: params.network_types.clone(),
                         mdns_mode: params.mdns_mode,
                         mdns_name: params.mdns_name.clone(),
@@ -96,15 +88,10 @@ impl Agent {
                     });
                 }
                 CandidateType::ServerReflexive => {
-                    let ephemeral_config = match &params.udp_network {
-                        UDPNetwork::Ephemeral(e) => e,
-                    };
 
                     let srflx_params = GatherCandidatesSrflxParams {
                         urls: params.urls.clone(),
                         network_types: params.network_types.clone(),
-                        port_max: ephemeral_config.port_max(),
-                        port_min: ephemeral_config.port_min(),
                         net: Arc::clone(&params.net),
                         agent_internal: Arc::clone(&params.agent_internal),
                     };
@@ -118,8 +105,6 @@ impl Agent {
                         if ext_ip_mapper.candidate_type == CandidateType::ServerReflexive {
                             let srflx_mapped_params = GatherCandidatesSrflxMappedParasm {
                                 network_types: params.network_types.clone(),
-                                port_max: ephemeral_config.port_max(),
-                                port_min: ephemeral_config.port_min(),
                                 ext_ip_mapper: Arc::clone(&params.ext_ip_mapper),
                                 net: Arc::clone(&params.net),
                                 agent_internal: Arc::clone(&params.agent_internal),
@@ -178,7 +163,6 @@ impl Agent {
 
     async fn gather_candidates_local(params: GatherCandidatesLocalParams) {
         let (
-            udp_network,
             network_types,
             mdns_mode,
             mdns_name,
@@ -187,7 +171,6 @@ impl Agent {
             net,
             agent_internal,
         ) = (
-            params.udp_network,
             params.network_types,
             params.mdns_mode,
             params.mdns_name,
@@ -225,12 +208,9 @@ impl Agent {
 
             //TODO: for network in networks
             let network = UDP.to_owned();
-            let UDPNetwork::Ephemeral(ephemeral_config) = &udp_network;
 
             let conn: Arc<dyn Conn + Send + Sync> = match listen_udp_in_port_range(
                 &net,
-                ephemeral_config.port_max(),
-                ephemeral_config.port_min(),
                 SocketAddr::new(ip, 0),
             )
             .await
@@ -323,10 +303,8 @@ impl Agent {
     }
 
     async fn gather_candidates_srflx_mapped(params: GatherCandidatesSrflxMappedParasm) {
-        let (network_types, port_max, port_min, ext_ip_mapper, net, agent_internal) = (
+        let (network_types, ext_ip_mapper, net, agent_internal) = (
             params.network_types,
-            params.port_max,
-            params.port_min,
             params.ext_ip_mapper,
             params.net,
             params.agent_internal,
@@ -350,8 +328,6 @@ impl Agent {
 
                 let conn: Arc<dyn Conn + Send + Sync> = match listen_udp_in_port_range(
                     &net2,
-                    port_max,
-                    port_min,
                     if network_type.is_ipv4() {
                         SocketAddr::new(Ipv4Addr::new(0, 0, 0, 0).into(), 0)
                     } else {
@@ -450,11 +426,9 @@ impl Agent {
     }
 
     async fn gather_candidates_srflx(params: GatherCandidatesSrflxParams) {
-        let (urls, network_types, port_max, port_min, net, agent_internal) = (
+        let (urls, network_types, net, agent_internal) = (
             params.urls,
             params.network_types,
-            params.port_max,
-            params.port_min,
             params.net,
             params.agent_internal,
         );
@@ -492,8 +466,6 @@ impl Agent {
 
                     let conn: Arc<dyn Conn + Send + Sync> = match listen_udp_in_port_range(
                         &net2,
-                        port_max,
-                        port_min,
                         if is_ipv4 {
                             SocketAddr::new(Ipv4Addr::new(0, 0, 0, 0).into(), 0)
                         } else {
