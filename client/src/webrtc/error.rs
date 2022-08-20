@@ -17,10 +17,6 @@ pub(crate) enum Error {
     #[error("connection closed")]
     ErrConnectionClosed,
 
-    /// ErrCertificateExpired indicates that an x509 certificate has expired.
-    #[error("x509Cert expired")]
-    ErrCertificateExpired,
-
     /// ErrNonCertificate indicates that there is no certificate
     #[error("no certificate")]
     ErrNonCertificate,

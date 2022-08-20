@@ -4,12 +4,11 @@ use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::RTCIceTransport;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 
-use crate::webrtc::error::{Error, Result};
+use crate::webrtc::error::Result;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
 
 use rcgen::KeyPair;
 use std::sync::Arc;
-use std::time::SystemTime;
 
 /// API bundles the global functions of the WebRTC and ORTC API.
 /// Some of these functions are also exported globally using the
@@ -22,14 +21,14 @@ impl API {
     /// new_ice_gatherer creates a new ice gatherer.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub(crate) fn new_ice_gatherer(&self) -> Result<RTCIceGatherer> {
+    pub(crate) fn new_ice_gatherer() -> Result<RTCIceGatherer> {
         Ok(RTCIceGatherer::new())
     }
 
     /// new_ice_transport creates a new ice transport.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
-    pub(crate) fn new_ice_transport(&self, gatherer: Arc<RTCIceGatherer>) -> RTCIceTransport {
+    pub(crate) fn new_ice_transport(gatherer: Arc<RTCIceGatherer>) -> RTCIceTransport {
         RTCIceTransport::new(gatherer)
     }
 
@@ -37,22 +36,11 @@ impl API {
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
     pub(crate) fn new_dtls_transport(
-        &self,
         ice_transport: Arc<RTCIceTransport>,
-        mut certificates: Vec<RTCCertificate>,
     ) -> Result<RTCDtlsTransport> {
-        if !certificates.is_empty() {
-            let now = SystemTime::now();
-            for cert in &certificates {
-                cert.expires()
-                    .duration_since(now)
-                    .map_err(|_| Error::ErrCertificateExpired)?;
-            }
-        } else {
-            let kp = KeyPair::generate(&rcgen::PKCS_ECDSA_P256_SHA256)?;
-            let cert = RTCCertificate::from_key_pair(kp)?;
-            certificates = vec![cert];
-        };
+        let kp = KeyPair::generate(&rcgen::PKCS_ECDSA_P256_SHA256)?;
+        let cert = RTCCertificate::from_key_pair(kp)?;
+        let certificates = vec![cert];
 
         Ok(RTCDtlsTransport::new(
             ice_transport,
@@ -64,7 +52,6 @@ impl API {
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
     pub(crate) fn new_sctp_transport(
-        &self,
         dtls_transport: Arc<RTCDtlsTransport>,
     ) -> Result<RTCSctpTransport> {
         Ok(RTCSctpTransport::new(

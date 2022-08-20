@@ -43,10 +43,7 @@ pub(crate) struct PeerConnectionInternal {
 }
 
 impl PeerConnectionInternal {
-    pub(crate) async fn new(
-        api: &API,
-        mut configuration: RTCConfiguration,
-    ) -> Result<(Arc<Self>, RTCConfiguration)> {
+    pub(crate) async fn new() -> Result<Arc<Self>> {
         let mut pc = PeerConnectionInternal {
             greater_mid: AtomicIsize::new(-1),
             sdp_origin: Mutex::new(Default::default()),
@@ -72,18 +69,17 @@ impl PeerConnectionInternal {
         };
 
         // Create the ice gatherer
-        pc.ice_gatherer = Arc::new(api.new_ice_gatherer()?);
+        pc.ice_gatherer = Arc::new(API::new_ice_gatherer()?);
 
         // Create the ice transport
-        pc.ice_transport = pc.create_ice_transport(api).await;
+        pc.ice_transport = pc.create_ice_transport().await;
 
         // Create the DTLS transport
-        let certificates = configuration.certificates.drain(..).collect();
         pc.dtls_transport =
-            Arc::new(api.new_dtls_transport(Arc::clone(&pc.ice_transport), certificates)?);
+            Arc::new(API::new_dtls_transport(Arc::clone(&pc.ice_transport))?);
 
         // Create the SCTP transport
-        pc.sctp_transport = Arc::new(api.new_sctp_transport(Arc::clone(&pc.dtls_transport))?);
+        pc.sctp_transport = Arc::new(API::new_sctp_transport(Arc::clone(&pc.dtls_transport))?);
 
         // Wire up the on datachannel handler
         let on_data_channel_handler = Arc::clone(&pc.on_data_channel_handler);
@@ -99,7 +95,7 @@ impl PeerConnectionInternal {
             }))
             .await;
 
-        Ok((Arc::new(pc), configuration))
+        Ok(Arc::new(pc))
     }
 
     pub(crate) async fn maybe_start_sctp(
@@ -231,7 +227,6 @@ impl PeerConnectionInternal {
     pub(crate) async fn generate_unmatched_sdp(
         &self,
         use_identity: bool,
-        sdp_semantics: RTCSdpSemantics,
     ) -> Result<SessionDescription> {
         let d = SessionDescription::new_jsep_session_description(use_identity);
 
@@ -239,38 +234,19 @@ impl PeerConnectionInternal {
 
         let candidates = self.ice_gatherer.get_local_candidates().await?;
 
-        let is_plan_b = sdp_semantics == RTCSdpSemantics::PlanB;
         let mut media_sections = vec![];
 
-        // Needed for self.sctpTransport.dataChannelsRequested
-        if is_plan_b {
-
-            if self
-                .sctp_transport
-                .data_channels_requested
-                .load(Ordering::SeqCst)
-                != 0
-            {
-                media_sections.push(MediaSection {
-                    id: "data".to_owned(),
-                    data: true,
-                    ..Default::default()
-                });
-            }
-        } else {
-
-            if self
-                .sctp_transport
-                .data_channels_requested
-                .load(Ordering::SeqCst)
-                != 0
-            {
-                media_sections.push(MediaSection {
-                    id: format!("{}", media_sections.len()),
-                    data: true,
-                    ..Default::default()
-                });
-            }
+        if self
+            .sctp_transport
+            .data_channels_requested
+            .load(Ordering::SeqCst)
+            != 0
+        {
+            media_sections.push(MediaSection {
+                id: format!("{}", media_sections.len()),
+                data: true,
+                ..Default::default()
+            });
         }
 
         let dtls_fingerprints = if let Some(cert) = self.dtls_transport.certificates.first() {
@@ -376,8 +352,8 @@ impl PeerConnectionInternal {
         }
     }
 
-    pub(crate) async fn create_ice_transport(&self, api: &API) -> Arc<RTCIceTransport> {
-        let ice_transport = Arc::new(api.new_ice_transport(Arc::clone(&self.ice_gatherer)));
+    pub(crate) async fn create_ice_transport(&self) -> Arc<RTCIceTransport> {
+        let ice_transport = Arc::new(API::new_ice_transport(Arc::clone(&self.ice_gatherer)));
 
         let ice_connection_state = Arc::clone(&self.ice_connection_state);
         let peer_connection_state = Arc::clone(&self.peer_connection_state);

@@ -1,6 +1,5 @@
 
 pub(crate) mod certificate;
-pub(crate) mod configuration;
 pub(crate) mod operation;
 mod peer_connection_internal;
 pub(crate) mod peer_connection_state;
@@ -28,11 +27,8 @@ use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 use crate::webrtc::ice_transport::ice_role::RTCIceRole;
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
 use crate::webrtc::ice_transport::RTCIceTransport;
-use crate::webrtc::peer_connection::certificate::RTCCertificate;
-use crate::webrtc::peer_connection::configuration::RTCConfiguration;
 use crate::webrtc::peer_connection::operation::{Operation, Operations};
 use crate::webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
-use crate::webrtc::peer_connection::policy::sdp_semantics::RTCSdpSemantics;
 use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use crate::webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 use crate::webrtc::peer_connection::sdp::*;
@@ -49,12 +45,10 @@ use crate::webrtc::sdp::description::session::*;
 use crate::webrtc::sdp::util::ConnectionRole;
 use peer_connection_internal::*;
 use rand::{thread_rng, Rng};
-use rcgen::KeyPair;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
-use std::time::SystemTime;
 use tokio::sync::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";
@@ -106,8 +100,6 @@ pub(crate) struct RTCPeerConnection {
 
     idp_login_url: Option<String>,
 
-    configuration: RTCConfiguration,
-
     pub(crate) internal: Arc<PeerConnectionInternal>,
 }
 
@@ -119,47 +111,17 @@ impl RTCPeerConnection {
     /// active interceptors, create a MediaEngine and call api.new_peer_connection
     /// instead of this function.
     pub(crate) async fn new() -> Arc<RTCPeerConnection> {
-        let api = API;
-
-        let mut configuration = RTCConfiguration::default();
-
-        RTCPeerConnection::init_configuration(&mut configuration).expect("can't create configuration");
-
-        let (internal, configuration) =
-            PeerConnectionInternal::new(&api, configuration).await.expect("can't create peer connection");
+        let internal = PeerConnectionInternal::new()
+            .await
+            .expect("can't create peer connection");
 
         // <https://w3c.github.io/webrtc-pc/#constructor> (Step #2)
         // Some variables defined explicitly despite their implicit zero values to
         // allow better readability to understand what is happening.
         Arc::new(RTCPeerConnection {
             internal,
-            configuration,
             idp_login_url: None,
         })
-    }
-
-    /// init_configuration defines validation of the specified Configuration and
-    /// its assignment to the internal configuration variable. This function differs
-    /// from its set_configuration counterpart because most of the checks do not
-    /// include verification statements related to the existing state. Thus the
-    /// function describes only minor verification of some the struct variables.
-    fn init_configuration(configuration: &mut RTCConfiguration) -> Result<()> {
-
-        // <https://www.w3.org/TR/webrtc/#constructor> (step #3)
-        if !configuration.certificates.is_empty() {
-            let now = SystemTime::now();
-            for cert in &configuration.certificates {
-                cert.expires()
-                    .duration_since(now)
-                    .map_err(|_| Error::ErrCertificateExpired)?;
-            }
-        } else {
-            let kp = KeyPair::generate(&rcgen::PKCS_ECDSA_P256_SHA256)?;
-            let cert = RTCCertificate::from_key_pair(kp)?;
-            configuration.certificates = vec![cert];
-        };
-
-        Ok(())
     }
 
     async fn do_signaling_state_change(&self, new_state: RTCSignalingState) {
@@ -226,7 +188,7 @@ impl RTCPeerConnection {
                 if current_remote_description.is_some() {
                     description_is_plan_b(current_remote_description.as_ref())?
                 } else {
-                    self.configuration.sdp_semantics == RTCSdpSemantics::PlanB
+                    false
                 }
             };
 
@@ -272,7 +234,6 @@ impl RTCPeerConnection {
                 self.internal
                     .generate_unmatched_sdp(
                         use_identity,
-                        self.configuration.sdp_semantics,
                     )
                     .await?
             } else {

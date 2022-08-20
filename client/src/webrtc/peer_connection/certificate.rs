@@ -6,13 +6,10 @@ use crate::webrtc::dtls::crypto::{CryptoPrivateKey, CryptoPrivateKeyKind};
 use rcgen::{CertificateParams, KeyPair, RcgenError};
 use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};
 use sha2::{Digest, Sha256};
-use std::ops::Add;
-use std::time::{Duration, SystemTime};
 
 /// Certificate represents a x509Cert used to authenticate WebRTC communications.
 pub(crate) struct RTCCertificate {
     pub(crate) certificate: crate::webrtc::dtls::crypto::Certificate,
-    pub(crate) expires: SystemTime,
 }
 
 /// Equals determines if two certificates are identical by comparing only certificate
@@ -70,14 +67,6 @@ impl RTCCertificate {
         };
         params.key_pair = Some(key_pair);
 
-        let expires = if cfg!(target_arch = "arm") {
-            // Workaround for issue overflow when adding duration to instant on armv7
-            // https://github.com/webrtc-rs/examples/issues/5 https://github.com/chronotope/chrono/issues/343
-            SystemTime::now().add(Duration::from_secs(172800)) //60*60*48 or 2 days
-        } else {
-            params.not_after.into()
-        };
-
         let x509_cert = rcgen::Certificate::from_params(params)?;
         let certificate = x509_cert.serialize_der()?;
 
@@ -85,14 +74,8 @@ impl RTCCertificate {
             certificate: crate::webrtc::dtls::crypto::Certificate {
                 certificate: vec![rustls::Certificate(certificate)],
                 private_key,
-            },
-            expires,
+            }
         })
-    }
-
-    /// expires returns the timestamp after which this certificate is no longer valid.
-    pub(crate) fn expires(&self) -> SystemTime {
-        self.expires
     }
 
     /// get_fingerprints returns certificate fingerprints, one of which
