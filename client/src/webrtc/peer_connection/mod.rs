@@ -1,7 +1,6 @@
 
 pub(crate) mod certificate;
 pub(crate) mod configuration;
-pub(crate) mod offer_answer_options;
 pub(crate) mod operation;
 mod peer_connection_internal;
 pub(crate) mod peer_connection_state;
@@ -57,7 +56,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use crate::webrtc::sdp::description::session::ATTR_KEY_ICELITE;
 use tokio::sync::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";
@@ -147,12 +145,6 @@ impl RTCPeerConnection {
     /// include verification statements related to the existing state. Thus the
     /// function describes only minor verification of some the struct variables.
     fn init_configuration(configuration: &mut RTCConfiguration) -> Result<()> {
-        let sanitized_ice_servers = configuration.get_ice_servers();
-        if !sanitized_ice_servers.is_empty() {
-            for server in &sanitized_ice_servers {
-                server.validate()?;
-            }
-        }
 
         // <https://www.w3.org/TR/webrtc/#constructor> (step #3)
         if !configuration.certificates.is_empty() {
@@ -665,7 +657,7 @@ impl RTCPeerConnection {
 
         if let Some(parsed) = &desc.parsed {
 
-            let we_offer = desc.sdp_type == RTCSdpType::Answer;
+            let we_offer = true;
 
             let (remote_ufrag, remote_pwd, candidates) = extract_ice_details(parsed).await?;
 
@@ -676,27 +668,12 @@ impl RTCPeerConnection {
                     .await?;
             }
 
-            let mut remote_is_lite = false;
-            for a in &parsed.attributes {
-                if a.key.trim() == ATTR_KEY_ICELITE {
-                    remote_is_lite = true;
-                    break;
-                }
-            }
-
             let (fingerprint, fingerprint_hash) = extract_fingerprint(parsed)?;
 
             // If one of the agents is lite and the other one is not, the lite agent must be the controlling agent.
             // If both or neither agents are lite the offering agent is controlling.
             // RFC 8445 S6.1.1
-            let ice_role = if (we_offer
-                && !remote_is_lite)
-                || remote_is_lite
-            {
-                RTCIceRole::Controlling
-            } else {
-                RTCIceRole::Controlled
-            };
+            let ice_role = RTCIceRole::Controlling;
 
             let pci = Arc::clone(&self.internal);
             let dtls_role = DTLSRole::from(parsed);

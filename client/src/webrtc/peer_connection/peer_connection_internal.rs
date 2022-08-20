@@ -73,7 +73,6 @@ impl PeerConnectionInternal {
 
         // Create the ice gatherer
         pc.ice_gatherer = Arc::new(api.new_ice_gatherer(RTCIceGatherOptions {
-            ice_servers: configuration.get_ice_servers(),
             ice_gather_policy: configuration.ice_transport_policy,
         })?);
 
@@ -196,7 +195,6 @@ impl PeerConnectionInternal {
                 &RTCIceParameters {
                     username_fragment: remote_ufrag,
                     password: remote_pwd,
-                    ice_lite: false,
                 },
                 Some(ice_role),
             )

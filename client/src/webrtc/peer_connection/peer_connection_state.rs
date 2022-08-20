@@ -90,29 +90,3 @@ impl fmt::Display for RTCPeerConnectionState {
         write!(f, "{}", s)
     }
 }
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum NegotiationNeededState {
-    /// NegotiationNeededStateEmpty not running and queue is empty
-    Empty,
-    /// NegotiationNeededStateEmpty running and queue is empty
-    Run,
-    /// NegotiationNeededStateEmpty running and queue
-    Queue,
-}
-
-impl Default for NegotiationNeededState {
-    fn default() -> Self {
-        NegotiationNeededState::Empty
-    }
-}
-
-impl From<u8> for NegotiationNeededState {
-    fn from(v: u8) -> Self {
-        match v {
-            1 => NegotiationNeededState::Run,
-            2 => NegotiationNeededState::Queue,
-            _ => NegotiationNeededState::Empty,
-        }
-    }
-}

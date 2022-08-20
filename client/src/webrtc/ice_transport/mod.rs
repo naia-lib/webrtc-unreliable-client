@@ -31,7 +31,6 @@ pub(crate) mod ice_gathering_state;
 pub(crate) mod ice_parameters;
 pub(crate) mod ice_protocol;
 pub(crate) mod ice_role;
-pub(crate) mod ice_server;
 pub(crate) mod ice_transport_state;
 
 pub(crate) type OnConnectionStateChangeHdlrFn = Box<

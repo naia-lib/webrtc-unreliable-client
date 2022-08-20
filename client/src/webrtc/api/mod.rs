@@ -24,16 +24,7 @@ impl API {
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
     pub(crate) fn new_ice_gatherer(&self, opts: RTCIceGatherOptions) -> Result<RTCIceGatherer> {
-        let mut validated_servers = vec![];
-        if !opts.ice_servers.is_empty() {
-            for server in &opts.ice_servers {
-                let url = server.urls()?;
-                validated_servers.extend(url);
-            }
-        }
-
         Ok(RTCIceGatherer::new(
-            validated_servers,
             opts.ice_gather_policy,
         ))
     }

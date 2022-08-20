@@ -2,12 +2,10 @@ use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::*;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::ice_transport::ice_server::RTCIceServer;
 use crate::webrtc::peer_connection::policy::ice_transport_policy::RTCIceTransportPolicy;
 
 use crate::webrtc::ice::agent::Agent;
 use crate::webrtc::ice::candidate::{Candidate, CandidateType};
-use crate::webrtc::ice::url::Url;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -20,7 +18,6 @@ use crate::webrtc::ice::mdns::MulticastDnsMode;
 /// ICEGatherOptions provides options relating to the gathering of ICE candidates.
 #[derive(Default, Debug, Clone)]
 pub(crate) struct RTCIceGatherOptions {
-    pub(crate) ice_servers: Vec<RTCIceServer>,
     pub(crate) ice_gather_policy: RTCIceTransportPolicy,
 }
 
@@ -45,7 +42,6 @@ pub(crate) type OnGatheringCompleteHdlrFn =
 /// exchanged in signaling.
 #[derive(Default)]
 pub(crate) struct RTCIceGatherer {
-    pub(crate) validated_servers: Vec<Url>,
     pub(crate) gather_policy: RTCIceTransportPolicy,
 
     pub(crate) state: Arc<AtomicU8>, //ICEGathererState,
@@ -60,12 +56,10 @@ pub(crate) struct RTCIceGatherer {
 
 impl RTCIceGatherer {
     pub(crate) fn new(
-        validated_servers: Vec<Url>,
         gather_policy: RTCIceTransportPolicy,
     ) -> Self {
         RTCIceGatherer {
             gather_policy,
-            validated_servers,
             state: Arc::new(AtomicU8::new(RTCIceGathererState::New as u8)),
             ..Default::default()
         }
@@ -95,7 +89,6 @@ impl RTCIceGatherer {
         let mut config = crate::webrtc::ice::agent::agent_config::AgentConfig {
             udp_network: UDPNetwork::Ephemeral(Default::default()),
             lite: false,
-            urls: self.validated_servers.clone(),
             disconnected_timeout: None,
             failed_timeout: None,
             keepalive_interval: None,
@@ -206,7 +199,6 @@ impl RTCIceGatherer {
         Ok(RTCIceParameters {
             username_fragment: frag,
             password: pwd,
-            ice_lite: false,
         })
     }
 

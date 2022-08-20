@@ -21,16 +21,6 @@ pub(crate) enum Error {
     #[error("x509Cert expired")]
     ErrCertificateExpired,
 
-    /// ErrNoTurnCredentials indicates that a TURN server URL was provided
-    /// without required credentials.
-    #[error("turn server credentials required")]
-    ErrNoTurnCredentials,
-
-    /// ErrTurnCredentials indicates that provided TURN credentials are partial
-    /// or malformed.
-    #[error("invalid turn server credentials")]
-    ErrTurnCredentials,
-
     /// ErrNonCertificate indicates that there is no certificate
     #[error("no certificate")]
     ErrNonCertificate,

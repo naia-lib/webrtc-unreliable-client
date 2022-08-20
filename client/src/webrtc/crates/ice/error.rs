@@ -11,22 +11,6 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 #[non_exhaustive]
 pub(crate) enum Error {
 
-    /// Indicates the scheme type could not be parsed.
-    #[error("unknown scheme type")]
-    ErrSchemeType,
-
-    /// Indicates query arguments are provided in a STUN URL.
-    #[error("queries not supported in stun address")]
-    ErrStunQuery,
-
-    /// Indicates an malformed query is provided.
-    #[error("invalid query")]
-    ErrInvalidQuery,
-
-    /// Indicates malformed hostname is provided.
-    #[error("invalid hostname")]
-    ErrHost,
-
     /// Indicates malformed port is provided.
     #[error("invalid port number")]
     ErrPort,
@@ -40,10 +24,6 @@ pub(crate) enum Error {
     /// Have to be at least 128 bits long.
     #[error("local password is less than 128 bits long")]
     ErrLocalPwdInsufficientBits,
-
-    /// Indicates an unsupported transport type was provided.
-    #[error("invalid transport protocol type")]
-    ErrProtoType,
 
     /// Indicates the agent is closed.
     #[error("the agent is closed")]
@@ -140,8 +120,6 @@ pub(crate) enum Error {
     ErrDetermineNetworkType,
     #[error("username mismatch")]
     ErrMismatchUsername,
-    #[error("invalid url")]
-    ErrInvalidUrl,
 
     #[error("parse int: {0}")]
     ParseInt(#[from] ParseIntError),

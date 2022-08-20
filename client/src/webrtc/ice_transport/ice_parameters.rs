@@ -6,5 +6,4 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct RTCIceParameters {
     pub(crate) username_fragment: String,
     pub(crate) password: String,
-    pub(crate) ice_lite: bool,
 }
