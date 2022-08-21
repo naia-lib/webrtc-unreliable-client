@@ -1,6 +1,6 @@
 
 pub(crate) mod data_channel_state;
-pub(crate) mod data;
+pub(crate) mod internal;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -44,7 +44,7 @@ pub(crate) struct RTCDataChannel {
     on_buffered_amount_low: Mutex<Option<OnBufferedAmountLowFn>>,
 
     sctp_transport: Mutex<Option<Weak<RTCSctpTransport>>>,
-    data_channel: Mutex<Option<Arc<crate::webrtc::data::data_channel::DataChannel>>>,
+    data_channel: Mutex<Option<Arc<crate::webrtc::internal::data_channel::DataChannel>>>,
 }
 
 impl RTCDataChannel {
@@ -72,12 +72,12 @@ impl RTCDataChannel {
                 }
             }
 
-            let cfg = crate::webrtc::data::data_channel::Config {
+            let cfg = crate::webrtc::internal::data_channel::Config {
                 label: self.label.clone(),
                 protocol: self.protocol.clone(),
             };
 
-            let dc = crate::webrtc::data::data_channel::DataChannel::dial(&association, 0, cfg).await?;
+            let dc = crate::webrtc::internal::data_channel::DataChannel::dial(&association, 0, cfg).await?;
 
             // buffered_amount_low_threshold and on_buffered_amount_low might be set earlier
             dc.set_buffered_amount_low_threshold(
@@ -132,7 +132,7 @@ impl RTCDataChannel {
         });
     }
 
-    pub(crate) async fn handle_open(&self, dc: Arc<crate::webrtc::data::data_channel::DataChannel>) {
+    pub(crate) async fn handle_open(&self, dc: Arc<crate::webrtc::internal::data_channel::DataChannel>) {
         {
             let mut data_channel = self.data_channel.lock().await;
             *data_channel = Some(Arc::clone(&dc));
@@ -157,7 +157,7 @@ impl RTCDataChannel {
     /// Please refer to the data-channels-detach example and the
     /// pion/datachannel documentation for the correct way to handle the
     /// resulting DataChannel object.
-    pub(crate) async fn detach(&self) -> Result<Arc<crate::webrtc::data::data_channel::DataChannel>> {
+    pub(crate) async fn detach(&self) -> Result<Arc<crate::webrtc::internal::data_channel::DataChannel>> {
 
         let data_channel = self.data_channel.lock().await;
         if let Some(dc) = &*data_channel {

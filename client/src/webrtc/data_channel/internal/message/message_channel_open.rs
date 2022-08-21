@@ -1,5 +1,5 @@
 use super::*;
-use crate::webrtc::data_channel::data::error::Error;
+use crate::webrtc::data_channel::internal::error::Error;
 
 type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 

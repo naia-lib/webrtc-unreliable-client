@@ -1,5 +1,5 @@
 use super::*;
-use crate::webrtc::data_channel::data::error::Error;
+use crate::webrtc::data_channel::internal::error::Error;
 
 // The first byte in a `Message` that specifies its type:
 pub(crate) const MESSAGE_TYPE_ACK: u8 = 0x02;

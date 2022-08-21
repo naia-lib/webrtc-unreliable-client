@@ -103,7 +103,7 @@ pub(crate) enum Error {
     #[error("{0}")]
     Dtls(#[from] crate::webrtc::dtls::Error),
     #[error("{0}")]
-    Data(#[from] crate::webrtc::data::Error),
+    Data(#[from] crate::webrtc::internal::Error),
     #[error("{0}")]
     Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("{0}")]

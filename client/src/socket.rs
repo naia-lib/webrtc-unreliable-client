@@ -10,7 +10,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use crate::webrtc::{
     peer_connection::{RTCPeerConnection, sdp::session_description::RTCSessionDescription}
 };
-use crate::webrtc::data_channel::data::data_channel::DataChannel;
+use crate::webrtc::data_channel::internal::data_channel::DataChannel;
 
 use super::addr_cell::AddrCell;
 

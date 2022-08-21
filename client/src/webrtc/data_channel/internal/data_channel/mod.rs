@@ -1,6 +1,6 @@
 
-use crate::webrtc::data_channel::data::error::Result;
-use crate::webrtc::data_channel::data::{
+use crate::webrtc::data_channel::internal::error::Result;
+use crate::webrtc::data_channel::internal::{
     message::message_channel_open::*, message::*,
 };
 
