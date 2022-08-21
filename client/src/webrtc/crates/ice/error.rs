@@ -116,8 +116,6 @@ pub(crate) enum Error {
     Stun(#[from] crate::webrtc::stun::Error),
     #[error("{0}")]
     ParseUrl(#[from] url::ParseError),
-    #[error("{0}")]
-    Mdns(#[from] crate::webrtc::mdns::Error),
 
     #[error("{0}")]
     Other(String),

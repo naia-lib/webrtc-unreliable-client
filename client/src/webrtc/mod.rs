@@ -8,7 +8,6 @@ pub(crate) use crates::dtls;
 pub(crate) use crates::ice;
 pub(crate) use crates::sdp;
 pub(crate) use crates::stun;
-pub(crate) use crates::mdns;
 
 pub(crate) mod api;
 pub(crate) mod data_channel;
