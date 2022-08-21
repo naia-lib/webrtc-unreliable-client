@@ -10,11 +10,6 @@ pub(crate) enum RTCIceTransportPolicy {
     /// ICETransportPolicyAll indicates any type of candidate is used.
     #[serde(rename = "all")]
     All = 1,
-
-    /// ICETransportPolicyRelay indicates only media relay candidates such
-    /// as candidates passing through a TURN server are used.
-    #[serde(rename = "relay")]
-    Relay = 2,
 }
 
 impl Default for RTCIceTransportPolicy {
@@ -23,14 +18,12 @@ impl Default for RTCIceTransportPolicy {
     }
 }
 
-const ICE_TRANSPORT_POLICY_RELAY_STR: &str = "relay";
 const ICE_TRANSPORT_POLICY_ALL_STR: &str = "all";
 
 /// takes a string and converts it to ICETransportPolicy
 impl From<&str> for RTCIceTransportPolicy {
     fn from(raw: &str) -> Self {
         match raw {
-            ICE_TRANSPORT_POLICY_RELAY_STR => RTCIceTransportPolicy::Relay,
             ICE_TRANSPORT_POLICY_ALL_STR => RTCIceTransportPolicy::All,
             _ => RTCIceTransportPolicy::Unspecified,
         }
@@ -40,7 +33,6 @@ impl From<&str> for RTCIceTransportPolicy {
 impl fmt::Display for RTCIceTransportPolicy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {
-            RTCIceTransportPolicy::Relay => ICE_TRANSPORT_POLICY_RELAY_STR,
             RTCIceTransportPolicy::All => ICE_TRANSPORT_POLICY_ALL_STR,
             RTCIceTransportPolicy::Unspecified => crate::webrtc::UNSPECIFIED_STR,
         };
