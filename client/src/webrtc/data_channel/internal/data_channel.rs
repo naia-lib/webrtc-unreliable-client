@@ -56,7 +56,7 @@ impl DataChannel {
             label: config.label.bytes().collect(),
             protocol: config.protocol.bytes().collect(),
         })
-        .marshal()?;
+            .marshal()?;
 
         stream
             .write_sctp(&msg, PayloadProtocolIdentifier::Dcep)
@@ -115,8 +115,8 @@ impl DataChannel {
     }
 
     async fn handle_dcep<B>(&self, data: &mut B) -> Result<()>
-    where
-        B: Buf,
+        where
+            B: Buf,
     {
         let msg = Message::unmarshal(data)?;
 
