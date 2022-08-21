@@ -21,7 +21,6 @@ use crate::webrtc::util::{vnet::net::*, Buffer};
 
 use crate::webrtc::ice::agent::agent_gather::GatherCandidatesInternalParams;
 use crate::webrtc::ice::rand::*;
-use crate::webrtc::ice::tcp_type::TcpType;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
@@ -216,14 +215,6 @@ impl Agent {
 
     /// Adds a new remote candidate.
     pub(crate) async fn add_remote_candidate(&self, c: &Arc<dyn Candidate + Send + Sync>) -> Result<()> {
-        // cannot check for network yet because it might not be applied
-        // when mDNS hostame is used.
-        if c.tcp_type() == TcpType::Active {
-            // TCP Candidates with tcptype active will probe server passive ones, so
-            // no need to do anything with them.
-            log::info!("Ignoring remote candidate with tcpType active: {}", c);
-            return Ok(());
-        }
 
         // If we have a mDNS Candidate lets fully resolve it before adding it locally
         if c.candidate_type() == CandidateType::Host && c.address().ends_with(".local") {

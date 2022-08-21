@@ -95,8 +95,6 @@ pub(crate) enum Error {
     ErrAttributeTooShortIceCandidate,
     #[error("could not parse related addresses")]
     ErrParseRelatedAddr,
-    #[error("could not parse type")]
-    ErrParseType,
     #[error("unknown candidate type")]
     ErrUnknownCandidateType,
     #[error("unable to determine networkType")]

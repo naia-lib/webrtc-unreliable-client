@@ -4,7 +4,6 @@ pub(crate) mod candidate_host;
 
 use crate::webrtc::ice::error::Result;
 use crate::webrtc::ice::network_type::*;
-use crate::webrtc::ice::tcp_type::*;
 use candidate_base::*;
 
 use async_trait::async_trait;
@@ -56,7 +55,6 @@ pub(crate) trait Candidate: fmt::Display {
     fn related_address(&self) -> Option<CandidateRelatedAddress>;
 
     fn candidate_type(&self) -> CandidateType;
-    fn tcp_type(&self) -> TcpType;
 
     fn marshal(&self) -> String;
 

@@ -57,5 +57,3 @@ pub(crate) use crate::webrtc::util::conn::Conn;
 
 mod error;
 pub(crate) use error::Error;
-
-pub(crate) mod sync;

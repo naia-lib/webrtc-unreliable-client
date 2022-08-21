@@ -23,7 +23,6 @@ pub(crate) struct RTCIceCandidate {
     pub(crate) component: u16,
     pub(crate) related_address: String,
     pub(crate) related_port: u16,
-    pub(crate) tcp_type: String,
 }
 
 /// Conversion for ice_candidates
@@ -52,7 +51,6 @@ impl From<&Arc<dyn Candidate + Send + Sync>> for RTCIceCandidate {
             port: c.port(),
             component: c.component(),
             typ,
-            tcp_type: c.tcp_type().to_string(),
             related_address,
             related_port,
         }

@@ -33,7 +33,6 @@ pub(crate) struct CandidateBase {
     pub(crate) address: String,
     pub(crate) port: u16,
     pub(crate) related_address: Option<CandidateRelatedAddress>,
-    pub(crate) tcp_type: TcpType,
 
     pub(crate) resolved_addr: Mutex<SocketAddr>,
 
@@ -61,7 +60,6 @@ impl Default for CandidateBase {
             address: String::new(),
             port: 0,
             related_address: None,
-            tcp_type: TcpType::default(),
 
             resolved_addr: Mutex::new(SocketAddr::new(IpAddr::from([0, 0, 0, 0]), 0)),
 
@@ -189,10 +187,6 @@ impl Candidate for CandidateBase {
         self.candidate_type
     }
 
-    fn tcp_type(&self) -> TcpType {
-        self.tcp_type
-    }
-
     /// Returns the string representation of the ICECandidate.
     fn marshal(&self) -> String {
         let mut val = format!(
@@ -205,10 +199,6 @@ impl Candidate for CandidateBase {
             self.port(),
             self.candidate_type()
         );
-
-        if self.tcp_type != TcpType::Unspecified {
-            val += format!(" tcptype {}", self.tcp_type()).as_str();
-        }
 
         if let Some(related_address) = self.related_address() {
             val += format!(
@@ -272,7 +262,6 @@ impl Candidate for CandidateBase {
             && self.candidate_type() == other.candidate_type()
             && self.address() == other.address()
             && self.port() == other.port()
-            && self.tcp_type() == other.tcp_type()
             && self.related_address() == other.related_address()
     }
 
@@ -311,58 +300,7 @@ impl CandidateBase {
 
     /// Returns the local preference for this candidate.
     pub(crate) fn local_preference(&self) -> u16 {
-        if self.network_type().is_tcp() {
-            // RFC 6544, section 4.2
-            //
-            // In Section 4.1.2.1 of [RFC5245], a recommended formula for UDP ICE
-            // candidate prioritization is defined.  For TCP candidates, the same
-            // formula and candidate type preferences SHOULD be used, and the
-            // RECOMMENDED type preferences for the new candidate types defined in
-            // this document (see Section 5) are 105 for NAT-assisted candidates and
-            // 75 for UDP-tunneled candidates.
-            //
-            // (...)
-            //
-            // With TCP candidates, the local preference part of the recommended
-            // priority formula is updated to also include the directionality
-            // (active, passive, or simultaneous-open) of the TCP connection.  The
-            // RECOMMENDED local preference is then defined as:
-            //
-            //     local preference = (2^13) * direction-pref + other-pref
-            //
-            // The direction-pref MUST be between 0 and 7 (both inclusive), with 7
-            // being the most preferred.  The other-pref MUST be between 0 and 8191
-            // (both inclusive), with 8191 being the most preferred.  It is
-            // RECOMMENDED that the host, UDP-tunneled, and relayed TCP candidates
-            // have the direction-pref assigned as follows: 6 for active, 4 for
-            // passive, and 2 for S-O.  For the NAT-assisted and server reflexive
-            // candidates, the RECOMMENDED values are: 6 for S-O, 4 for active, and
-            // 2 for passive.
-            //
-            // (...)
-            //
-            // If any two candidates have the same type-preference and direction-
-            // pref, they MUST have a unique other-pref.  With this specification,
-            // this usually only happens with multi-homed hosts, in which case
-            // other-pref is the preference for the particular IP address from which
-            // the candidate was obtained.  When there is only a single IP address,
-            // this value SHOULD be set to the maximum allowed value (8191).
-            let other_pref: u16 = 8191;
-
-            let direction_pref: u16 = match self.candidate_type() {
-                CandidateType::Host => match self.tcp_type() {
-                    TcpType::Active => 6,
-                    TcpType::Passive => 4,
-                    TcpType::SimultaneousOpen => 2,
-                    TcpType::Unspecified => 0,
-                },
-                CandidateType::Unspecified => 0,
-            };
-
-            (1 << 13) * direction_pref + other_pref
-        } else {
-            DEFAULT_LOCAL_PREFERENCE
-        }
+        DEFAULT_LOCAL_PREFERENCE
     }
 }
 
@@ -397,8 +335,6 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
 
     let typ = split[7];
 
-    let mut tcp_type = TcpType::Unspecified;
-
     if split.len() > 8 {
         let split2 = &split[8..];
 
@@ -409,15 +345,6 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                     Error::ErrParseRelatedAddr
                 )));
             }
-        } else if split2[0] == "tcptype" {
-            if split2.len() < 2 {
-                return Err(Error::Other(format!(
-                    "{:?}: incorrect length",
-                    Error::ErrParseType
-                )));
-            }
-
-            tcp_type = TcpType::from(split2[1]);
         }
     }
 
@@ -432,8 +359,7 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                     priority,
                     foundation,
                     ..CandidateBaseConfig::default()
-                },
-                tcp_type,
+                }
             };
             config.new_candidate_host().await
         }
