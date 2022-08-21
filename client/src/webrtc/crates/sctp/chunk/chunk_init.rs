@@ -1,5 +1,4 @@
 use super::{chunk_header::*, chunk_type::*, *};
-use crate::webrtc::sctp::param::param_supported_extensions::ParamSupportedExtensions;
 use crate::webrtc::sctp::param::{param_header::*, *};
 use crate::webrtc::sctp::util::get_padding_size;
 

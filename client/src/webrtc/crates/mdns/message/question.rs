@@ -1,8 +1,6 @@
 use super::name::*;
 use super::*;
-use crate::webrtc::mdns::error::Result;
 
-use std::collections::HashMap;
 use std::fmt;
 
 // A question is a DNS query.
@@ -20,19 +18,5 @@ impl fmt::Display for Question {
             "dnsmessage.question{{Name: {}, Type: {}, Class: {}}}",
             self.name, self.typ, self.class
         )
-    }
-}
-
-impl Question {
-    // pack appends the wire format of the question to msg.
-    pub(crate) fn pack(
-        &self,
-        mut msg: Vec<u8>,
-        compression: &mut Option<HashMap<String, usize>>,
-        compression_off: usize,
-    ) -> Result<Vec<u8>> {
-        msg = self.name.pack(msg, compression, compression_off)?;
-        msg = self.typ.pack(msg);
-        Ok(self.class.pack(msg))
     }
 }

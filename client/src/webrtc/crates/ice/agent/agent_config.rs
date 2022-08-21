@@ -72,9 +72,6 @@ pub(crate) struct AgentConfig {
     /// Controls the hostname for this agent. If none is specified a random one will be generated.
     pub(crate) multicast_dns_host_name: String,
 
-    /// Control mDNS destination address    
-    pub(crate) multicast_dns_dest_addr: String,
-
     /// Defaults to 5 seconds when this property is nil.
     /// If the duration is 0, the ICE Agent will never go to disconnected.
     pub(crate) disconnected_timeout: Option<Duration>,

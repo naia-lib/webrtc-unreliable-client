@@ -20,15 +20,6 @@ impl fmt::Display for Name {
 }
 
 impl Name {
-    pub(crate) fn new(data: &str) -> Result<Self> {
-        if data.len() > NAME_LEN {
-            Err(Error::ErrCalcLen)
-        } else {
-            Ok(Name {
-                data: data.to_owned(),
-            })
-        }
-    }
 
     // pack appends the wire format of the Name to msg.
     //

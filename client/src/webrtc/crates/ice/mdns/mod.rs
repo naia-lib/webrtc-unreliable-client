@@ -1,12 +1,4 @@
 
-use crate::webrtc::ice::error::Result;
-
-use crate::webrtc::mdns::config::*;
-use crate::webrtc::mdns::conn::*;
-
-use std::net::SocketAddr;
-use std::str::FromStr;
-use std::sync::Arc;
 use uuid::Uuid;
 
 /// Represents the different Multicast modes that ICE can run.
@@ -35,44 +27,4 @@ pub(crate) fn generate_multicast_dns_name() -> String {
     // The unique name MUST consist of a version 4 UUID as defined in [RFC4122], followed by “.local”.
     let u = Uuid::new_v4();
     format!("{}.local", u)
-}
-
-pub(crate) fn create_multicast_dns(
-    mdns_mode: MulticastDnsMode,
-    mdns_name: &str,
-    dest_addr: &str,
-) -> Result<Option<Arc<DnsConn>>> {
-    if mdns_mode == MulticastDnsMode::Disabled {
-        return Ok(None);
-    }
-
-    let addr = if dest_addr.is_empty() {
-        //TODO: why DEFAULT_DEST_ADDR doesn't work on Mac/Win?
-        if cfg!(target_os = "linux") {
-            SocketAddr::from_str(DEFAULT_DEST_ADDR)?
-        } else {
-            SocketAddr::from_str("0.0.0.0:5353")?
-        }
-    } else {
-        SocketAddr::from_str(dest_addr)?
-    };
-    log::info!("mDNS is using {} as dest_addr", addr);
-
-    match mdns_mode {
-        MulticastDnsMode::QueryOnly => {
-            let conn = DnsConn::server(addr, Config::default())?;
-            Ok(Some(Arc::new(conn)))
-        }
-        MulticastDnsMode::QueryAndGather => {
-            let conn = DnsConn::server(
-                addr,
-                Config {
-                    local_names: vec![mdns_name.to_owned()],
-                    ..Config::default()
-                },
-            )?;
-            Ok(Some(Arc::new(conn)))
-        }
-        _ => Ok(None),
-    }
 }

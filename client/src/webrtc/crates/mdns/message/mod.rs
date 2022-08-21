@@ -2,17 +2,13 @@
 pub(crate) mod header;
 pub(crate) mod name;
 mod packer;
-pub(crate) mod parser;
 pub(crate) mod question;
 pub(crate) mod resource;
 
-use crate::webrtc::mdns::error::*;
 use header::*;
-use packer::*;
 use question::*;
 use resource::*;
 
-use std::collections::HashMap;
 use std::fmt;
 
 // Message formats
@@ -98,19 +94,6 @@ impl fmt::Display for DnsType {
     }
 }
 
-impl DnsType {
-    // pack_type appends the wire format of field to msg.
-    pub(crate) fn pack(&self, msg: Vec<u8>) -> Vec<u8> {
-        pack_uint16(msg, *self as u16)
-    }
-
-    pub(crate) fn unpack(&mut self, msg: &[u8], off: usize) -> Result<usize> {
-        let (t, o) = unpack_uint16(msg, off)?;
-        *self = DnsType::from(t);
-        Ok(o)
-    }
-}
-
 // A Class is a type of network.
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct DnsClass(pub(crate) u16);
@@ -135,19 +118,6 @@ impl fmt::Display for DnsClass {
             _ => other.as_str(),
         };
         write!(f, "{}", s)
-    }
-}
-
-impl DnsClass {
-    // pack_class appends the wire format of field to msg.
-    pub(crate) fn pack(&self, msg: Vec<u8>) -> Vec<u8> {
-        pack_uint16(msg, self.0)
-    }
-
-    pub(crate) fn unpack(&mut self, msg: &[u8], off: usize) -> Result<usize> {
-        let (c, o) = unpack_uint16(msg, off)?;
-        *self = DnsClass(c);
-        Ok(o)
     }
 }
 
@@ -210,12 +180,6 @@ const UINT16LEN: usize = 2;
 // UINT32LEN is the length (in bytes) of a uint32.
 const UINT32LEN: usize = 4;
 
-const HEADER_BIT_QR: u16 = 1 << 15; // query/response (response=1)
-const HEADER_BIT_AA: u16 = 1 << 10; // authoritative
-const HEADER_BIT_TC: u16 = 1 << 9; // truncated
-const HEADER_BIT_RD: u16 = 1 << 8; // recursion desired
-const HEADER_BIT_RA: u16 = 1 << 7; // recursion available
-
 // Message is a representation of a DNS message.
 #[derive(Default, Debug)]
 pub(crate) struct Message {
@@ -248,77 +212,5 @@ impl fmt::Display for Message {
         s += &v.join(", ");
 
         write!(f, "{}", s)
-    }
-}
-
-impl Message {
-
-    // Pack packs a full Message.
-    pub(crate) fn pack(&mut self) -> Result<Vec<u8>> {
-        self.append_pack(vec![])
-    }
-
-    // append_pack is like Pack but appends the full Message to b and returns the
-    // extended buffer.
-    pub(crate) fn append_pack(&mut self, b: Vec<u8>) -> Result<Vec<u8>> {
-        // Validate the lengths. It is very unlikely that anyone will try to
-        // pack more than 65535 of any particular type, but it is possible and
-        // we should fail gracefully.
-        if self.questions.len() > u16::MAX as usize {
-            return Err(Error::ErrTooManyQuestions);
-        }
-        if self.answers.len() > u16::MAX as usize {
-            return Err(Error::ErrTooManyAnswers);
-        }
-        if self.authorities.len() > u16::MAX as usize {
-            return Err(Error::ErrTooManyAuthorities);
-        }
-        if self.additionals.len() > u16::MAX as usize {
-            return Err(Error::ErrTooManyAdditionals);
-        }
-
-        let (id, bits) = self.header.pack();
-
-        let questions = self.questions.len() as u16;
-        let answers = self.answers.len() as u16;
-        let authorities = self.authorities.len() as u16;
-        let additionals = self.additionals.len() as u16;
-
-        let h = HeaderInternal {
-            id,
-            bits,
-            questions,
-            answers,
-            authorities,
-            additionals,
-        };
-
-        let compression_off = b.len();
-        let mut msg = h.pack(b);
-
-        // RFC 1035 allows (but does not require) compression for packing. RFC
-        // 1035 requires unpacking implementations to support compression, so
-        // unconditionally enabling it is fine.
-        //
-        // DNS lookups are typically done over UDP, and RFC 1035 states that UDP
-        // DNS messages can be a maximum of 512 bytes long. Without compression,
-        // many DNS response messages are over this limit, so enabling
-        // compression will help ensure compliance.
-        let mut compression = Some(HashMap::new());
-
-        for question in &self.questions {
-            msg = question.pack(msg, &mut compression, compression_off)?;
-        }
-        for answer in &mut self.answers {
-            msg = answer.pack(msg, &mut compression, compression_off)?;
-        }
-        for authority in &mut self.authorities {
-            msg = authority.pack(msg, &mut compression, compression_off)?;
-        }
-        for additional in &mut self.additionals {
-            msg = additional.pack(msg, &mut compression, compression_off)?;
-        }
-
-        Ok(msg)
     }
 }

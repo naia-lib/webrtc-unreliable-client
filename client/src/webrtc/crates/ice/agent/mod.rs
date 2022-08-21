@@ -15,7 +15,6 @@ use crate::webrtc::ice::url::*;
 use agent_config::*;
 use agent_internal::*;
 
-use crate::webrtc::mdns::conn::*;
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddr};
 use crate::webrtc::stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, xoraddr::*};
@@ -244,19 +243,6 @@ impl Agent {
             if c.candidate_type() != CandidateType::Host {
                 return Err(Error::ErrAddressParseFailed);
             }
-
-            let ai = Arc::clone(&self.internal);
-            let host_candidate = Arc::clone(c);
-            // let mdns_conn = self.mdns_conn.clone();
-            // tokio::spawn(async move {
-            //     if let Some(mdns_conn) = mdns_conn {
-            //         if let Ok(candidate) =
-            //             Self::resolve_and_add_multicast_candidate(mdns_conn, host_candidate).await
-            //         {
-            //             ai.add_remote_candidate(&candidate).await;
-            //         }
-            //     }
-            // });
         } else {
             let ai = Arc::clone(&self.internal);
             let candidate = Arc::clone(c);
@@ -405,32 +391,5 @@ impl Agent {
         });
 
         Ok(())
-    }
-
-    async fn resolve_and_add_multicast_candidate(
-        mdns_conn: Arc<DnsConn>,
-        c: Arc<dyn Candidate + Send + Sync>,
-    ) -> Result<Arc<dyn Candidate + Send + Sync>> {
-        //TODO: hook up _close_query_signal_tx to Agent or Candidate's Close signal?
-        let (_close_query_signal_tx, close_query_signal_rx) = mpsc::channel(1);
-        let src = match mdns_conn.query(&c.address(), close_query_signal_rx).await {
-            Ok((_, src)) => src,
-            Err(err) => {
-                log::warn!("Failed to discover mDNS candidate {}: {}", c.address(), err);
-                return Err(err.into());
-            }
-        };
-
-        c.set_ip(&src.ip()).await?;
-
-        Ok(c)
-    }
-
-    async fn close_multicast_conn(mdns_conn: &Option<Arc<DnsConn>>) {
-        if let Some(conn) = mdns_conn {
-            if let Err(err) = conn.close().await {
-                log::warn!("failed to close mDNS Conn: {}", err);
-            }
-        }
     }
 }

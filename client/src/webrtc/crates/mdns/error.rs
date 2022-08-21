@@ -9,14 +9,6 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
 pub(crate) enum Error {
-    #[error("mDNS: failed to join multicast group")]
-    ErrJoiningMulticastGroup,
-    #[error("mDNS: connection is closed")]
-    ErrConnectionClosed,
-    #[error("parsing/packing of this type isn't available yet")]
-    ErrNotStarted,
-    #[error("parsing/packing of this section has completed")]
-    ErrSectionDone,
     #[error("insufficient data for base length type")]
     ErrBaseLen,
     #[error("insufficient data for calculated length type")]
@@ -27,22 +19,10 @@ pub(crate) enum Error {
     ErrTooManyPtr,
     #[error("invalid pointer")]
     ErrInvalidPtr,
-    #[error("nil resource body")]
-    ErrNilResourceBody,
     #[error("segment length too long")]
     ErrSegTooLong,
     #[error("zero length segment")]
     ErrZeroSegLen,
-    #[error("resource length too long")]
-    ErrResTooLong,
-    #[error("too many Questions to pack (>65535)")]
-    ErrTooManyQuestions,
-    #[error("too many Answers to pack (>65535)")]
-    ErrTooManyAnswers,
-    #[error("too many Authorities to pack (>65535)")]
-    ErrTooManyAuthorities,
-    #[error("too many Additionals to pack (>65535)")]
-    ErrTooManyAdditionals,
     #[error("name is not in canonical format (it must end with a .)")]
     ErrNonCanonicalName,
     #[error("character string exceeds maximum length (255)")]
@@ -55,8 +35,6 @@ pub(crate) enum Error {
     Utf8(#[from] FromUtf8Error),
     #[error("parse addr: {0}")]
     ParseIp(#[from] net::AddrParseError),
-    #[error("{0}")]
-    Other(String),
 }
 
 #[derive(Debug, Error)]
