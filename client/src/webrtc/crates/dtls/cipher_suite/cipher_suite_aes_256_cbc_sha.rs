@@ -3,7 +3,7 @@ use crate::webrtc::dtls::crypto::crypto_cbc::*;
 use crate::webrtc::dtls::prf::*;
 
 #[derive(Clone)]
-pub struct CipherSuiteAes256CbcSha {
+pub(crate) struct CipherSuiteAes256CbcSha {
     cbc: Option<CryptoCbc>,
     rsa: bool,
 }
@@ -13,7 +13,7 @@ impl CipherSuiteAes256CbcSha {
     const PRF_KEY_LEN: usize = 32;
     const PRF_IV_LEN: usize = 16;
 
-    pub fn new(rsa: bool) -> Self {
+    pub(crate) fn new(rsa: bool) -> Self {
         CipherSuiteAes256CbcSha { cbc: None, rsa }
     }
 }

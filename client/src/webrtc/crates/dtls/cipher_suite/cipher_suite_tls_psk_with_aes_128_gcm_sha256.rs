@@ -3,7 +3,7 @@ use crate::webrtc::dtls::crypto::crypto_gcm::*;
 use crate::webrtc::dtls::prf::*;
 
 #[derive(Clone, Default)]
-pub struct CipherSuiteTlsPskWithAes128GcmSha256 {
+pub(crate) struct CipherSuiteTlsPskWithAes128GcmSha256 {
     gcm: Option<CryptoGcm>,
 }
 

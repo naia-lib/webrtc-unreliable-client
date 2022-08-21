@@ -24,8 +24,8 @@ use std::fmt;
 ///|                                                               |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone)]
-pub struct ChunkAbort {
-    pub error_causes: Vec<ErrorCause>,
+pub(crate) struct ChunkAbort {
+    pub(crate) error_causes: Vec<ErrorCause>,
 }
 
 /// String makes chunkAbort printable

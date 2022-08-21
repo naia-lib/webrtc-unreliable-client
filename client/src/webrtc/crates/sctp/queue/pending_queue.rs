@@ -5,13 +5,13 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use tokio::sync::Mutex;
 
 /// pendingBaseQueue
-pub type PendingBaseQueue = VecDeque<ChunkPayloadData>;
+pub(crate) type PendingBaseQueue = VecDeque<ChunkPayloadData>;
 
 // TODO: benchmark performance between multiple Atomic+Mutex vs one Mutex<PendingQueueInternal>
 
 /// pendingQueue
 #[derive(Debug, Default)]
-pub struct PendingQueue {
+pub(crate) struct PendingQueue {
     unordered_queue: Mutex<PendingBaseQueue>,
     ordered_queue: Mutex<PendingBaseQueue>,
     queue_len: AtomicUsize,
@@ -21,11 +21,11 @@ pub struct PendingQueue {
 }
 
 impl PendingQueue {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         PendingQueue::default()
     }
 
-    pub async fn push(&self, c: ChunkPayloadData) {
+    pub(crate) async fn push(&self, c: ChunkPayloadData) {
         self.n_bytes.fetch_add(c.user_data.len(), Ordering::SeqCst);
         if c.unordered {
             let mut unordered_queue = self.unordered_queue.lock().await;
@@ -37,7 +37,7 @@ impl PendingQueue {
         self.queue_len.fetch_add(1, Ordering::SeqCst);
     }
 
-    pub async fn peek(&self) -> Option<ChunkPayloadData> {
+    pub(crate) async fn peek(&self) -> Option<ChunkPayloadData> {
         if self.selected.load(Ordering::SeqCst) {
             if self.unordered_is_selected.load(Ordering::SeqCst) {
                 let unordered_queue = self.unordered_queue.lock().await;
@@ -61,7 +61,7 @@ impl PendingQueue {
         ordered_queue.get(0).cloned()
     }
 
-    pub async fn pop(
+    pub(crate) async fn pop(
         &self,
         beginning_fragment: bool,
         unordered: bool,
@@ -119,7 +119,7 @@ impl PendingQueue {
         popped
     }
 
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.queue_len.load(Ordering::SeqCst)
     }
 }

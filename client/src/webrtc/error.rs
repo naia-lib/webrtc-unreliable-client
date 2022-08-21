@@ -6,30 +6,16 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 use tokio::sync::mpsc::error::SendError as MpscSendError;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
 
     /// ErrConnectionClosed indicates an operation executed after connection
     /// has already been closed.
     #[error("connection closed")]
     ErrConnectionClosed,
-
-    /// ErrCertificateExpired indicates that an x509 certificate has expired.
-    #[error("x509Cert expired")]
-    ErrCertificateExpired,
-
-    /// ErrNoTurnCredentials indicates that a TURN server URL was provided
-    /// without required credentials.
-    #[error("turn server credentials required")]
-    ErrNoTurnCredentials,
-
-    /// ErrTurnCredentials indicates that provided TURN credentials are partial
-    /// or malformed.
-    #[error("invalid turn server credentials")]
-    ErrTurnCredentials,
 
     /// ErrNonCertificate indicates that there is no certificate
     #[error("no certificate")]
@@ -117,7 +103,7 @@ pub enum Error {
     #[error("{0}")]
     Dtls(#[from] crate::webrtc::dtls::Error),
     #[error("{0}")]
-    Data(#[from] crate::webrtc::data::Error),
+    Data(#[from] crate::webrtc::internal::Error),
     #[error("{0}")]
     Sctp(#[from] crate::webrtc::sctp::Error),
     #[error("{0}")]
@@ -139,7 +125,7 @@ pub enum Error {
     new(String),
 }
 
-pub type OnErrorHdlrFn =
+pub(crate) type OnErrorHdlrFn =
     Box<dyn (FnMut(Error) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
 // Because Tokio SendError is parameterized, we sadly lose the backtrace.

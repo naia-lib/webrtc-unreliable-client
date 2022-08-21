@@ -1,7 +1,3 @@
-//TODO: remove this conditional test
-#[cfg(not(target_os = "macos"))]
-#[cfg(test)]
-mod association_test;
 
 mod association_internal;
 mod association_stats;
@@ -52,21 +48,21 @@ use std::time::SystemTime;
 use tokio::sync::{broadcast, mpsc, Mutex};
 use crate::webrtc::util::Conn;
 
-pub const RECEIVE_MTU: usize = 8192;
+pub(crate) const RECEIVE_MTU: usize = 8192;
 /// MTU for inbound packet (from DTLS)
-pub const INITIAL_MTU: u32 = 1228;
+pub(crate) const INITIAL_MTU: u32 = 1228;
 /// initial MTU for outgoing packets (to DTLS)
-pub const INITIAL_RECV_BUF_SIZE: u32 = 1024 * 1024;
-pub const COMMON_HEADER_SIZE: u32 = 12;
-pub const DATA_CHUNK_HEADER_SIZE: u32 = 16;
-pub const DEFAULT_MAX_MESSAGE_SIZE: u32 = 65536;
+pub(crate) const INITIAL_RECV_BUF_SIZE: u32 = 1024 * 1024;
+pub(crate) const COMMON_HEADER_SIZE: u32 = 12;
+pub(crate) const DATA_CHUNK_HEADER_SIZE: u32 = 16;
+pub(crate) const DEFAULT_MAX_MESSAGE_SIZE: u32 = 65536;
 
 /// other constants
-pub const ACCEPT_CH_SIZE: usize = 16;
+pub(crate) const ACCEPT_CH_SIZE: usize = 16;
 
 /// association state enums
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum AssociationState {
+pub(crate) enum AssociationState {
     Closed = 0,
     CookieWait = 1,
     CookieEchoed = 2,
@@ -110,7 +106,7 @@ impl fmt::Display for AssociationState {
 
 /// retransmission timer IDs
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RtxTimerId {
+pub(crate) enum RtxTimerId {
     T1Init,
     T1Cookie,
     T2Shutdown,
@@ -139,7 +135,7 @@ impl fmt::Display for RtxTimerId {
 
 /// ack mode (for testing)
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum AckMode {
+pub(crate) enum AckMode {
     Normal,
     AlwaysDelay,
 }
@@ -161,7 +157,7 @@ impl fmt::Display for AckMode {
 
 /// ack transmission state
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum AckState {
+pub(crate) enum AckState {
     Idle,      // ack timer is off
     Immediate, // will send ack immediately
     Delay,     // ack timer is on (ack is being delayed)
@@ -186,11 +182,11 @@ impl fmt::Display for AckState {
 
 /// Config collects the arguments to create_association construction into
 /// a single structure
-pub struct Config {
-    pub net_conn: Arc<dyn Conn + Send + Sync>,
-    pub max_receive_buffer_size: u32,
-    pub max_message_size: u32,
-    pub name: String,
+pub(crate) struct Config {
+    pub(crate) net_conn: Arc<dyn Conn + Send + Sync>,
+    pub(crate) max_receive_buffer_size: u32,
+    pub(crate) max_message_size: u32,
+    pub(crate) name: String,
 }
 
 ///Association represents an SCTP association
@@ -210,18 +206,17 @@ pub struct Config {
 ///
 /// No Closed state is illustrated since if a
 /// association is Closed its TCB SHOULD be removed.
-pub struct Association {
+pub(crate) struct Association {
     name: String,
-    accept_ch_rx: Mutex<mpsc::Receiver<Arc<Stream>>>,
     net_conn: Arc<dyn Conn + Send + Sync>,
 
-    pub association_internal: Arc<Mutex<AssociationInternal>>,
+    pub(crate) association_internal: Arc<Mutex<AssociationInternal>>,
 }
 
 impl Association {
 
     /// Client opens a SCTP stream over a conn
-    pub async fn client(config: Config) -> Result<Self> {
+    pub(crate) async fn client(config: Config) -> Result<Self> {
         let (a, mut handshake_completed_ch_rx) = Association::new(config, true).await?;
 
         if let Some(err_opt) = handshake_completed_ch_rx.recv().await {
@@ -236,7 +231,7 @@ impl Association {
     }
 
     /// Close ends the SCTP Association and cleans up any state
-    pub async fn close(&self) -> Result<()> {
+    pub(crate) async fn close(&self) -> Result<()> {
         log::debug!("[{}] closing association..", self.name);
 
         let _ = self.net_conn.close().await;
@@ -249,7 +244,7 @@ impl Association {
         let net_conn = Arc::clone(&config.net_conn);
 
         let (awake_write_loop_ch_tx, awake_write_loop_ch_rx) = mpsc::channel(1);
-        let (accept_ch_tx, accept_ch_rx) = mpsc::channel(ACCEPT_CH_SIZE);
+        let (accept_ch_tx, _accept_ch_rx) = mpsc::channel(ACCEPT_CH_SIZE);
         let (handshake_completed_ch_tx, handshake_completed_ch_rx) = mpsc::channel(1);
         let (close_loop_ch_tx, _) = broadcast::channel(1);
         let (close_loop_ch_rx1, close_loop_ch_rx2) =
@@ -276,7 +271,7 @@ impl Association {
             advertised_receiver_window_credit: ai.max_receive_buffer_size,
             ..Default::default()
         };
-        init.set_supported_extensions();
+        init.set_forward_tsn_supported();
 
         let name1 = name.clone();
         let name2 = name.clone();
@@ -363,7 +358,6 @@ impl Association {
         Ok((
             Association {
                 name,
-                accept_ch_rx: Mutex::new(accept_ch_rx),
                 net_conn,
                 association_internal,
             },
@@ -481,18 +475,11 @@ impl Association {
     }
 
     /// open_stream opens a stream
-    pub async fn open_stream(
+    pub(crate) async fn open_stream(
         &self,
         stream_identifier: u16,
-        default_payload_type: PayloadProtocolIdentifier,
     ) -> Result<Arc<Stream>> {
         let mut ai = self.association_internal.lock().await;
-        ai.open_stream(stream_identifier, default_payload_type)
-    }
-
-    /// accept_stream accepts a stream
-    pub async fn accept_stream(&self) -> Option<Arc<Stream>> {
-        let mut accept_ch_rx = self.accept_ch_rx.lock().await;
-        accept_ch_rx.recv().await
+        ai.open_stream(stream_identifier)
     }
 }

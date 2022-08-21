@@ -15,35 +15,35 @@ use crate::webrtc::util::KeyingMaterialExporter;
 use crate::webrtc::util::KeyingMaterialExporterError;
 
 // State holds the dtls connection state and implements both encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
-pub struct State {
-    pub local_epoch: Arc<AtomicU16>,
-    pub remote_epoch: Arc<AtomicU16>,
-    pub local_sequence_number: Arc<Mutex<Vec<u64>>>, // uint48
-    pub local_random: HandshakeRandom,
-    pub remote_random: HandshakeRandom,
-    pub master_secret: Vec<u8>,
-    pub cipher_suite: Arc<Mutex<Option<Box<dyn CipherSuite + Send + Sync>>>>, // nil if a cipher_suite hasn't been chosen
+pub(crate) struct State {
+    pub(crate) local_epoch: Arc<AtomicU16>,
+    pub(crate) remote_epoch: Arc<AtomicU16>,
+    pub(crate) local_sequence_number: Arc<Mutex<Vec<u64>>>, // uint48
+    pub(crate) local_random: HandshakeRandom,
+    pub(crate) remote_random: HandshakeRandom,
+    pub(crate) master_secret: Vec<u8>,
+    pub(crate) cipher_suite: Arc<Mutex<Option<Box<dyn CipherSuite + Send + Sync>>>>, // nil if a cipher_suite hasn't been chosen
 
-    pub srtp_protection_profile: SrtpProtectionProfile, // Negotiated srtp_protection_profile
-    pub peer_certificates: Vec<Vec<u8>>,
-    pub identity_hint: Vec<u8>,
+    pub(crate) srtp_protection_profile: SrtpProtectionProfile, // Negotiated srtp_protection_profile
+    pub(crate) peer_certificates: Vec<Vec<u8>>,
+    pub(crate) identity_hint: Vec<u8>,
 
-    pub is_client: bool,
+    pub(crate) is_client: bool,
 
-    pub pre_master_secret: Vec<u8>,
-    pub extended_master_secret: bool,
+    pub(crate) pre_master_secret: Vec<u8>,
+    pub(crate) extended_master_secret: bool,
 
-    pub named_curve: NamedCurve,
-    pub local_keypair: Option<NamedCurveKeypair>,
-    pub cookie: Vec<u8>,
-    pub handshake_send_sequence: isize,
-    pub handshake_recv_sequence: isize,
-    pub server_name: String,
-    pub remote_requested_certificate: bool, // Did we get a CertificateRequest
-    pub local_certificates_verify: Vec<u8>, // cache CertificateVerify
-    pub local_verify_data: Vec<u8>,         // cached VerifyData
-    pub local_key_signature: Vec<u8>,       // cached keySignature
-    pub peer_certificates_verified: bool,
+    pub(crate) named_curve: NamedCurve,
+    pub(crate) local_keypair: Option<NamedCurveKeypair>,
+    pub(crate) cookie: Vec<u8>,
+    pub(crate) handshake_send_sequence: isize,
+    pub(crate) handshake_recv_sequence: isize,
+    pub(crate) server_name: String,
+    pub(crate) remote_requested_certificate: bool, // Did we get a CertificateRequest
+    pub(crate) local_certificates_verify: Vec<u8>, // cache CertificateVerify
+    pub(crate) local_verify_data: Vec<u8>,         // cached VerifyData
+    pub(crate) local_key_signature: Vec<u8>,       // cached keySignature
+    pub(crate) peer_certificates_verified: bool,
     //pub(crate) replay_detector: Vec<Box<dyn ReplayDetector + Send + Sync>>,
 }
 

@@ -4,7 +4,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum CompressionMethodId {
+pub(crate) enum CompressionMethodId {
     Null = 0,
     Unsupported,
 }
@@ -19,16 +19,16 @@ impl From<u8> for CompressionMethodId {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct CompressionMethods {
-    pub ids: Vec<CompressionMethodId>,
+pub(crate) struct CompressionMethods {
+    pub(crate) ids: Vec<CompressionMethodId>,
 }
 
 impl CompressionMethods {
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         1 + self.ids.len()
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u8(self.ids.len() as u8)?;
 
         for id in &self.ids {
@@ -38,7 +38,7 @@ impl CompressionMethods {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let compression_methods_count = reader.read_u8()? as usize;
         let mut ids = vec![];
         for _ in 0..compression_methods_count {
@@ -52,7 +52,7 @@ impl CompressionMethods {
     }
 }
 
-pub fn default_compression_methods() -> CompressionMethods {
+pub(crate) fn default_compression_methods() -> CompressionMethods {
     CompressionMethods {
         ids: vec![CompressionMethodId::Null],
     }

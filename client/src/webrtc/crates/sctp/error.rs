@@ -1,11 +1,11 @@
 use std::io;
 use thiserror::Error;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error("raw is too small for a SCTP chunk")]
     ErrChunkHeaderTooSmall,
     #[error("not enough data left in SCTP packet to satisfy requested length")]
@@ -17,18 +17,12 @@ pub enum Error {
 
     #[error("ChunkType is not of type ABORT")]
     ErrChunkTypeNotAbort,
-    #[error("failed build Abort Chunk")]
-    ErrBuildAbortChunkFailed,
     #[error("ChunkType is not of type COOKIEACK")]
     ErrChunkTypeNotCookieAck,
     #[error("ChunkType is not of type COOKIEECHO")]
     ErrChunkTypeNotCookieEcho,
     #[error("ChunkType is not of type ctError")]
     ErrChunkTypeNotCtError,
-    #[error("failed build Error Chunk")]
-    ErrBuildErrorChunkFailed,
-    #[error("failed to marshal stream")]
-    ErrMarshalStreamFailed,
     #[error("chunk too short")]
     ErrChunkTooShort,
     #[error("ChunkType is not of type ForwardTsn")]
@@ -39,20 +33,12 @@ pub enum Error {
     ErrChunkTypeNotHeartbeatAck,
     #[error("heartbeat is not long enough to contain Heartbeat Info")]
     ErrHeartbeatNotLongEnoughInfo,
-    #[error("failed to parse param type")]
-    ErrParseParamTypeFailed,
     #[error("heartbeat should only have HEARTBEAT param")]
     ErrHeartbeatParam,
-    #[error("failed unmarshalling param in Heartbeat Chunk")]
-    ErrHeartbeatChunkUnmarshal,
-    #[error("unimplemented")]
-    ErrUnimplemented,
     #[error("heartbeat Ack must have one param")]
     ErrHeartbeatAckParams,
     #[error("heartbeat Ack must have one param, and it should be a HeartbeatInfo")]
     ErrHeartbeatAckNotHeartbeatInfo,
-    #[error("unable to marshal parameter for Heartbeat Ack")]
-    ErrHeartbeatAckMarshalParam,
 
     #[error("raw is too small for error cause")]
     ErrErrorCauseTooSmall,
@@ -65,15 +51,7 @@ pub enum Error {
 
     #[error("param header too short")]
     ErrParamHeaderTooShort,
-    #[error("param self reported length is shorter than header length")]
-    ErrParamHeaderSelfReportedLengthShorter,
-    #[error("param self reported length is longer than header length")]
-    ErrParamHeaderSelfReportedLengthLonger,
-    #[error("failed to parse param type")]
-    ErrParamHeaderParseFailed,
 
-    #[error("packet to short")]
-    ErrParamPacketTooShort,
     #[error("outgoing SSN reset request parameter too short")]
     ErrSsnResetRequestParamTooShort,
     #[error("reconfig response parameter too short")]
@@ -81,23 +59,12 @@ pub enum Error {
     #[error("invalid algorithm type")]
     ErrInvalidAlgorithmType,
 
-    #[error("failed to parse param type")]
-    ErrInitChunkParseParamTypeFailed,
-    #[error("failed unmarshalling param in Init Chunk")]
-    ErrInitChunkUnmarshalParam,
-    #[error("unable to marshal parameter for INIT/INITACK")]
-    ErrInitAckMarshalParam,
-
     #[error("ChunkType is not of type INIT")]
     ErrChunkTypeNotTypeInit,
     #[error("chunk Value isn't long enough for mandatory parameters exp")]
     ErrChunkValueNotLongEnough,
     #[error("ChunkType of type INIT flags must be all 0")]
     ErrChunkTypeInitFlagZero,
-    #[error("failed to unmarshal INIT body")]
-    ErrChunkTypeInitUnmarshalFailed,
-    #[error("failed marshaling INIT common data")]
-    ErrChunkTypeInitMarshalFailed,
     #[error("ChunkType of type INIT ACK InitiateTag must not be 0")]
     ErrChunkTypeInitInitateTagZero,
     #[error("INIT ACK inbound stream request must be > 0")]
@@ -115,13 +82,6 @@ pub enum Error {
     ErrChunkTypeNotReconfig,
     #[error("ChunkReconfig has invalid ParamA")]
     ErrChunkReconfigInvalidParamA,
-
-    #[error("failed to parse param type")]
-    ErrChunkParseParamTypeFailed,
-    #[error("unable to marshal parameter A for reconfig")]
-    ErrChunkMarshalParamAReconfigFailed,
-    #[error("unable to marshal parameter B for reconfig")]
-    ErrChunkMarshalParamBReconfigFailed,
 
     #[error("ChunkType is not of type SACK")]
     ErrChunkTypeNotSack,
@@ -147,27 +107,13 @@ pub enum Error {
     #[error("checksum mismatch theirs")]
     ErrChecksumMismatch,
 
-    #[error("unexpected chunk popped (unordered)")]
-    ErrUnexpectedChuckPoppedUnordered,
-    #[error("unexpected chunk popped (ordered)")]
-    ErrUnexpectedChuckPoppedOrdered,
-    #[error("unexpected q state (should've been selected)")]
-    ErrUnexpectedQState,
     #[error("try again")]
     ErrTryAgain,
 
     #[error("abort chunk, with following errors")]
     ErrChunk,
-    #[error("shutdown called in non-Established state")]
-    ErrShutdownNonEstablished,
-    #[error("association closed before connecting")]
-    ErrAssociationClosedBeforeConn,
-    #[error("association init failed")]
-    ErrAssociationInitFailed,
     #[error("association handshake closed")]
     ErrAssociationHandshakeClosed,
-    #[error("silently discard")]
-    ErrSilentlyDiscard,
     #[error("the init not stored to send")]
     ErrInitNotStoredToSend,
     #[error("cookieEcho not stored to send")]
@@ -211,17 +157,11 @@ pub enum Error {
     ErrStreamClosed,
     #[error("Short buffer to be filled")]
     ErrShortBuffer,
+    #[allow(dead_code)]
     #[error("Io EOF")]
     ErrEof,
     #[error("Invalid SystemTime")]
     ErrInvalidSystemTime,
-    #[error("Net Conn read error")]
-    ErrNetConnReadError,
-    #[error("Max Data Channel ID")]
-    ErrMaxDataChannelID,
-
-    #[error("{0}")]
-    Other(String),
 }
 
 impl From<Error> for io::Error {

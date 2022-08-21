@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod rand_test;
 
 use rand::{thread_rng, Rng};
 
@@ -11,7 +9,7 @@ const LEN_UFRAG: usize = 16;
 const LEN_PWD: usize = 32;
 
 //TODO: generates a random string for cryptographic usage.
-pub fn generate_crypto_random_string(n: usize, runes: &[u8]) -> String {
+pub(crate) fn generate_crypto_random_string(n: usize, runes: &[u8]) -> String {
     let mut rng = thread_rng();
 
     let rand_string: String = (0..n)
@@ -28,7 +26,7 @@ pub fn generate_crypto_random_string(n: usize, runes: &[u8]) -> String {
 /// candidate-id = "candidate" ":" foundation
 /// foundation   = 1*32ice-char
 /// ice-char     = ALPHA / DIGIT / "+" / "/"
-pub fn generate_cand_id() -> String {
+pub(crate) fn generate_cand_id() -> String {
     format!(
         "candidate:{}",
         generate_crypto_random_string(32, RUNES_CANDIDATE_ID_FOUNDATION)
@@ -37,12 +35,12 @@ pub fn generate_cand_id() -> String {
 
 /// Generates ICE pwd.
 /// This internally uses `generate_crypto_random_string`.
-pub fn generate_pwd() -> String {
+pub(crate) fn generate_pwd() -> String {
     generate_crypto_random_string(LEN_PWD, RUNES_ALPHA)
 }
 
 /// ICE user fragment.
 /// This internally uses `generate_crypto_random_string`.
-pub fn generate_ufrag() -> String {
+pub(crate) fn generate_ufrag() -> String {
     generate_crypto_random_string(LEN_UFRAG, RUNES_ALPHA)
 }

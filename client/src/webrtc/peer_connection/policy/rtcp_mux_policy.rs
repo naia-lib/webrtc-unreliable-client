@@ -4,7 +4,7 @@ use std::fmt;
 /// RTCPMuxPolicy affects what ICE candidates are gathered to support
 /// non-multiplexed RTCP.
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCRtcpMuxPolicy {
+pub(crate) enum RTCRtcpMuxPolicy {
     Unspecified = 0,
 
     /// RTCPMuxPolicyNegotiate indicates to gather ICE candidates for both
@@ -48,36 +48,5 @@ impl fmt::Display for RTCRtcpMuxPolicy {
             RTCRtcpMuxPolicy::Unspecified => crate::webrtc::UNSPECIFIED_STR,
         };
         write!(f, "{}", s)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_rtcp_mux_policy() {
-        let tests = vec![
-            ("Unspecified", RTCRtcpMuxPolicy::Unspecified),
-            ("negotiate", RTCRtcpMuxPolicy::Negotiate),
-            ("require", RTCRtcpMuxPolicy::Require),
-        ];
-
-        for (policy_string, expected_policy) in tests {
-            assert_eq!(expected_policy, RTCRtcpMuxPolicy::from(policy_string));
-        }
-    }
-
-    #[test]
-    fn test_rtcp_mux_policy_string() {
-        let tests = vec![
-            (RTCRtcpMuxPolicy::Unspecified, "Unspecified"),
-            (RTCRtcpMuxPolicy::Negotiate, "negotiate"),
-            (RTCRtcpMuxPolicy::Require, "require"),
-        ];
-
-        for (policy, expected_string) in tests {
-            assert_eq!(expected_string, policy.to_string());
-        }
     }
 }

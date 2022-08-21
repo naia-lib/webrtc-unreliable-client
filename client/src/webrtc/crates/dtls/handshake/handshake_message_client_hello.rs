@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_client_hello_test;
 
 use super::handshake_random::*;
 use super::*;
@@ -20,14 +18,14 @@ initiative in order to renegotiate the security parameters in an
 existing connection.
 */
 #[derive(Clone)]
-pub struct HandshakeMessageClientHello {
-    pub version: ProtocolVersion,
-    pub random: HandshakeRandom,
-    pub cookie: Vec<u8>,
+pub(crate) struct HandshakeMessageClientHello {
+    pub(crate) version: ProtocolVersion,
+    pub(crate) random: HandshakeRandom,
+    pub(crate) cookie: Vec<u8>,
 
-    pub cipher_suites: Vec<CipherSuiteId>,
-    pub compression_methods: CompressionMethods,
-    pub extensions: Vec<Extension>,
+    pub(crate) cipher_suites: Vec<CipherSuiteId>,
+    pub(crate) compression_methods: CompressionMethods,
+    pub(crate) extensions: Vec<Extension>,
 }
 
 impl PartialEq for HandshakeMessageClientHello {
@@ -71,11 +69,11 @@ impl fmt::Debug for HandshakeMessageClientHello {
 }
 
 impl HandshakeMessageClientHello {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::ClientHello
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         let mut len = 0;
 
         len += 2; // version.major+minor
@@ -98,7 +96,7 @@ impl HandshakeMessageClientHello {
         len
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         if self.cookie.len() > 255 {
             return Err(Error::ErrCookieTooLong);
         }
@@ -134,7 +132,7 @@ impl HandshakeMessageClientHello {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
         let random = HandshakeRandom::unmarshal(reader)?;

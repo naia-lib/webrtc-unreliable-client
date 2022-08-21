@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_client_key_exchange_test;
 
 use super::*;
 
@@ -7,17 +5,17 @@ use byteorder::{BigEndian, WriteBytesExt};
 use std::io::{Read, Write};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct HandshakeMessageClientKeyExchange {
-    pub identity_hint: Vec<u8>,
-    pub public_key: Vec<u8>,
+pub(crate) struct HandshakeMessageClientKeyExchange {
+    pub(crate) identity_hint: Vec<u8>,
+    pub(crate) public_key: Vec<u8>,
 }
 
 impl HandshakeMessageClientKeyExchange {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::ClientKeyExchange
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         if !self.public_key.is_empty() {
             1 + self.public_key.len()
         } else {
@@ -25,7 +23,7 @@ impl HandshakeMessageClientKeyExchange {
         }
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         if (!self.identity_hint.is_empty() && !self.public_key.is_empty())
             || (self.identity_hint.is_empty() && self.public_key.is_empty())
         {
@@ -43,7 +41,7 @@ impl HandshakeMessageClientKeyExchange {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let mut data = vec![];
         reader.read_to_end(&mut data)?;
 

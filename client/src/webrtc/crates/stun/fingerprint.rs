@@ -8,7 +8,7 @@ use crc::{Crc, CRC_32_ISO_HDLC};
 // FingerprintAttr represents FINGERPRINT attribute.
 //
 // RFC 5389 Section 15.5
-pub struct FingerprintAttr;
+pub(crate) struct FingerprintAttr;
 
 // FINGERPRINT is shorthand for FingerprintAttr.
 //
@@ -16,10 +16,10 @@ pub struct FingerprintAttr;
 //
 //  m := New()
 //  FINGERPRINT.add_to(m)
-pub const FINGERPRINT: FingerprintAttr = FingerprintAttr {};
+pub(crate) const FINGERPRINT: FingerprintAttr = FingerprintAttr {};
 
-pub const FINGERPRINT_XOR_VALUE: u32 = 0x5354554e;
-pub const FINGERPRINT_SIZE: usize = 4; // 32 bit
+pub(crate) const FINGERPRINT_XOR_VALUE: u32 = 0x5354554e;
+pub(crate) const FINGERPRINT_SIZE: usize = 4; // 32 bit
 
 // FingerprintValue returns CRC-32 of b XOR-ed by 0x5354554e.
 //
@@ -27,7 +27,7 @@ pub const FINGERPRINT_SIZE: usize = 4; // 32 bit
 // up to (but excluding) the FINGERPRINT attribute itself, XOR'ed with
 // the 32-bit value 0x5354554e (the XOR helps in cases where an
 // application packet is also using CRC-32 in it).
-pub fn fingerprint_value(b: &[u8]) -> u32 {
+pub(crate) fn fingerprint_value(b: &[u8]) -> u32 {
     let checksum = Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(b);
     checksum ^ FINGERPRINT_XOR_VALUE // XOR
 }

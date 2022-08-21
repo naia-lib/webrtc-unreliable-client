@@ -27,7 +27,7 @@ type Aes256Cbc = Cbc<Aes256, DtlsPadding>;
 
 // State needed to handle encrypted input/output
 #[derive(Clone)]
-pub struct CryptoCbc {
+pub(crate) struct CryptoCbc {
     local_key: Vec<u8>,
     remote_key: Vec<u8>,
     write_mac: Vec<u8>,
@@ -38,7 +38,7 @@ impl CryptoCbc {
     const BLOCK_SIZE: usize = 16;
     const MAC_SIZE: usize = 20;
 
-    pub fn new(
+    pub(crate) fn new(
         local_key: &[u8],
         local_mac: &[u8],
         remote_key: &[u8],
@@ -53,7 +53,7 @@ impl CryptoCbc {
         })
     }
 
-    pub fn encrypt(&self, pkt_rlh: &RecordLayerHeader, raw: &[u8]) -> Result<Vec<u8>> {
+    pub(crate) fn encrypt(&self, pkt_rlh: &RecordLayerHeader, raw: &[u8]) -> Result<Vec<u8>> {
         let mut payload = raw[RECORD_LAYER_HEADER_SIZE..].to_vec();
         let raw = &raw[..RECORD_LAYER_HEADER_SIZE];
 
@@ -89,7 +89,7 @@ impl CryptoCbc {
         Ok(r)
     }
 
-    pub fn decrypt(&self, r: &[u8]) -> Result<Vec<u8>> {
+    pub(crate) fn decrypt(&self, r: &[u8]) -> Result<Vec<u8>> {
         let mut reader = Cursor::new(r);
         let h = RecordLayerHeader::unmarshal(&mut reader)?;
         if h.content_type == ContentType::ChangeCipherSpec {

@@ -13,11 +13,11 @@ use std::fmt;
 ///|                      Cumulative TSN Ack                       |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone)]
-pub struct ChunkShutdown {
-    pub cumulative_tsn_ack: u32,
+pub(crate) struct ChunkShutdown {
+    pub(crate) cumulative_tsn_ack: u32,
 }
 
-pub const CUMULATIVE_TSN_ACK_LENGTH: usize = 4;
+pub(crate) const CUMULATIVE_TSN_ACK_LENGTH: usize = 4;
 
 /// makes chunkShutdown printable
 impl fmt::Display for ChunkShutdown {

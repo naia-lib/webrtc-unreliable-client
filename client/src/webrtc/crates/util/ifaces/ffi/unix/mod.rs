@@ -4,12 +4,12 @@ use std::{net, ptr};
 
 use std::net::IpAddr;
 
-use crate::webrtc::util::ifaces::{Interface, Kind, NextHop};
+use crate::webrtc::util::ifaces::{Interface, Kind};
 
 // https://github.com/Exa-Networks/exaproxy/blob/master/lib/exaproxy/util/interfaces.py
 
-pub const AF_INET: i32 = nix::sys::socket::AddressFamily::Inet as i32;
-pub const AF_INET6: i32 = nix::sys::socket::AddressFamily::Inet6 as i32;
+pub(crate) const AF_INET: i32 = nix::sys::socket::AddressFamily::Inet as i32;
+pub(crate) const AF_INET6: i32 = nix::sys::socket::AddressFamily::Inet6 as i32;
 
 #[cfg(any(
     target_os = "macos",
@@ -18,7 +18,7 @@ pub const AF_INET6: i32 = nix::sys::socket::AddressFamily::Inet6 as i32;
     target_os = "openbsd",
     target_os = "netbsd"
 ))]
-pub const AF_LINK: i32 = nix::libc::AF_LINK;
+pub(crate) const AF_LINK: i32 = nix::libc::AF_LINK;
 #[cfg(any(
     target_os = "macos",
     target_os = "ios",
@@ -26,16 +26,16 @@ pub const AF_LINK: i32 = nix::libc::AF_LINK;
     target_os = "openbsd",
     target_os = "netbsd"
 ))]
-pub const AF_PACKET: i32 = -1;
+pub(crate) const AF_PACKET: i32 = -1;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub const AF_LINK: i32 = -1;
+pub(crate) const AF_LINK: i32 = -1;
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub const AF_PACKET: i32 = nix::libc::AF_PACKET;
+pub(crate) const AF_PACKET: i32 = nix::libc::AF_PACKET;
 
 #[allow(dead_code, non_camel_case_types)]
 #[repr(C)]
-pub enum SiocgifFlags {
+pub(crate) enum SiocgifFlags {
     Up = 0x1,           /* Interface is up.  */
     Broadcast = 0x2,    /* Broadcast address valid.  */
     Debug = 0x4,        /* Turn on debugging.  */
@@ -60,37 +60,29 @@ pub enum SiocgifFlags {
 }
 
 #[repr(C)]
-pub struct union_ifa_ifu {
-    pub data: *mut ::std::os::raw::c_void,
-}
-impl union_ifa_ifu {
-    pub fn ifu_broadaddr(&mut self) -> *mut nix::sys::socket::sockaddr {
-        self.data as *mut nix::sys::socket::sockaddr
-    }
-    pub fn ifu_dstaddr(&mut self) -> *mut nix::sys::socket::sockaddr {
-        self.data as *mut nix::sys::socket::sockaddr
-    }
+pub(crate) struct union_ifa_ifu {
+    pub(crate) data: *mut ::std::os::raw::c_void,
 }
 
 #[repr(C)]
-pub struct ifaddrs {
-    pub ifa_next: *mut ifaddrs,
-    pub ifa_name: *mut ::std::os::raw::c_char,
-    pub ifa_flags: ::std::os::raw::c_uint,
-    pub ifa_addr: *mut nix::sys::socket::sockaddr,
-    pub ifa_netmask: *mut nix::sys::socket::sockaddr,
-    pub ifa_ifu: union_ifa_ifu,
-    pub ifa_data: *mut ::std::os::raw::c_void,
+pub(crate) struct ifaddrs {
+    pub(crate) ifa_next: *mut ifaddrs,
+    pub(crate) ifa_name: *mut ::std::os::raw::c_char,
+    pub(crate) ifa_flags: ::std::os::raw::c_uint,
+    pub(crate) ifa_addr: *mut nix::sys::socket::sockaddr,
+    pub(crate) ifa_netmask: *mut nix::sys::socket::sockaddr,
+    pub(crate) ifa_ifu: union_ifa_ifu,
+    pub(crate) ifa_data: *mut ::std::os::raw::c_void,
 }
 
 extern "C" {
-    pub fn getifaddrs(ifap: *mut *mut ifaddrs) -> ::std::os::raw::c_int;
-    pub fn freeifaddrs(ifa: *mut ifaddrs) -> ::std::os::raw::c_void;
+    pub(crate) fn getifaddrs(ifap: *mut *mut ifaddrs) -> ::std::os::raw::c_int;
+    pub(crate) fn freeifaddrs(ifa: *mut ifaddrs) -> ::std::os::raw::c_void;
     #[allow(dead_code)]
-    pub fn if_nametoindex(ifname: *const ::std::os::raw::c_char) -> ::std::os::raw::c_uint;
+    pub(crate) fn if_nametoindex(ifname: *const ::std::os::raw::c_char) -> ::std::os::raw::c_uint;
 }
 
-pub fn nix_socketaddr_to_sockaddr(sa: *mut nix::sys::socket::sockaddr) -> Option<net::SocketAddr> {
+pub(crate) fn nix_socketaddr_to_sockaddr(sa: *mut nix::sys::socket::sockaddr) -> Option<net::SocketAddr> {
     if sa.is_null() {
         return None;
     }
@@ -134,7 +126,7 @@ pub fn nix_socketaddr_to_sockaddr(sa: *mut nix::sys::socket::sockaddr) -> Option
 }
 
 /// Query the local system for all interface addresses.
-pub fn ifaces() -> Result<Vec<Interface>, Error> {
+pub(crate) fn ifaces() -> Result<Vec<Interface>, Error> {
     let mut ifaddrs_ptr: *mut ifaddrs = ptr::null_mut();
     match unsafe { getifaddrs(&mut ifaddrs_ptr as *mut _) } {
         0 => {
@@ -169,17 +161,6 @@ pub fn ifaces() -> Result<Vec<Interface>, Error> {
 
                 let addr = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_addr });
                 let mask = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_netmask });
-                let hop = unsafe {
-                    if (*item).ifa_flags & SiocgifFlags::Broadcast as ::std::os::raw::c_uint
-                        == SiocgifFlags::Broadcast as ::std::os::raw::c_uint
-                    {
-                        nix_socketaddr_to_sockaddr((*item).ifa_ifu.ifu_broadaddr())
-                            .map(NextHop::Broadcast)
-                    } else {
-                        nix_socketaddr_to_sockaddr((*item).ifa_ifu.ifu_dstaddr())
-                            .map(NextHop::Destination)
-                    }
-                };
 
                 if let Some(kind) = kind {
                     match kind {
@@ -187,10 +168,8 @@ pub fn ifaces() -> Result<Vec<Interface>, Error> {
                         _ => {
                             ret.push(Interface {
                                 name: name.unwrap(),
-                                kind,
                                 addr,
                                 mask,
-                                hop,
                             });
                         }
                     };

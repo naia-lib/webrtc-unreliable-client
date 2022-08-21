@@ -3,7 +3,7 @@ use std::fmt;
 /// ICECredentialType indicates the type of credentials used to connect to
 /// an ICE server.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceCredentialType {
+pub(crate) enum RTCIceCredentialType {
     Unspecified,
 
     /// ICECredential::Password describes username and password based
@@ -41,37 +41,6 @@ impl fmt::Display for RTCIceCredentialType {
             RTCIceCredentialType::Password => write!(f, "{}", ICE_CREDENTIAL_TYPE_PASSWORD_STR),
             RTCIceCredentialType::Oauth => write!(f, "{}", ICE_CREDENTIAL_TYPE_OAUTH_STR),
             _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_credential_type() {
-        let tests = vec![
-            ("Unspecified", RTCIceCredentialType::Unspecified),
-            ("password", RTCIceCredentialType::Password),
-            ("oauth", RTCIceCredentialType::Oauth),
-        ];
-
-        for (ct_str, expected_ct) in tests {
-            assert_eq!(expected_ct, RTCIceCredentialType::from(ct_str));
-        }
-    }
-
-    #[test]
-    fn test_ice_credential_type_string() {
-        let tests = vec![
-            (RTCIceCredentialType::Unspecified, "Unspecified"),
-            (RTCIceCredentialType::Password, "password"),
-            (RTCIceCredentialType::Oauth, "oauth"),
-        ];
-
-        for (ct, expected_string) in tests {
-            assert_eq!(expected_string, ct.to_string());
         }
     }
 }

@@ -1,21 +1,9 @@
-#[cfg(test)]
-mod candidate_pair_test;
-#[cfg(test)]
-mod candidate_relay_test;
-#[cfg(test)]
-mod candidate_server_reflexive_test;
-#[cfg(test)]
-mod candidate_test;
 
-pub mod candidate_base;
-pub mod candidate_host;
-pub mod candidate_peer_reflexive;
-pub mod candidate_relay;
-pub mod candidate_server_reflexive;
+pub(crate) mod candidate_base;
+pub(crate) mod candidate_host;
 
 use crate::webrtc::ice::error::Result;
 use crate::webrtc::ice::network_type::*;
-use crate::webrtc::ice::tcp_type::*;
 use candidate_base::*;
 
 use async_trait::async_trait;
@@ -26,15 +14,15 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::{broadcast, Mutex};
 
-pub const RECEIVE_MTU: usize = 8192;
-pub const DEFAULT_LOCAL_PREFERENCE: u16 = 65535;
+pub(crate) const RECEIVE_MTU: usize = 8192;
+pub(crate) const DEFAULT_LOCAL_PREFERENCE: u16 = 65535;
 
 /// Indicates that the candidate is used for RTP.
-pub const COMPONENT_RTP: u16 = 1;
+pub(crate) const COMPONENT_RTP: u16 = 1;
 
 /// Candidate represents an ICE candidate
 #[async_trait]
-pub trait Candidate: fmt::Display {
+pub(crate) trait Candidate: fmt::Display {
     /// An arbitrary string used in the freezing algorithm to
     /// group similar candidates.  It is the same for two candidates that
     /// have the same type, base IP address, protocol (UDP, TCP, etc.),
@@ -67,7 +55,6 @@ pub trait Candidate: fmt::Display {
     fn related_address(&self) -> Option<CandidateRelatedAddress>;
 
     fn candidate_type(&self) -> CandidateType;
-    fn tcp_type(&self) -> TcpType;
 
     fn marshal(&self) -> String;
 
@@ -85,12 +72,9 @@ pub trait Candidate: fmt::Display {
 
 /// Represents the type of candidate `CandidateType` enum.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum CandidateType {
+pub(crate) enum CandidateType {
     Unspecified,
     Host,
-    ServerReflexive,
-    PeerReflexive,
-    Relay,
 }
 
 // String makes CandidateType printable
@@ -98,9 +82,6 @@ impl fmt::Display for CandidateType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {
             CandidateType::Host => "host",
-            CandidateType::ServerReflexive => "srflx",
-            CandidateType::PeerReflexive => "prflx",
-            CandidateType::Relay => "relay",
             CandidateType::Unspecified => "Unknown candidate type",
         };
         write!(f, "{}", s)
@@ -121,36 +102,19 @@ impl CandidateType {
     /// for server reflexive candidates, 110 for peer reflexive candidates,
     /// and 0 for relayed candidates.
     #[must_use]
-    pub const fn preference(self) -> u16 {
+    pub(crate) const fn preference(self) -> u16 {
         match self {
             Self::Host => 126,
-            Self::PeerReflexive => 110,
-            Self::ServerReflexive => 100,
-            Self::Relay | CandidateType::Unspecified => 0,
+            CandidateType::Unspecified => 0,
         }
     }
-}
-
-pub fn contains_candidate_type(
-    candidate_type: CandidateType,
-    candidate_type_list: &[CandidateType],
-) -> bool {
-    if candidate_type_list.is_empty() {
-        return false;
-    }
-    for ct in candidate_type_list {
-        if *ct == candidate_type {
-            return true;
-        }
-    }
-    false
 }
 
 /// Convey transport addresses related to the candidate, useful for diagnostics and other purposes.
 #[derive(PartialEq, Debug, Clone)]
-pub struct CandidateRelatedAddress {
-    pub address: String,
-    pub port: u16,
+pub(crate) struct CandidateRelatedAddress {
+    pub(crate) address: String,
+    pub(crate) port: u16,
 }
 
 // String makes CandidateRelatedAddress printable
@@ -162,7 +126,7 @@ impl fmt::Display for CandidateRelatedAddress {
 
 /// Represent the ICE candidate pair state.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum CandidatePairState {
+pub(crate) enum CandidatePairState {
     Unspecified = 0,
 
     /// Means a check has not been performed for this pair.
@@ -212,13 +176,13 @@ impl fmt::Display for CandidatePairState {
 }
 
 /// Represents a combination of a local and remote candidate.
-pub struct CandidatePair {
-    pub ice_role_controlling: AtomicBool,
-    pub remote: Arc<dyn Candidate + Send + Sync>,
-    pub local: Arc<dyn Candidate + Send + Sync>,
-    pub binding_request_count: AtomicU16,
-    pub state: AtomicU8, // convert it to CandidatePairState,
-    pub nominated: AtomicBool,
+pub(crate) struct CandidatePair {
+    pub(crate) ice_role_controlling: AtomicBool,
+    pub(crate) remote: Arc<dyn Candidate + Send + Sync>,
+    pub(crate) local: Arc<dyn Candidate + Send + Sync>,
+    pub(crate) binding_request_count: AtomicU16,
+    pub(crate) state: AtomicU8, // convert it to CandidatePairState,
+    pub(crate) nominated: AtomicBool,
 }
 
 impl Default for CandidatePair {
@@ -270,7 +234,7 @@ impl PartialEq for CandidatePair {
 
 impl CandidatePair {
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         local: Arc<dyn Candidate + Send + Sync>,
         remote: Arc<dyn Candidate + Send + Sync>,
         controlling: bool,
@@ -290,7 +254,7 @@ impl CandidatePair {
     /// agent.  Let D be the priority for the candidate provided by the
     /// controlled agent.
     /// pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)
-    pub fn priority(&self) -> u64 {
+    pub(crate) fn priority(&self) -> u64 {
         let (g, d) = if self.ice_role_controlling.load(Ordering::SeqCst) {
             (self.local.priority(), self.remote.priority())
         } else {
@@ -304,7 +268,7 @@ impl CandidatePair {
             + if g > d { 1 } else { 0 }
     }
 
-    pub async fn write(&self, b: &[u8]) -> Result<usize> {
+    pub(crate) async fn write(&self, b: &[u8]) -> Result<usize> {
         self.local.write_to(b, &*self.remote).await
     }
 }

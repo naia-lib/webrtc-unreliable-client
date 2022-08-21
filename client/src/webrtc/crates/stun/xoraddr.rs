@@ -51,7 +51,7 @@ fn safe_xor_bytes(dst: &mut [u8], a: &[u8], b: &[u8]) -> usize {
 
 /// xor_bytes xors the bytes in a and b. The destination is assumed to have enough
 /// space. Returns the number of bytes xor'd.
-pub fn xor_bytes(dst: &mut [u8], a: &[u8], b: &[u8]) -> usize {
+pub(crate) fn xor_bytes(dst: &mut [u8], a: &[u8], b: &[u8]) -> usize {
     //TODO: if supportsUnaligned {
     //	return fastXORBytes(dst, a, b)
     //}
@@ -61,9 +61,9 @@ pub fn xor_bytes(dst: &mut [u8], a: &[u8], b: &[u8]) -> usize {
 /// XORMappedAddress implements XOR-MAPPED-ADDRESS attribute.
 ///
 /// RFC 5389 Section 15.2
-pub struct XorMappedAddress {
-    pub ip: IpAddr,
-    pub port: u16,
+pub(crate) struct XorMappedAddress {
+    pub(crate) ip: IpAddr,
+    pub(crate) port: u16,
 }
 
 impl Default for XorMappedAddress {
@@ -109,7 +109,7 @@ impl Getter for XorMappedAddress {
 
 impl XorMappedAddress {
     /// add_to_as adds XOR-MAPPED-ADDRESS value to m as t attribute.
-    pub fn add_to_as(&self, m: &mut Message, t: AttrType) -> Result<()> {
+    pub(crate) fn add_to_as(&self, m: &mut Message, t: AttrType) -> Result<()> {
         let (family, ip_len, ip) = match self.ip {
             IpAddr::V4(ipv4) => (FAMILY_IPV4, IPV4LEN, ipv4.octets().to_vec()),
             IpAddr::V6(ipv6) => (FAMILY_IPV6, IPV6LEN, ipv6.octets().to_vec()),
@@ -129,7 +129,7 @@ impl XorMappedAddress {
 
     /// get_from_as decodes XOR-MAPPED-ADDRESS attribute value in message
     /// getting it as for t type.
-    pub fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<()> {
+    pub(crate) fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<()> {
         let v = m.get(t)?;
         if v.len() <= 4 {
             return Err(Error::ErrUnexpectedEof);

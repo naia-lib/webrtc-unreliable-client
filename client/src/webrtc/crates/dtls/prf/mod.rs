@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod prf_test;
 
 use std::convert::TryInto;
 use std::fmt;
@@ -18,21 +16,21 @@ use crate::webrtc::dtls::curve::named_curve::*;
 use crate::webrtc::dtls::error::*;
 use crate::webrtc::dtls::record_layer::record_layer_header::ProtocolVersion;
 
-pub const PRF_MASTER_SECRET_LABEL: &str = "master secret";
-pub const PRF_EXTENDED_MASTER_SECRET_LABEL: &str = "extended master secret";
-pub const PRF_KEY_EXPANSION_LABEL: &str = "key expansion";
-pub const PRF_VERIFY_DATA_CLIENT_LABEL: &str = "client finished";
-pub const PRF_VERIFY_DATA_SERVER_LABEL: &str = "server finished";
+pub(crate) const PRF_MASTER_SECRET_LABEL: &str = "master secret";
+pub(crate) const PRF_EXTENDED_MASTER_SECRET_LABEL: &str = "extended master secret";
+pub(crate) const PRF_KEY_EXPANSION_LABEL: &str = "key expansion";
+pub(crate) const PRF_VERIFY_DATA_CLIENT_LABEL: &str = "client finished";
+pub(crate) const PRF_VERIFY_DATA_SERVER_LABEL: &str = "server finished";
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct EncryptionKeys {
-    pub master_secret: Vec<u8>,
-    pub client_mac_key: Vec<u8>,
-    pub server_mac_key: Vec<u8>,
-    pub client_write_key: Vec<u8>,
-    pub server_write_key: Vec<u8>,
-    pub client_write_iv: Vec<u8>,
-    pub server_write_iv: Vec<u8>,
+pub(crate) struct EncryptionKeys {
+    pub(crate) master_secret: Vec<u8>,
+    pub(crate) client_mac_key: Vec<u8>,
+    pub(crate) server_mac_key: Vec<u8>,
+    pub(crate) client_write_key: Vec<u8>,
+    pub(crate) server_write_key: Vec<u8>,
+    pub(crate) client_write_iv: Vec<u8>,
+    pub(crate) server_write_iv: Vec<u8>,
 }
 
 impl fmt::Display for EncryptionKeys {
@@ -56,7 +54,7 @@ impl fmt::Display for EncryptionKeys {
 // uint16 with the value N, and the PSK itself.
 //
 // https://tools.ietf.org/html/rfc4279#section-2
-pub fn prf_psk_pre_master_secret(psk: &[u8]) -> Vec<u8> {
+pub(crate) fn prf_psk_pre_master_secret(psk: &[u8]) -> Vec<u8> {
     let psk_len = psk.len();
 
     let mut out = vec![0u8; 2 + psk_len + 2];
@@ -69,7 +67,7 @@ pub fn prf_psk_pre_master_secret(psk: &[u8]) -> Vec<u8> {
     out
 }
 
-pub fn prf_pre_master_secret(
+pub(crate) fn prf_pre_master_secret(
     public_key: &[u8],
     private_key: &NamedCurvePrivateKey,
     curve: NamedCurve,
@@ -145,7 +143,7 @@ fn hmac_sha(h: CipherSuiteHash, key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
     Ok(code_bytes.to_vec())
 }
 
-pub fn prf_p_hash(
+pub(crate) fn prf_p_hash(
     secret: &[u8],
     seed: &[u8],
     requested_length: usize,
@@ -168,7 +166,7 @@ pub fn prf_p_hash(
     Ok(out[..requested_length].to_vec())
 }
 
-pub fn prf_extended_master_secret(
+pub(crate) fn prf_extended_master_secret(
     pre_master_secret: &[u8],
     session_hash: &[u8],
     h: CipherSuiteHash,
@@ -178,7 +176,7 @@ pub fn prf_extended_master_secret(
     prf_p_hash(pre_master_secret, &seed, 48, h)
 }
 
-pub fn prf_master_secret(
+pub(crate) fn prf_master_secret(
     pre_master_secret: &[u8],
     client_random: &[u8],
     server_random: &[u8],
@@ -190,7 +188,7 @@ pub fn prf_master_secret(
     prf_p_hash(pre_master_secret, &seed, 48, h)
 }
 
-pub fn prf_encryption_keys(
+pub(crate) fn prf_encryption_keys(
     master_secret: &[u8],
     client_random: &[u8],
     server_random: &[u8],
@@ -239,7 +237,7 @@ pub fn prf_encryption_keys(
     })
 }
 
-pub fn prf_verify_data(
+pub(crate) fn prf_verify_data(
     master_secret: &[u8],
     handshake_bodies: &[u8],
     label: &str,
@@ -256,7 +254,7 @@ pub fn prf_verify_data(
     prf_p_hash(master_secret, &seed, 12, h)
 }
 
-pub fn prf_verify_data_client(
+pub(crate) fn prf_verify_data_client(
     master_secret: &[u8],
     handshake_bodies: &[u8],
     h: CipherSuiteHash,
@@ -269,7 +267,7 @@ pub fn prf_verify_data_client(
     )
 }
 
-pub fn prf_verify_data_server(
+pub(crate) fn prf_verify_data_server(
     master_secret: &[u8],
     handshake_bodies: &[u8],
     h: CipherSuiteHash,
@@ -283,7 +281,7 @@ pub fn prf_verify_data_server(
 }
 
 // compute the MAC using HMAC-SHA1
-pub fn prf_mac(
+pub(crate) fn prf_mac(
     epoch: u16,
     sequence_number: u64,
     content_type: ContentType,

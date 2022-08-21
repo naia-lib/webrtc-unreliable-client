@@ -3,7 +3,7 @@ use std::fmt;
 
 /// ICETransportState represents the current state of the ICE transport.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceTransportState {
+pub(crate) enum RTCIceTransportState {
     Unspecified,
 
     /// ICETransportStateNew indicates the ICETransport is waiting
@@ -121,54 +121,6 @@ impl From<ConnectionState> for RTCIceTransportState {
             ConnectionState::Disconnected => RTCIceTransportState::Disconnected,
             ConnectionState::Closed => RTCIceTransportState::Closed,
             _ => RTCIceTransportState::Unspecified,
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_ice_transport_state_string() {
-        let tests = vec![
-            (RTCIceTransportState::Unspecified, "Unspecified"),
-            (RTCIceTransportState::New, "new"),
-            (RTCIceTransportState::Checking, "checking"),
-            (RTCIceTransportState::Connected, "connected"),
-            (RTCIceTransportState::Completed, "completed"),
-            (RTCIceTransportState::Failed, "failed"),
-            (RTCIceTransportState::Disconnected, "disconnected"),
-            (RTCIceTransportState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string());
-        }
-    }
-
-    #[test]
-    fn test_ice_transport_state_convert() {
-        let tests = vec![
-            (
-                RTCIceTransportState::Unspecified,
-                ConnectionState::Unspecified,
-            ),
-            (RTCIceTransportState::New, ConnectionState::New),
-            (RTCIceTransportState::Checking, ConnectionState::Checking),
-            (RTCIceTransportState::Connected, ConnectionState::Connected),
-            (RTCIceTransportState::Completed, ConnectionState::Completed),
-            (RTCIceTransportState::Failed, ConnectionState::Failed),
-            (
-                RTCIceTransportState::Disconnected,
-                ConnectionState::Disconnected,
-            ),
-            (RTCIceTransportState::Closed, ConnectionState::Closed),
-        ];
-
-        for (native, ice_state) in tests {
-            assert_eq!(native.to_ice(), ice_state);
-            assert_eq!(native, RTCIceTransportState::from(ice_state));
         }
     }
 }

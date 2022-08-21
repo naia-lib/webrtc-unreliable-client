@@ -1,11 +1,11 @@
-pub mod cipher_suite_aes_128_ccm;
-pub mod cipher_suite_aes_128_gcm_sha256;
-pub mod cipher_suite_aes_256_cbc_sha;
-pub mod cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm;
-pub mod cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm8;
-pub mod cipher_suite_tls_psk_with_aes_128_ccm;
-pub mod cipher_suite_tls_psk_with_aes_128_ccm8;
-pub mod cipher_suite_tls_psk_with_aes_128_gcm_sha256;
+pub(crate) mod cipher_suite_aes_128_ccm;
+pub(crate) mod cipher_suite_aes_128_gcm_sha256;
+pub(crate) mod cipher_suite_aes_256_cbc_sha;
+pub(crate) mod cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm;
+pub(crate) mod cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm8;
+pub(crate) mod cipher_suite_tls_psk_with_aes_128_ccm;
+pub(crate) mod cipher_suite_tls_psk_with_aes_128_ccm8;
+pub(crate) mod cipher_suite_tls_psk_with_aes_128_gcm_sha256;
 
 use std::fmt;
 use std::marker::{Send, Sync};
@@ -26,7 +26,7 @@ use cipher_suite_tls_psk_with_aes_128_gcm_sha256::*;
 // Supported Cipher Suites
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum CipherSuiteId {
+pub(crate) enum CipherSuiteId {
     // AES-128-CCM
     Tls_Ecdhe_Ecdsa_With_Aes_128_Ccm = 0xc0ac,
     Tls_Ecdhe_Ecdsa_With_Aes_128_Ccm_8 = 0xc0ae,
@@ -102,19 +102,19 @@ impl From<u16> for CipherSuiteId {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum CipherSuiteHash {
+pub(crate) enum CipherSuiteHash {
     Sha256,
 }
 
 impl CipherSuiteHash {
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         match *self {
             CipherSuiteHash::Sha256 => 32,
         }
     }
 }
 
-pub trait CipherSuite {
+pub(crate) trait CipherSuite {
     fn to_string(&self) -> String;
     fn id(&self) -> CipherSuiteId;
     fn certificate_type(&self) -> ClientCertificateType;
@@ -138,7 +138,7 @@ pub trait CipherSuite {
 // Taken from https://www.iana.org/assignments/tls-parameters/tls-parameters.xml
 // A cipher_suite is a specific combination of key agreement, cipher and MAC
 // function.
-pub fn cipher_suite_for_id(id: CipherSuiteId) -> Result<Box<dyn CipherSuite + Send + Sync>> {
+pub(crate) fn cipher_suite_for_id(id: CipherSuiteId) -> Result<Box<dyn CipherSuite + Send + Sync>> {
     match id {
         CipherSuiteId::Tls_Ecdhe_Ecdsa_With_Aes_128_Ccm => {
             Ok(Box::new(new_cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm()))
@@ -172,7 +172,7 @@ pub fn cipher_suite_for_id(id: CipherSuiteId) -> Result<Box<dyn CipherSuite + Se
 }
 
 // CipherSuites we support in order of preference
-pub fn default_cipher_suites() -> Vec<Box<dyn CipherSuite + Send + Sync>> {
+pub(crate) fn default_cipher_suites() -> Vec<Box<dyn CipherSuite + Send + Sync>> {
     vec![
         Box::new(CipherSuiteAes128GcmSha256::new(false)),
         Box::new(CipherSuiteAes256CbcSha::new(false)),
@@ -189,7 +189,7 @@ fn cipher_suites_for_ids(ids: &[CipherSuiteId]) -> Result<Vec<Box<dyn CipherSuit
     Ok(cipher_suites)
 }
 
-pub fn parse_cipher_suites(
+pub(crate) fn parse_cipher_suites(
     user_selected_suites: &[CipherSuiteId],
     exclude_psk: bool,
     exclude_non_psk: bool,

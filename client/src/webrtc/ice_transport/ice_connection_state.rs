@@ -2,7 +2,7 @@ use std::fmt;
 
 /// RTCIceConnectionState indicates signaling state of the ICE Connection.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceConnectionState {
+pub(crate) enum RTCIceConnectionState {
     Unspecified,
 
     /// ICEConnectionStateNew indicates that any of the ICETransports are
@@ -98,51 +98,5 @@ impl fmt::Display for RTCIceConnectionState {
             RTCIceConnectionState::Unspecified => crate::webrtc::UNSPECIFIED_STR,
         };
         write!(f, "{}", s)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_connection_state() {
-        let tests = vec![
-            (crate::webrtc::UNSPECIFIED_STR, RTCIceConnectionState::Unspecified),
-            ("new", RTCIceConnectionState::New),
-            ("checking", RTCIceConnectionState::Checking),
-            ("connected", RTCIceConnectionState::Connected),
-            ("completed", RTCIceConnectionState::Completed),
-            ("disconnected", RTCIceConnectionState::Disconnected),
-            ("failed", RTCIceConnectionState::Failed),
-            ("closed", RTCIceConnectionState::Closed),
-        ];
-
-        for (state_string, expected_state) in tests {
-            assert_eq!(
-                expected_state,
-                RTCIceConnectionState::from(state_string),
-                "testCase: {}",
-                expected_state,
-            );
-        }
-    }
-
-    #[test]
-    fn test_ice_connection_state_string() {
-        let tests = vec![
-            (RTCIceConnectionState::Unspecified, crate::webrtc::UNSPECIFIED_STR),
-            (RTCIceConnectionState::New, "new"),
-            (RTCIceConnectionState::Checking, "checking"),
-            (RTCIceConnectionState::Connected, "connected"),
-            (RTCIceConnectionState::Completed, "completed"),
-            (RTCIceConnectionState::Disconnected, "disconnected"),
-            (RTCIceConnectionState::Failed, "failed"),
-            (RTCIceConnectionState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string(),)
-        }
     }
 }

@@ -1,43 +1,31 @@
-use crate::webrtc::api::setting_engine::SettingEngine;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::*;
-use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
 use crate::webrtc::ice_transport::ice_gatherer_state::RTCIceGathererState;
 use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
-use crate::webrtc::ice_transport::ice_server::RTCIceServer;
-use crate::webrtc::peer_connection::policy::ice_transport_policy::RTCIceTransportPolicy;
 
 use crate::webrtc::ice::agent::Agent;
 use crate::webrtc::ice::candidate::{Candidate, CandidateType};
-use crate::webrtc::ice::url::Url;
 
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
-use crate::webrtc::ice::udp_network::UDPNetwork;
 use tokio::sync::Mutex;
+use crate::webrtc::ice::mdns::MulticastDnsMode;
 
-/// ICEGatherOptions provides options relating to the gathering of ICE candidates.
-#[derive(Default, Debug, Clone)]
-pub struct RTCIceGatherOptions {
-    pub ice_servers: Vec<RTCIceServer>,
-    pub ice_gather_policy: RTCIceTransportPolicy,
-}
-
-pub type OnLocalCandidateHdlrFn = Box<
+pub(crate) type OnLocalCandidateHdlrFn = Box<
     dyn (FnMut(Option<RTCIceCandidate>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
 >;
 
-pub type OnICEGathererStateChangeHdlrFn = Box<
+pub(crate) type OnICEGathererStateChangeHdlrFn = Box<
     dyn (FnMut(RTCIceGathererState) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
 >;
 
-pub type OnGatheringCompleteHdlrFn =
+pub(crate) type OnGatheringCompleteHdlrFn =
     Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
 /// ICEGatherer gathers local host, server reflexive and relay
@@ -45,37 +33,27 @@ pub type OnGatheringCompleteHdlrFn =
 /// Connectivity Establishment (ICE) parameters which can be
 /// exchanged in signaling.
 #[derive(Default)]
-pub struct RTCIceGatherer {
-    pub validated_servers: Vec<Url>,
-    pub gather_policy: RTCIceTransportPolicy,
-    pub setting_engine: Arc<SettingEngine>,
+pub(crate) struct RTCIceGatherer {
 
-    pub state: Arc<AtomicU8>, //ICEGathererState,
-    pub agent: Mutex<Option<Arc<crate::webrtc::ice::agent::Agent>>>,
+    pub(crate) state: Arc<AtomicU8>, //ICEGathererState,
+    pub(crate) agent: Mutex<Option<Arc<crate::webrtc::ice::agent::Agent>>>,
 
-    pub on_local_candidate_handler: Arc<Mutex<Option<OnLocalCandidateHdlrFn>>>,
-    pub on_state_change_handler: Arc<Mutex<Option<OnICEGathererStateChangeHdlrFn>>>,
+    pub(crate) on_local_candidate_handler: Arc<Mutex<Option<OnLocalCandidateHdlrFn>>>,
+    pub(crate) on_state_change_handler: Arc<Mutex<Option<OnICEGathererStateChangeHdlrFn>>>,
 
     // Used for gathering_complete_promise
-    pub on_gathering_complete_handler: Arc<Mutex<Option<OnGatheringCompleteHdlrFn>>>,
+    pub(crate) on_gathering_complete_handler: Arc<Mutex<Option<OnGatheringCompleteHdlrFn>>>,
 }
 
 impl RTCIceGatherer {
-    pub fn new(
-        validated_servers: Vec<Url>,
-        gather_policy: RTCIceTransportPolicy,
-        setting_engine: Arc<SettingEngine>,
-    ) -> Self {
+    pub(crate) fn new() -> Self {
         RTCIceGatherer {
-            gather_policy,
-            validated_servers,
-            setting_engine,
             state: Arc::new(AtomicU8::new(RTCIceGathererState::New as u8)),
             ..Default::default()
         }
     }
 
-    pub async fn create_agent(&self) -> Result<()> {
+    pub(crate) async fn create_agent(&self) -> Result<()> {
         {
             let agent = self.agent.lock().await;
             if agent.is_some() || self.state() != RTCIceGathererState::New {
@@ -83,20 +61,7 @@ impl RTCIceGatherer {
             }
         }
 
-        let mut candidate_types = vec![];
-        if self.setting_engine.candidates.ice_lite {
-            candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Host);
-        } else if self.gather_policy == RTCIceTransportPolicy::Relay {
-            candidate_types.push(crate::webrtc::ice::candidate::CandidateType::Relay);
-        }
-
-        let nat_1to1_cand_type = match self.setting_engine.candidates.nat_1to1_ip_candidate_type {
-            RTCIceCandidateType::Host => CandidateType::Host,
-            RTCIceCandidateType::Srflx => CandidateType::ServerReflexive,
-            _ => CandidateType::Unspecified,
-        };
-
-        let mut mdns_mode = self.setting_engine.candidates.multicast_dns_mode;
+        let mut mdns_mode = MulticastDnsMode::Unspecified;
         if mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::Disabled
             && mdns_mode != crate::webrtc::ice::mdns::MulticastDnsMode::QueryAndGather
         {
@@ -105,40 +70,24 @@ impl RTCIceGatherer {
         }
 
         let mut config = crate::webrtc::ice::agent::agent_config::AgentConfig {
-            udp_network: UDPNetwork::Ephemeral(Default::default()),
-            lite: self.setting_engine.candidates.ice_lite,
-            urls: self.validated_servers.clone(),
+            lite: false,
             disconnected_timeout: None,
             failed_timeout: None,
             keepalive_interval: None,
-            candidate_types,
+            candidate_types: Vec::new(),
             host_acceptance_min_wait:  None,
             srflx_acceptance_min_wait: None,
             prflx_acceptance_min_wait: None,
             relay_acceptance_min_wait: None,
-            interface_filter: self.setting_engine.candidates.interface_filter.clone(),
-            nat_1to1_ips: self.setting_engine.candidates.nat_1to1_ips.clone(),
-            nat_1to1_ip_candidate_type: nat_1to1_cand_type,
+            nat_1to1_ip_candidate_type: CandidateType::Unspecified,
             net: None,
             multicast_dns_mode: mdns_mode,
-            multicast_dns_host_name: self
-                .setting_engine
-                .candidates
-                .multicast_dns_host_name
-                .clone(),
-            local_ufrag: self.setting_engine.candidates.username_fragment.clone(),
-            local_pwd: self.setting_engine.candidates.password.clone(),
             //TODO: TCPMux:                 self.setting_engine.iceTCPMux,
             //TODO: ProxyDialer:            self.setting_engine.iceProxyDialer,
             ..Default::default()
         };
 
-        let requested_network_types = if self.setting_engine.candidates.ice_network_types.is_empty()
-        {
-            crate::webrtc::ice::network_type::supported_network_types()
-        } else {
-            self.setting_engine.candidates.ice_network_types.clone()
-        };
+        let requested_network_types = crate::webrtc::ice::network_type::supported_network_types();
 
         config.network_types.extend(requested_network_types);
 
@@ -151,7 +100,7 @@ impl RTCIceGatherer {
     }
 
     /// Gather ICE candidates.
-    pub async fn gather(&self) -> Result<()> {
+    pub(crate) async fn gather(&self) -> Result<()> {
         self.create_agent().await?;
         self.set_state(RTCIceGathererState::Gathering).await;
 
@@ -220,7 +169,7 @@ impl RTCIceGatherer {
     }
 
     /// get_local_parameters returns the ICE parameters of the ICEGatherer.
-    pub async fn get_local_parameters(&self) -> Result<RTCIceParameters> {
+    pub(crate) async fn get_local_parameters(&self) -> Result<RTCIceParameters> {
         self.create_agent().await?;
 
         let (frag, pwd) = if let Some(agent) = self.get_agent().await {
@@ -232,12 +181,11 @@ impl RTCIceGatherer {
         Ok(RTCIceParameters {
             username_fragment: frag,
             password: pwd,
-            ice_lite: false,
         })
     }
 
     /// get_local_candidates returns the sequence of valid local candidates associated with the ICEGatherer.
-    pub async fn get_local_candidates(&self) -> Result<Vec<RTCIceCandidate>> {
+    pub(crate) async fn get_local_candidates(&self) -> Result<Vec<RTCIceCandidate>> {
         self.create_agent().await?;
 
         let ice_candidates = if let Some(agent) = self.get_agent().await {
@@ -250,11 +198,11 @@ impl RTCIceGatherer {
     }
 
     /// State indicates the current state of the ICE gatherer.
-    pub fn state(&self) -> RTCIceGathererState {
+    pub(crate) fn state(&self) -> RTCIceGathererState {
         self.state.load(Ordering::SeqCst).into()
     }
 
-    pub async fn set_state(&self, s: RTCIceGathererState) {
+    pub(crate) async fn set_state(&self, s: RTCIceGathererState) {
         self.state.store(s as u8, Ordering::SeqCst);
 
         let mut on_state_change_handler = self.on_state_change_handler.lock().await;
@@ -263,104 +211,8 @@ impl RTCIceGatherer {
         }
     }
 
-    pub async fn get_agent(&self) -> Option<Arc<Agent>> {
+    pub(crate) async fn get_agent(&self) -> Option<Arc<Agent>> {
         let agent = self.agent.lock().await;
         agent.clone()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::api::APIBuilder;
-    use crate::ice_transport::ice_gatherer::RTCIceGatherOptions;
-    use crate::ice_transport::ice_server::RTCIceServer;
-    use tokio::sync::mpsc;
-
-    #[tokio::test]
-    async fn test_new_ice_gatherer_success() -> Result<()> {
-        let opts = RTCIceGatherOptions {
-            ice_servers: vec![RTCIceServer {
-                urls: vec!["stun:stun.l.google.com:19302".to_owned()],
-                ..Default::default()
-            }],
-            ..Default::default()
-        };
-
-        let gatherer = APIBuilder::new().build().new_ice_gatherer(opts)?;
-
-        assert_eq!(
-            gatherer.state(),
-            RTCIceGathererState::New,
-            "Expected gathering state new"
-        );
-
-        let (gather_finished_tx, mut gather_finished_rx) = mpsc::channel::<()>(1);
-        let gather_finished_tx = Arc::new(Mutex::new(Some(gather_finished_tx)));
-        gatherer
-            .on_local_candidate(Box::new(move |c: Option<RTCIceCandidate>| {
-                let gather_finished_tx_clone = Arc::clone(&gather_finished_tx);
-                Box::pin(async move {
-                    if c.is_none() {
-                        let mut tx = gather_finished_tx_clone.lock().await;
-                        tx.take();
-                    }
-                })
-            }))
-            .await;
-
-        gatherer.gather().await?;
-
-        let _ = gather_finished_rx.recv().await;
-
-        let params = gatherer.get_local_parameters().await?;
-
-        assert!(
-            !params.username_fragment.is_empty() && !params.password.is_empty(),
-            "Empty local username or password frag"
-        );
-
-        let candidates = gatherer.get_local_candidates().await?;
-
-        assert!(!candidates.is_empty(), "No candidates gathered");
-
-        gatherer.close().await?;
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_ice_gather_mdns_candidate_gathering() -> Result<()> {
-        let mut s = SettingEngine::default();
-        s.set_ice_multicast_dns_mode(crate::webrtc::ice::mdns::MulticastDnsMode::QueryAndGather);
-
-        let gatherer = APIBuilder::new()
-            .with_setting_engine(s)
-            .build()
-            .new_ice_gatherer(RTCIceGatherOptions::default())?;
-
-        let (done_tx, mut done_rx) = mpsc::channel::<()>(1);
-        let done_tx = Arc::new(Mutex::new(Some(done_tx)));
-        gatherer
-            .on_local_candidate(Box::new(move |c: Option<RTCIceCandidate>| {
-                let done_tx_clone = Arc::clone(&done_tx);
-                Box::pin(async move {
-                    if let Some(c) = c {
-                        if c.address.ends_with(".local") {
-                            let mut tx = done_tx_clone.lock().await;
-                            tx.take();
-                        }
-                    }
-                })
-            }))
-            .await;
-
-        gatherer.gather().await?;
-
-        let _ = done_rx.recv().await;
-
-        gatherer.close().await?;
-
-        Ok(())
     }
 }

@@ -4,20 +4,20 @@ use crate::webrtc::dtls::curve::named_curve::*;
 
 // https://tools.ietf.org/html/rfc8422#section-5.1.1
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExtensionSupportedEllipticCurves {
-    pub elliptic_curves: Vec<NamedCurve>,
+pub(crate) struct ExtensionSupportedEllipticCurves {
+    pub(crate) elliptic_curves: Vec<NamedCurve>,
 }
 
 impl ExtensionSupportedEllipticCurves {
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         ExtensionValue::SupportedEllipticCurves
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         2 + 2 + self.elliptic_curves.len() * 2
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u16::<BigEndian>(2 + 2 * self.elliptic_curves.len() as u16)?;
         writer.write_u16::<BigEndian>(2 * self.elliptic_curves.len() as u16)?;
         for v in &self.elliptic_curves {
@@ -27,7 +27,7 @@ impl ExtensionSupportedEllipticCurves {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let _ = reader.read_u16::<BigEndian>()?;
 
         let group_count = reader.read_u16::<BigEndian>()? as usize / 2;

@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ClientCertificateType {
+pub(crate) enum ClientCertificateType {
     RsaSign = 1,
     EcdsaSign = 64,
     Unsupported,

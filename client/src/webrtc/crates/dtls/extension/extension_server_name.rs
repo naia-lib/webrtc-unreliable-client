@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod extension_server_name_test;
 
 use super::*;
 
@@ -9,21 +7,21 @@ use std::io::{Read, Write};
 const EXTENSION_SERVER_NAME_TYPE_DNSHOST_NAME: u8 = 0;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExtensionServerName {
-    pub server_name: String,
+pub(crate) struct ExtensionServerName {
+    pub(crate) server_name: String,
 }
 
 impl ExtensionServerName {
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         ExtensionValue::ServerName
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         //TODO: check how to do cryptobyte?
         2 + 2 + 1 + 2 + self.server_name.as_bytes().len()
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         //TODO: check how to do cryptobyte?
         writer.write_u16::<BigEndian>(2 + 1 + 2 + self.server_name.len() as u16)?;
         writer.write_u16::<BigEndian>(1 + 2 + self.server_name.len() as u16)?;
@@ -34,7 +32,7 @@ impl ExtensionServerName {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         //TODO: check how to do cryptobyte?
         let _ = reader.read_u16::<BigEndian>()? as usize;
         let _ = reader.read_u16::<BigEndian>()? as usize;

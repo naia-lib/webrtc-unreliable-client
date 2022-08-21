@@ -3,7 +3,7 @@ use std::fmt;
 
 /// ConnectionRole indicates which of the end points should initiate the connection establishment
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum ConnectionRole {
+pub(crate) enum ConnectionRole {
     Unspecified,
 
     /// ConnectionRoleActive indicates the endpoint will initiate an outgoing connection.
@@ -71,20 +71,20 @@ impl From<&str> for ConnectionRole {
 /// Session ID is recommended to be constructed by generating a 64-bit
 /// quantity with the highest bit set to zero and the remaining 63-bits
 /// being cryptographically random.
-pub fn new_session_id() -> u64 {
+pub(crate) fn new_session_id() -> u64 {
     let c = u64::MAX ^ (1u64 << 63);
     rand::random::<u64>() & c
 }
 
 // Codec represents a codec
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Codec {
-    pub payload_type: u8,
-    pub name: String,
-    pub clock_rate: u32,
-    pub encoding_parameters: String,
-    pub fmtp: String,
-    pub rtcp_feedback: Vec<String>,
+pub(crate) struct Codec {
+    pub(crate) payload_type: u8,
+    pub(crate) name: String,
+    pub(crate) clock_rate: u32,
+    pub(crate) encoding_parameters: String,
+    pub(crate) fmtp: String,
+    pub(crate) rtcp_feedback: Vec<String>,
 }
 
 impl fmt::Display for Codec {

@@ -53,11 +53,11 @@ use std::fmt;
 ///|                           Checksum                            |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug)]
-pub struct Packet {
-    pub source_port: u16,
-    pub destination_port: u16,
-    pub verification_tag: u32,
-    pub chunks: Vec<Box<dyn Chunk + Send + Sync>>,
+pub(crate) struct Packet {
+    pub(crate) source_port: u16,
+    pub(crate) destination_port: u16,
+    pub(crate) verification_tag: u32,
+    pub(crate) chunks: Vec<Box<dyn Chunk + Send + Sync>>,
 }
 
 /// makes packet printable
@@ -78,10 +78,10 @@ impl fmt::Display for Packet {
     }
 }
 
-pub const PACKET_HEADER_SIZE: usize = 12;
+pub(crate) const PACKET_HEADER_SIZE: usize = 12;
 
 impl Packet {
-    pub fn unmarshal(raw: &Bytes) -> Result<Self> {
+    pub(crate) fn unmarshal(raw: &Bytes) -> Result<Self> {
         if raw.len() < PACKET_HEADER_SIZE {
             return Err(Error::ErrPacketRawTooSmall);
         }
@@ -142,7 +142,7 @@ impl Packet {
         })
     }
 
-    pub fn marshal_to(&self, writer: &mut BytesMut) -> Result<usize> {
+    pub(crate) fn marshal_to(&self, writer: &mut BytesMut) -> Result<usize> {
         // Populate static headers
         // 8-12 is Checksum which will be populated when packet is complete
         writer.put_u16(self.source_port);
@@ -177,7 +177,7 @@ impl Packet {
         Ok(writer.len())
     }
 
-    pub fn marshal(&self) -> Result<Bytes> {
+    pub(crate) fn marshal(&self) -> Result<Bytes> {
         let mut buf = BytesMut::with_capacity(PACKET_HEADER_SIZE);
         self.marshal_to(&mut buf)?;
         Ok(buf.freeze())
@@ -185,7 +185,7 @@ impl Packet {
 }
 
 impl Packet {
-    pub fn check_packet(&self) -> Result<()> {
+    pub(crate) fn check_packet(&self) -> Result<()> {
         // All packets must adhere to these rules
 
         // This is the SCTP sender's port number.  It can be used by the
@@ -227,74 +227,4 @@ impl Packet {
 
         Ok(())
     }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_packet_unmarshal() -> Result<()> {
-        let result = Packet::unmarshal(&Bytes::new());
-        assert!(
-            result.is_err(),
-            "Unmarshal should fail when a packet is too small to be SCTP"
-        );
-
-        let header_only = Bytes::from_static(&[
-            0x13, 0x88, 0x13, 0x88, 0x00, 0x00, 0x00, 0x00, 0x06, 0xa9, 0x00, 0xe1,
-        ]);
-        let pkt = Packet::unmarshal(&header_only)?;
-        //assert!(result.o(), "Unmarshal failed for SCTP packet with no chunks: {}", result);
-        assert_eq!(
-            pkt.source_port, 5000,
-            "Unmarshal passed for SCTP packet, but got incorrect source port exp: {} act: {}",
-            5000, pkt.source_port
-        );
-        assert_eq!(
-            pkt.destination_port, 5000,
-            "Unmarshal passed for SCTP packet, but got incorrect destination port exp: {} act: {}",
-            5000, pkt.destination_port
-        );
-        assert_eq!(
-            pkt.verification_tag, 0,
-            "Unmarshal passed for SCTP packet, but got incorrect verification tag exp: {} act: {}",
-            0, pkt.verification_tag
-        );
-
-        let raw_chunk = Bytes::from_static(&[
-            0x13, 0x88, 0x13, 0x88, 0x00, 0x00, 0x00, 0x00, 0x81, 0x46, 0x9d, 0xfc, 0x01, 0x00,
-            0x00, 0x56, 0x55, 0xb9, 0x64, 0xa5, 0x00, 0x02, 0x00, 0x00, 0x04, 0x00, 0x08, 0x00,
-            0xe8, 0x6d, 0x10, 0x30, 0xc0, 0x00, 0x00, 0x04, 0x80, 0x08, 0x00, 0x09, 0xc0, 0x0f,
-            0xc1, 0x80, 0x82, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x24, 0x9f, 0xeb, 0xbb, 0x5c,
-            0x50, 0xc9, 0xbf, 0x75, 0x9c, 0xb1, 0x2c, 0x57, 0x4f, 0xa4, 0x5a, 0x51, 0xba, 0x60,
-            0x17, 0x78, 0x27, 0x94, 0x5c, 0x31, 0xe6, 0x5d, 0x5b, 0x09, 0x47, 0xe2, 0x22, 0x06,
-            0x80, 0x04, 0x00, 0x06, 0x00, 0x01, 0x00, 0x00, 0x80, 0x03, 0x00, 0x06, 0x80, 0xc1,
-            0x00, 0x00,
-        ]);
-
-        Packet::unmarshal(&raw_chunk)?;
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_packet_marshal() -> Result<()> {
-        let header_only = Bytes::from_static(&[
-            0x13, 0x88, 0x13, 0x88, 0x00, 0x00, 0x00, 0x00, 0x06, 0xa9, 0x00, 0xe1,
-        ]);
-        let pkt = Packet::unmarshal(&header_only)?;
-        let header_only_marshaled = pkt.marshal()?;
-        assert_eq!(header_only, header_only_marshaled, "Unmarshal/Marshaled header only packet did not match \nheaderOnly: {:?} \nheader_only_marshaled {:?}", header_only, header_only_marshaled);
-
-        Ok(())
-    }
-
-    /*fn BenchmarkPacketGenerateChecksum(b *testing.B) {
-        var data [1024]byte
-
-        for i := 0; i < b.N; i++ {
-            _ = generatePacketChecksum(data[:])
-        }
-    }*/
 }

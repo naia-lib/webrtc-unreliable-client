@@ -14,7 +14,7 @@ use std::fmt;
 use std::sync::atomic::Ordering;
 
 #[derive(Debug, PartialEq)]
-pub struct Flight0;
+pub(crate) struct Flight0;
 
 impl fmt::Display for Flight0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

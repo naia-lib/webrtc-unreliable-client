@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod signature_hash_algorithm_test;
 
 use std::fmt;
 
@@ -10,7 +8,7 @@ use crate::webrtc::dtls::error::*;
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-18
 // Supported hash hash algorithms
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum HashAlgorithm {
+pub(crate) enum HashAlgorithm {
     Md2 = 0,  // Blacklisted
     Md5 = 1,  // Blacklisted
     Sha1 = 2, // Blacklisted
@@ -56,7 +54,7 @@ impl fmt::Display for HashAlgorithm {
 
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-16
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum SignatureAlgorithm {
+pub(crate) enum SignatureAlgorithm {
     Rsa = 1,
     Ecdsa = 3,
     Ed25519 = 7,
@@ -75,14 +73,14 @@ impl From<u8> for SignatureAlgorithm {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct SignatureHashAlgorithm {
-    pub hash: HashAlgorithm,
-    pub signature: SignatureAlgorithm,
+pub(crate) struct SignatureHashAlgorithm {
+    pub(crate) hash: HashAlgorithm,
+    pub(crate) signature: SignatureAlgorithm,
 }
 
 impl SignatureHashAlgorithm {
     // is_compatible checks that given private key is compatible with the signature scheme.
-    pub fn is_compatible(&self, private_key: &CryptoPrivateKey) -> bool {
+    pub(crate) fn is_compatible(&self, private_key: &CryptoPrivateKey) -> bool {
         match &private_key.kind {
             CryptoPrivateKeyKind::Ed25519(_) => self.signature == SignatureAlgorithm::Ed25519,
             CryptoPrivateKeyKind::Ecdsa256(_) => self.signature == SignatureAlgorithm::Ecdsa,
@@ -91,7 +89,7 @@ impl SignatureHashAlgorithm {
     }
 }
 
-pub fn default_signature_schemes() -> Vec<SignatureHashAlgorithm> {
+pub(crate) fn default_signature_schemes() -> Vec<SignatureHashAlgorithm> {
     vec![
         SignatureHashAlgorithm {
             hash: HashAlgorithm::Sha256,
@@ -125,7 +123,7 @@ pub fn default_signature_schemes() -> Vec<SignatureHashAlgorithm> {
 }
 
 // select Signature Scheme returns most preferred and compatible scheme.
-pub fn select_signature_scheme(
+pub(crate) fn select_signature_scheme(
     sigs: &[SignatureHashAlgorithm],
     private_key: &CryptoPrivateKey,
 ) -> Result<SignatureHashAlgorithm> {
@@ -141,6 +139,6 @@ pub fn select_signature_scheme(
 // SignatureScheme identifies a signature algorithm supported by TLS. See
 // RFC 8446, Section 4.2.3.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum SignatureScheme {
+pub(crate) enum SignatureScheme {
 
 }

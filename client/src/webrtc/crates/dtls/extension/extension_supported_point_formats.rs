@@ -2,26 +2,26 @@
 use super::*;
 
 
-pub type EllipticCurvePointFormat = u8;
+pub(crate) type EllipticCurvePointFormat = u8;
 
-pub const ELLIPTIC_CURVE_POINT_FORMAT_UNCOMPRESSED: EllipticCurvePointFormat = 0;
+pub(crate) const ELLIPTIC_CURVE_POINT_FORMAT_UNCOMPRESSED: EllipticCurvePointFormat = 0;
 
 // https://tools.ietf.org/html/rfc4492#section-5.1.2
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExtensionSupportedPointFormats {
-    pub point_formats: Vec<EllipticCurvePointFormat>,
+pub(crate) struct ExtensionSupportedPointFormats {
+    pub(crate) point_formats: Vec<EllipticCurvePointFormat>,
 }
 
 impl ExtensionSupportedPointFormats {
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         ExtensionValue::SupportedPointFormats
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         2 + 1 + self.point_formats.len()
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u16::<BigEndian>(1 + self.point_formats.len() as u16)?;
         writer.write_u8(self.point_formats.len() as u8)?;
         for v in &self.point_formats {
@@ -31,7 +31,7 @@ impl ExtensionSupportedPointFormats {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let _ = reader.read_u16::<BigEndian>()?;
 
         let point_format_count = reader.read_u8()? as usize;

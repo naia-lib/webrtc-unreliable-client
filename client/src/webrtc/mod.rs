@@ -1,28 +1,24 @@
 mod crates;
 
 // re-export sub-crates
-pub use crates::data;
-pub use crates::sctp;
-pub use crates::util;
-pub use crates::dtls;
-pub use crates::ice;
-pub use crates::turn;
-pub use crates::sdp;
-pub use crates::stun;
-pub use crates::mdns;
+pub(crate) use data_channel::internal;
+pub(crate) use crates::sctp;
+pub(crate) use crates::util;
+pub(crate) use crates::dtls;
+pub(crate) use crates::ice;
+pub(crate) use crates::sdp;
+pub(crate) use crates::stun;
 
-pub mod api;
-pub mod data_channel;
-pub mod dtls_transport;
-pub mod error;
-pub mod ice_transport;
-pub mod mux;
-pub mod peer_connection;
-pub mod sctp_transport;
+pub(crate) mod api;
+pub(crate) mod data_channel;
+pub(crate) mod dtls_transport;
+pub(crate) mod error;
+pub(crate) mod ice_transport;
+pub(crate) mod mux;
+pub(crate) mod peer_connection;
+pub(crate) mod sctp_transport;
 
-pub use error::Error;
-
-pub const UNSPECIFIED_STR: &str = "Unspecified";
+pub(crate) const UNSPECIFIED_STR: &str = "Unspecified";
 
 /// Equal to UDP MTU
-pub const RECEIVE_MTU: usize = 1460;
+pub(crate) const RECEIVE_MTU: usize = 1460;

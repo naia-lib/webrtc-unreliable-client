@@ -4,7 +4,7 @@ use crate::webrtc::dtls::crypto::crypto_ccm::{CryptoCcm, CryptoCcmTagLen};
 use crate::webrtc::dtls::prf::*;
 
 #[derive(Clone)]
-pub struct CipherSuiteAes128Ccm {
+pub(crate) struct CipherSuiteAes128Ccm {
     ccm: Option<CryptoCcm>,
     client_certificate_type: ClientCertificateType,
     id: CipherSuiteId,
@@ -17,7 +17,7 @@ impl CipherSuiteAes128Ccm {
     const PRF_KEY_LEN: usize = 16;
     const PRF_IV_LEN: usize = 4;
 
-    pub fn new(
+    pub(crate) fn new(
         client_certificate_type: ClientCertificateType,
         id: CipherSuiteId,
         psk: bool,

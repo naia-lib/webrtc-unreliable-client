@@ -3,8 +3,8 @@ use super::{param_header::*, param_type::*, *};
 use bytes::{Bytes, BytesMut};
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamHeartbeatInfo {
-    pub heartbeat_information: Bytes,
+pub(crate) struct ParamHeartbeatInfo {
+    pub(crate) heartbeat_information: Bytes,
 }
 
 impl fmt::Display for ParamHeartbeatInfo {

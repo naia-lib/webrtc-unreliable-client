@@ -8,9 +8,9 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::webrtc::{
-    peer_connection::{sdp::session_description::RTCSessionDescription, RTCPeerConnection},
-    data::data_channel::DataChannel
+    peer_connection::{RTCPeerConnection, sdp::session_description::RTCSessionDescription}
 };
+use crate::webrtc::data_channel::internal::data_channel::DataChannel;
 
 use super::addr_cell::AddrCell;
 
@@ -30,9 +30,12 @@ impl Socket {
         // create a new RTCPeerConnection
         let peer_connection = RTCPeerConnection::new().await;
 
+        let label = "data";
+        let protocol = "";
+
         // create a datachannel with label 'data'
         let data_channel = peer_connection
-            .create_data_channel()
+            .create_data_channel(label, protocol)
             .await
             .expect("cannot create data channel");
 
@@ -167,20 +170,17 @@ async fn write_loop(
 }
 
 #[derive(Clone)]
-pub struct SessionAnswer {
-    pub sdp: String,
-    pub type_str: String,
+pub(crate) struct SessionAnswer {
+    pub(crate) sdp: String,
 }
 
-pub struct SessionCandidate {
-    pub candidate: String,
-    pub sdp_m_line_index: u16,
-    pub sdp_mid: String,
+pub(crate) struct SessionCandidate {
+    pub(crate) candidate: String,
 }
 
-pub struct JsSessionResponse {
-    pub answer: SessionAnswer,
-    pub candidate: SessionCandidate,
+pub(crate) struct JsSessionResponse {
+    pub(crate) answer: SessionAnswer,
+    pub(crate) candidate: SessionCandidate,
 }
 
 fn get_session_response(input: &str) -> JsSessionResponse {
@@ -189,24 +189,13 @@ fn get_session_response(input: &str) -> JsSessionResponse {
     let sdp_opt: Option<&String> = json_obj["answer"]["sdp"].get();
     let sdp: String = sdp_opt.unwrap().clone();
 
-    let type_str_opt: Option<&String> = json_obj["answer"]["type"].get();
-    let type_str: String = type_str_opt.unwrap().clone();
-
     let candidate_opt: Option<&String> = json_obj["candidate"]["candidate"].get();
     let candidate: String = candidate_opt.unwrap().clone();
 
-    let sdp_m_line_index_opt: Option<&f64> = json_obj["candidate"]["sdpMLineIndex"].get();
-    let sdp_m_line_index: u16 = *(sdp_m_line_index_opt.unwrap()) as u16;
-
-    let sdp_mid_opt: Option<&String> = json_obj["candidate"]["sdpMid"].get();
-    let sdp_mid: String = sdp_mid_opt.unwrap().clone();
-
     JsSessionResponse {
-        answer: SessionAnswer { sdp, type_str },
+        answer: SessionAnswer { sdp },
         candidate: SessionCandidate {
-            candidate,
-            sdp_m_line_index,
-            sdp_mid,
+            candidate
         },
     }
 }

@@ -1,10 +1,10 @@
-pub mod flight0;
-pub mod flight1;
-pub mod flight2;
-pub mod flight3;
-pub mod flight4;
-pub mod flight5;
-pub mod flight6;
+pub(crate) mod flight0;
+pub(crate) mod flight1;
+pub(crate) mod flight2;
+pub(crate) mod flight3;
+pub(crate) mod flight4;
+pub(crate) mod flight5;
+pub(crate) mod flight6;
 
 use crate::webrtc::dtls::alert::*;
 use crate::webrtc::dtls::error::Error;
@@ -51,13 +51,13 @@ use tokio::sync::mpsc;
 */
 
 #[derive(Clone, Debug)]
-pub struct Packet {
-    pub record: RecordLayer,
-    pub should_encrypt: bool,
+pub(crate) struct Packet {
+    pub(crate) record: RecordLayer,
+    pub(crate) should_encrypt: bool,
 }
 
 #[async_trait]
-pub trait Flight: fmt::Display + fmt::Debug {
+pub(crate) trait Flight: fmt::Display + fmt::Debug {
     fn is_last_send_flight(&self) -> bool {
         false
     }

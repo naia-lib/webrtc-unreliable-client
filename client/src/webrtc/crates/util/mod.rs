@@ -2,15 +2,15 @@ use async_trait::async_trait;
 use thiserror::Error;
 use std::io;
 
-pub mod fixed_big_int;
-pub mod replay_detector;
+pub(crate) mod fixed_big_int;
+pub(crate) mod replay_detector;
 
 /// KeyingMaterialExporter to extract keying material.
 ///
 /// This trait sits here to avoid getting a direct dependency between
 /// the dtls and srtp crates.
 #[async_trait]
-pub trait KeyingMaterialExporter {
+pub(crate) trait KeyingMaterialExporter {
     async fn export_keying_material(
         &self,
         label: &str,
@@ -26,7 +26,7 @@ pub trait KeyingMaterialExporter {
 /// srtp and dtls.
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum KeyingMaterialExporterError {
+pub(crate) enum KeyingMaterialExporterError {
     #[error("tls handshake is in progress")]
     HandshakeInProgress,
     #[error("context is not supported for export_keying_material")]
@@ -47,16 +47,13 @@ impl From<io::Error> for KeyingMaterialExporterError {
     }
 }
 
-pub mod buffer;
-pub mod conn;
-pub mod ifaces;
-pub mod vnet;
-pub mod marshal;
-pub use crate::webrtc::util::buffer::Buffer;
-pub use crate::webrtc::util::conn::Conn;
-pub use crate::webrtc::util::marshal::{exact_size_buf::ExactSizeBuf, Marshal, MarshalSize, Unmarshal};
+pub(crate) mod buffer;
+pub(crate) mod conn;
+pub(crate) mod ifaces;
+pub(crate) mod vnet;
+pub(crate) mod marshal;
+pub(crate) use crate::webrtc::util::buffer::Buffer;
+pub(crate) use crate::webrtc::util::conn::Conn;
 
 mod error;
-pub use error::{Error, Result};
-
-pub mod sync;
+pub(crate) use error::Error;

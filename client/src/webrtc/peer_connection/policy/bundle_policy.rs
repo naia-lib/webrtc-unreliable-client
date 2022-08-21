@@ -6,7 +6,7 @@ use std::fmt;
 /// remote endpoint is bundle-aware, all media tracks and data channels are
 /// bundled onto the same transport.
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCBundlePolicy {
+pub(crate) enum RTCBundlePolicy {
     Unspecified = 0,
 
     /// BundlePolicyBalanced indicates to gather ICE candidates for each
@@ -60,39 +60,6 @@ impl fmt::Display for RTCBundlePolicy {
             RTCBundlePolicy::MaxCompat => write!(f, "{}", BUNDLE_POLICY_MAX_COMPAT_STR),
             RTCBundlePolicy::MaxBundle => write!(f, "{}", BUNDLE_POLICY_MAX_BUNDLE_STR),
             _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_bundle_policy() {
-        let tests = vec![
-            ("Unspecified", RTCBundlePolicy::Unspecified),
-            ("balanced", RTCBundlePolicy::Balanced),
-            ("max-compat", RTCBundlePolicy::MaxCompat),
-            ("max-bundle", RTCBundlePolicy::MaxBundle),
-        ];
-
-        for (policy_string, expected_policy) in tests {
-            assert_eq!(expected_policy, RTCBundlePolicy::from(policy_string));
-        }
-    }
-
-    #[test]
-    fn test_bundle_policy_string() {
-        let tests = vec![
-            (RTCBundlePolicy::Unspecified, "Unspecified"),
-            (RTCBundlePolicy::Balanced, "balanced"),
-            (RTCBundlePolicy::MaxCompat, "max-compat"),
-            (RTCBundlePolicy::MaxBundle, "max-bundle"),
-        ];
-
-        for (policy, expected_string) in tests {
-            assert_eq!(expected_string, policy.to_string());
         }
     }
 }

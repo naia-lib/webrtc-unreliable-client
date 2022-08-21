@@ -2,68 +2,55 @@ use crate::webrtc::peer_connection::*;
 use std::sync::atomic::AtomicIsize;
 use tokio::sync::Notify;
 
-pub struct PeerConnectionInternal {
+pub(crate) struct PeerConnectionInternal {
     /// a value containing the last known greater mid value
     /// we internally generate mids as numbers. Needed since JSEP
     /// requires that when reusing a media section a new unique mid
     /// should be defined (see JSEP 3.4.1).
-    pub greater_mid: AtomicIsize,
-    pub sdp_origin: Mutex<crate::webrtc::sdp::description::session::Origin>,
-    pub last_offer: Mutex<String>,
-    pub last_answer: Mutex<String>,
+    pub(crate) greater_mid: AtomicIsize,
+    pub(crate) sdp_origin: Mutex<crate::webrtc::sdp::description::session::Origin>,
+    pub(crate) last_offer: Mutex<String>,
+    pub(crate) last_answer: Mutex<String>,
 
-    pub on_negotiation_needed_handler: Arc<Mutex<Option<OnNegotiationNeededHdlrFn>>>,
-    pub is_closed: Arc<AtomicBool>,
+    pub(crate) is_closed: Arc<AtomicBool>,
 
     /// ops is an operations queue which will ensure the enqueued actions are
     /// executed in order. It is used for asynchronously, but serially processing
     /// remote and local descriptions
-    pub ops: Arc<Operations>,
-    pub negotiation_needed_state: Arc<AtomicU8>,
-    pub is_negotiation_needed: Arc<AtomicBool>,
-    pub signaling_state: Arc<AtomicU8>,
+    pub(crate) ops: Arc<Operations>,
+    pub(crate) signaling_state: Arc<AtomicU8>,
 
-    pub ice_transport: Arc<RTCIceTransport>,
-    pub dtls_transport: Arc<RTCDtlsTransport>,
-    pub on_peer_connection_state_change_handler:
+    pub(crate) ice_transport: Arc<RTCIceTransport>,
+    pub(crate) dtls_transport: Arc<RTCDtlsTransport>,
+    pub(crate) on_peer_connection_state_change_handler:
         Arc<Mutex<Option<OnPeerConnectionStateChangeHdlrFn>>>,
-    pub peer_connection_state: Arc<AtomicU8>,
-    pub ice_connection_state: Arc<AtomicU8>,
+    pub(crate) peer_connection_state: Arc<AtomicU8>,
+    pub(crate) ice_connection_state: Arc<AtomicU8>,
 
-    pub sctp_transport: Arc<RTCSctpTransport>,
+    pub(crate) sctp_transport: Arc<RTCSctpTransport>,
 
-    pub on_signaling_state_change_handler: Arc<Mutex<Option<OnSignalingStateChangeHdlrFn>>>,
-    pub on_ice_connection_state_change_handler:
+    pub(crate) on_signaling_state_change_handler: Arc<Mutex<Option<OnSignalingStateChangeHdlrFn>>>,
+    pub(crate) on_ice_connection_state_change_handler:
         Arc<Mutex<Option<OnICEConnectionStateChangeHdlrFn>>>,
-    pub on_data_channel_handler: Arc<Mutex<Option<OnDataChannelHdlrFn>>>,
+    pub(crate) on_data_channel_handler: Arc<Mutex<Option<OnDataChannelHdlrFn>>>,
 
-    pub ice_gatherer: Arc<RTCIceGatherer>,
+    pub(crate) ice_gatherer: Arc<RTCIceGatherer>,
 
-    pub current_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-    pub current_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-    pub pending_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-    pub pending_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
-
-    // A reference to the associated API state used by this connection
-    pub setting_engine: Arc<SettingEngine>,
+    pub(crate) current_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
+    pub(crate) current_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
+    pub(crate) pending_local_description: Arc<Mutex<Option<RTCSessionDescription>>>,
+    pub(crate) pending_remote_description: Arc<Mutex<Option<RTCSessionDescription>>>,
 }
 
 impl PeerConnectionInternal {
-    pub async fn new(
-        api: &API,
-        mut configuration: RTCConfiguration,
-    ) -> Result<(Arc<Self>, RTCConfiguration)> {
+    pub(crate) async fn new() -> Result<Arc<Self>> {
         let mut pc = PeerConnectionInternal {
             greater_mid: AtomicIsize::new(-1),
             sdp_origin: Mutex::new(Default::default()),
             last_offer: Mutex::new("".to_owned()),
             last_answer: Mutex::new("".to_owned()),
-
-            on_negotiation_needed_handler: Arc::new(Default::default()),
             ops: Arc::new(Operations::new()),
             is_closed: Arc::new(AtomicBool::new(false)),
-            is_negotiation_needed: Arc::new(AtomicBool::new(false)),
-            negotiation_needed_state: Arc::new(AtomicU8::new(NegotiationNeededState::Empty as u8)),
             signaling_state: Arc::new(AtomicU8::new(RTCSignalingState::Stable as u8)),
             ice_transport: Arc::new(Default::default()),
             dtls_transport: Arc::new(Default::default()),
@@ -77,28 +64,22 @@ impl PeerConnectionInternal {
             current_remote_description: Arc::new(Default::default()),
             pending_local_description: Arc::new(Default::default()),
             peer_connection_state: Arc::new(AtomicU8::new(RTCPeerConnectionState::New as u8)),
-
-            setting_engine: Arc::clone(&api.setting_engine),
             on_peer_connection_state_change_handler: Arc::new(Default::default()),
             pending_remote_description: Arc::new(Default::default()),
         };
 
         // Create the ice gatherer
-        pc.ice_gatherer = Arc::new(api.new_ice_gatherer(RTCIceGatherOptions {
-            ice_servers: configuration.get_ice_servers(),
-            ice_gather_policy: configuration.ice_transport_policy,
-        })?);
+        pc.ice_gatherer = Arc::new(API::new_ice_gatherer()?);
 
         // Create the ice transport
-        pc.ice_transport = pc.create_ice_transport(api).await;
+        pc.ice_transport = pc.create_ice_transport().await;
 
         // Create the DTLS transport
-        let certificates = configuration.certificates.drain(..).collect();
         pc.dtls_transport =
-            Arc::new(api.new_dtls_transport(Arc::clone(&pc.ice_transport), certificates)?);
+            Arc::new(API::new_dtls_transport(Arc::clone(&pc.ice_transport))?);
 
         // Create the SCTP transport
-        pc.sctp_transport = Arc::new(api.new_sctp_transport(Arc::clone(&pc.dtls_transport))?);
+        pc.sctp_transport = Arc::new(API::new_sctp_transport(Arc::clone(&pc.dtls_transport))?);
 
         // Wire up the on datachannel handler
         let on_data_channel_handler = Arc::clone(&pc.on_data_channel_handler);
@@ -114,10 +95,10 @@ impl PeerConnectionInternal {
             }))
             .await;
 
-        Ok((Arc::new(pc), configuration))
+        Ok(Arc::new(pc))
     }
 
-    pub async fn maybe_start_sctp(
+    pub(crate) async fn maybe_start_sctp(
         self: &Arc<Self>,
         remote_desc: Arc<RTCSessionDescription>,
     ) -> Result<()> {
@@ -181,7 +162,7 @@ impl PeerConnectionInternal {
             .fetch_add(opened_dc_count, Ordering::SeqCst);
     }
 
-    pub async fn remote_description(self: &Arc<Self>) -> Option<RTCSessionDescription> {
+    pub(crate) async fn remote_description(self: &Arc<Self>) -> Option<RTCSessionDescription> {
         let pending_remote_description = self.pending_remote_description.lock().await;
         if pending_remote_description.is_some() {
             pending_remote_description.clone()
@@ -192,7 +173,7 @@ impl PeerConnectionInternal {
     }
 
     /// Start all transports. PeerConnection now has enough state
-    pub async fn start_transports(
+    pub(crate) async fn start_transports(
         self: &Arc<Self>,
         ice_role: RTCIceRole,
         dtls_role: DTLSRole,
@@ -208,7 +189,6 @@ impl PeerConnectionInternal {
                 &RTCIceParameters {
                     username_fragment: remote_ufrag,
                     password: remote_pwd,
-                    ice_lite: false,
                 },
                 Some(ice_role),
             )
@@ -244,10 +224,9 @@ impl PeerConnectionInternal {
 
     /// generate_unmatched_sdp generates an SDP that doesn't take remote state into account
     /// This is used for the initial call for CreateOffer
-    pub async fn generate_unmatched_sdp(
+    pub(crate) async fn generate_unmatched_sdp(
         &self,
         use_identity: bool,
-        sdp_semantics: RTCSdpSemantics,
     ) -> Result<SessionDescription> {
         let d = SessionDescription::new_jsep_session_description(use_identity);
 
@@ -255,38 +234,19 @@ impl PeerConnectionInternal {
 
         let candidates = self.ice_gatherer.get_local_candidates().await?;
 
-        let is_plan_b = sdp_semantics == RTCSdpSemantics::PlanB;
         let mut media_sections = vec![];
 
-        // Needed for self.sctpTransport.dataChannelsRequested
-        if is_plan_b {
-
-            if self
-                .sctp_transport
-                .data_channels_requested
-                .load(Ordering::SeqCst)
-                != 0
-            {
-                media_sections.push(MediaSection {
-                    id: "data".to_owned(),
-                    data: true,
-                    ..Default::default()
-                });
-            }
-        } else {
-
-            if self
-                .sctp_transport
-                .data_channels_requested
-                .load(Ordering::SeqCst)
-                != 0
-            {
-                media_sections.push(MediaSection {
-                    id: format!("{}", media_sections.len()),
-                    data: true,
-                    ..Default::default()
-                });
-            }
+        if self
+            .sctp_transport
+            .data_channels_requested
+            .load(Ordering::SeqCst)
+            != 0
+        {
+            media_sections.push(MediaSection {
+                id: format!("{}", media_sections.len()),
+                data: true,
+                ..Default::default()
+            });
         }
 
         let dtls_fingerprints = if let Some(cert) = self.dtls_transport.certificates.first() {
@@ -296,7 +256,7 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            is_icelite: self.setting_engine.candidates.ice_lite,
+            is_icelite: false,
             connection_role: DEFAULT_DTLS_ROLE_OFFER.to_connection_role(),
             ice_gathering_state: self.ice_gathering_state(),
         };
@@ -313,7 +273,7 @@ impl PeerConnectionInternal {
 
     /// generate_matched_sdp generates a SDP and takes the remote state into account
     /// this is used everytime we have a remote_description
-    pub async fn generate_matched_sdp(
+    pub(crate) async fn generate_matched_sdp(
         &self,
         use_identity: bool,
         include_unmatched: bool,
@@ -369,7 +329,7 @@ impl PeerConnectionInternal {
         };
 
         let params = PopulateSdpParams {
-            is_icelite: self.setting_engine.candidates.ice_lite,
+            is_icelite: false,
             connection_role,
             ice_gathering_state: self.ice_gathering_state(),
         };
@@ -384,7 +344,7 @@ impl PeerConnectionInternal {
         .await
     }
 
-    pub fn ice_gathering_state(&self) -> RTCIceGatheringState {
+    pub(crate) fn ice_gathering_state(&self) -> RTCIceGatheringState {
         match self.ice_gatherer.state() {
             RTCIceGathererState::New => RTCIceGatheringState::New,
             RTCIceGathererState::Gathering => RTCIceGatheringState::Gathering,
@@ -392,8 +352,8 @@ impl PeerConnectionInternal {
         }
     }
 
-    pub async fn create_ice_transport(&self, api: &API) -> Arc<RTCIceTransport> {
-        let ice_transport = Arc::new(api.new_ice_transport(Arc::clone(&self.ice_gatherer)));
+    pub(crate) async fn create_ice_transport(&self) -> Arc<RTCIceTransport> {
+        let ice_transport = Arc::new(API::new_ice_transport(Arc::clone(&self.ice_gatherer)));
 
         let ice_connection_state = Arc::clone(&self.ice_connection_state);
         let peer_connection_state = Arc::clone(&self.peer_connection_state);

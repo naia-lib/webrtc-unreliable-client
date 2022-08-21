@@ -34,15 +34,15 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 
-pub const INITIAL_TICKER_INTERVAL: Duration = Duration::from_secs(1);
-pub const COOKIE_LENGTH: usize = 20;
-pub const DEFAULT_NAMED_CURVE: NamedCurve = NamedCurve::X25519;
-pub const INBOUND_BUFFER_SIZE: usize = 8192;
+pub(crate) const INITIAL_TICKER_INTERVAL: Duration = Duration::from_secs(1);
+pub(crate) const COOKIE_LENGTH: usize = 20;
+pub(crate) const DEFAULT_NAMED_CURVE: NamedCurve = NamedCurve::X25519;
+pub(crate) const INBOUND_BUFFER_SIZE: usize = 8192;
 // Default replay protection window is specified by RFC 6347 Section 4.1.2.6
-pub const DEFAULT_REPLAY_PROTECTION_WINDOW: usize = 64;
+pub(crate) const DEFAULT_REPLAY_PROTECTION_WINDOW: usize = 64;
 
 lazy_static! {
-    pub static ref INVALID_KEYING_LABELS: HashMap<&'static str, bool> = {
+    pub(crate) static ref INVALID_KEYING_LABELS: HashMap<&'static str, bool> = {
         let mut map = HashMap::new();
         map.insert("client finished", true);
         map.insert("server finished", true);
@@ -70,11 +70,11 @@ struct ConnReaderContext {
 }
 
 // Conn represents a DTLS connection
-pub struct DTLSConn {
+pub(crate) struct DTLSConn {
     conn: Arc<dyn Conn + Send + Sync>,
-    pub cache: HandshakeCache, // caching of handshake messages for verifyData generation
+    pub(crate) cache: HandshakeCache, // caching of handshake messages for verifyData generation
     decrypted_rx: Mutex<mpsc::Receiver<Result<Vec<u8>>>>, // Decrypted Application Data or error, pull by calling `Read`
-    pub state: State,                              // Internal state
+    pub(crate) state: State,                              // Internal state
 
     handshake_completed_successfully: Arc<AtomicBool>,
     // closeLock              sync.Mutex
@@ -91,15 +91,15 @@ pub struct DTLSConn {
     cancelHandshaker      func()
     cancelHandshakeReader func()
     */
-    pub current_flight: Box<dyn Flight + Send + Sync>,
-    pub flights: Option<Vec<Packet>>,
-    pub cfg: HandshakeConfig,
-    pub retransmit: bool,
-    pub handshake_rx: mpsc::Receiver<mpsc::Sender<()>>,
+    pub(crate) current_flight: Box<dyn Flight + Send + Sync>,
+    pub(crate) flights: Option<Vec<Packet>>,
+    pub(crate) cfg: HandshakeConfig,
+    pub(crate) retransmit: bool,
+    pub(crate) handshake_rx: mpsc::Receiver<mpsc::Sender<()>>,
 
-    pub packet_tx: Arc<mpsc::Sender<PacketSendRequest>>,
-    pub handle_queue_tx: mpsc::Sender<mpsc::Sender<()>>,
-    pub handshake_done_tx: Option<mpsc::Sender<()>>,
+    pub(crate) packet_tx: Arc<mpsc::Sender<PacketSendRequest>>,
+    pub(crate) handle_queue_tx: mpsc::Sender<mpsc::Sender<()>>,
+    pub(crate) handshake_done_tx: Option<mpsc::Sender<()>>,
 
     reader_close_tx: Mutex<Option<mpsc::Sender<()>>>,
 }
@@ -142,7 +142,7 @@ impl Conn for DTLSConn {
 }
 
 impl DTLSConn {
-    pub async fn new(
+    pub(crate) async fn new(
         conn: Arc<dyn Conn + Send + Sync>,
         mut config: Config,
         is_client: bool,
@@ -385,7 +385,7 @@ impl DTLSConn {
     }
 
     // Read reads data from the connection.
-    pub async fn read(&self, p: &mut [u8], duration: Option<Duration>) -> Result<usize> {
+    pub(crate) async fn read(&self, p: &mut [u8], duration: Option<Duration>) -> Result<usize> {
         if !self.is_handshake_completed_successfully() {
             return Err(Error::ErrHandshakeInProgress);
         }
@@ -423,7 +423,7 @@ impl DTLSConn {
     }
 
     // Write writes len(p) bytes from p to the DTLS connection
-    pub async fn write(&self, p: &[u8], duration: Option<Duration>) -> Result<usize> {
+    pub(crate) async fn write(&self, p: &[u8], duration: Option<Duration>) -> Result<usize> {
         if self.is_connection_closed() {
             return Err(Error::ErrConnClosed);
         }
@@ -462,7 +462,7 @@ impl DTLSConn {
     }
 
     // Close closes the connection.
-    pub async fn close(&self) -> Result<()> {
+    pub(crate) async fn close(&self) -> Result<()> {
         if !self.closed.load(Ordering::SeqCst) {
             self.closed.store(true, Ordering::SeqCst);
 
@@ -481,7 +481,7 @@ impl DTLSConn {
         Ok(())
     }
 
-    pub async fn notify(&self, level: AlertLevel, desc: AlertDescription) -> Result<()> {
+    pub(crate) async fn notify(&self, level: AlertLevel, desc: AlertDescription) -> Result<()> {
         self.write_packets(vec![Packet {
             record: RecordLayer::new(
                 PROTOCOL_VERSION1_2,
@@ -497,7 +497,7 @@ impl DTLSConn {
         .await
     }
 
-    pub async fn write_packets(&self, pkts: Vec<Packet>) -> Result<()> {
+    pub(crate) async fn write_packets(&self, pkts: Vec<Packet>) -> Result<()> {
         let (tx, mut rx) = mpsc::channel(1);
 
         self.packet_tx.send((pkts, Some(tx))).await?;
@@ -723,12 +723,12 @@ impl DTLSConn {
         Ok(fragmented_handshakes)
     }
 
-    pub fn set_handshake_completed_successfully(&mut self) {
+    pub(crate) fn set_handshake_completed_successfully(&mut self) {
         self.handshake_completed_successfully
             .store(true, Ordering::SeqCst);
     }
 
-    pub fn is_handshake_completed_successfully(&self) -> bool {
+    pub(crate) fn is_handshake_completed_successfully(&self) -> bool {
         self.handshake_completed_successfully.load(Ordering::SeqCst)
     }
 
@@ -1119,11 +1119,11 @@ impl DTLSConn {
         self.closed.load(Ordering::SeqCst)
     }
 
-    pub fn set_local_epoch(&mut self, epoch: u16) {
+    pub(crate) fn set_local_epoch(&mut self, epoch: u16) {
         self.state.local_epoch.store(epoch, Ordering::SeqCst);
     }
 
-    pub fn get_local_epoch(&self) -> u16 {
+    pub(crate) fn get_local_epoch(&self) -> u16 {
         self.state.local_epoch.load(Ordering::SeqCst)
     }
 }

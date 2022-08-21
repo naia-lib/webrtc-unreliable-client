@@ -8,7 +8,7 @@ use tokio::time::{self, Duration, Instant};
 /// Collector calls function f with constant rate.
 ///
 /// The simple Collector is ticker which calls function on each tick.
-pub trait Collector {
+pub(crate) trait Collector {
     fn start(
         &mut self,
         rate: Duration,

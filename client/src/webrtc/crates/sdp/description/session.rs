@@ -10,26 +10,26 @@ use super::common::*;
 use super::media::*;
 
 /// Constants for SDP attributes used in JSEP
-pub const ATTR_KEY_IDENTITY: &str = "identity";
-pub const ATTR_KEY_GROUP: &str = "group";
-pub const ATTR_KEY_CONNECTION_SETUP: &str = "setup";
-pub const ATTR_KEY_MID: &str = "mid";
-pub const ATTR_KEY_ICELITE: &str = "ice-lite";
+pub(crate) const ATTR_KEY_IDENTITY: &str = "identity";
+pub(crate) const ATTR_KEY_GROUP: &str = "group";
+pub(crate) const ATTR_KEY_CONNECTION_SETUP: &str = "setup";
+pub(crate) const ATTR_KEY_MID: &str = "mid";
+pub(crate) const ATTR_KEY_ICELITE: &str = "ice-lite";
 
 /// Version describes the value provided by the "v=" field which gives
 /// the version of the Session Description Protocol.
-pub type Version = isize;
+pub(crate) type Version = isize;
 
 /// Origin defines the structure for the "o=" field which provides the
 /// originator of the session plus a session identifier and version number.
 #[derive(Debug, Default, Clone)]
-pub struct Origin {
-    pub username: String,
-    pub session_id: u64,
-    pub session_version: u64,
-    pub network_type: String,
-    pub address_type: String,
-    pub unicast_address: String,
+pub(crate) struct Origin {
+    pub(crate) username: String,
+    pub(crate) session_id: u64,
+    pub(crate) session_version: u64,
+    pub(crate) network_type: String,
+    pub(crate) address_type: String,
+    pub(crate) unicast_address: String,
 }
 
 impl fmt::Display for Origin {
@@ -48,7 +48,7 @@ impl fmt::Display for Origin {
 }
 
 impl Origin {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Origin {
             username: "".to_owned(),
             session_id: 0,
@@ -62,24 +62,24 @@ impl Origin {
 
 /// SessionName describes a structured representations for the "s=" field
 /// and is the textual session name.
-pub type SessionName = String;
+pub(crate) type SessionName = String;
 
 /// EmailAddress describes a structured representations for the "e=" line
 /// which specifies email contact information for the person responsible for
 /// the conference.
-pub type EmailAddress = String;
+pub(crate) type EmailAddress = String;
 
 /// PhoneNumber describes a structured representations for the "p=" line
 /// specify phone contact information for the person responsible for the
 /// conference.
-pub type PhoneNumber = String;
+pub(crate) type PhoneNumber = String;
 
 /// TimeZone defines the structured object for "z=" line which describes
 /// repeated sessions scheduling.
 #[derive(Debug, Default, Clone)]
-pub struct TimeZone {
-    pub adjustment_time: u64,
-    pub offset: i64,
+pub(crate) struct TimeZone {
+    pub(crate) adjustment_time: u64,
+    pub(crate) offset: i64,
 }
 
 impl fmt::Display for TimeZone {
@@ -92,24 +92,24 @@ impl fmt::Display for TimeZone {
 /// which are used to specify the start and stop times for a session as well as
 /// repeat intervals and durations for the scheduled session.
 #[derive(Debug, Default, Clone)]
-pub struct TimeDescription {
+pub(crate) struct TimeDescription {
     /// `t=<start-time> <stop-time>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.9>
-    pub timing: Timing,
+    pub(crate) timing: Timing,
 
     /// `r=<repeat interval> <active duration> <offsets from start-time>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.10>
-    pub repeat_times: Vec<RepeatTime>,
+    pub(crate) repeat_times: Vec<RepeatTime>,
 }
 
 /// Timing defines the "t=" field's structured representation for the start and
 /// stop times.
 #[derive(Debug, Default, Clone)]
-pub struct Timing {
-    pub start_time: u64,
-    pub stop_time: u64,
+pub(crate) struct Timing {
+    pub(crate) start_time: u64,
+    pub(crate) stop_time: u64,
 }
 
 impl fmt::Display for Timing {
@@ -121,10 +121,10 @@ impl fmt::Display for Timing {
 /// RepeatTime describes the "r=" fields of the session description which
 /// represents the intervals and durations for repeated scheduled sessions.
 #[derive(Debug, Default, Clone)]
-pub struct RepeatTime {
-    pub interval: i64,
-    pub duration: i64,
-    pub offsets: Vec<i64>,
+pub(crate) struct RepeatTime {
+    pub(crate) interval: i64,
+    pub(crate) duration: i64,
+    pub(crate) offsets: Vec<i64>,
 }
 
 impl fmt::Display for RepeatTime {
@@ -140,77 +140,77 @@ impl fmt::Display for RepeatTime {
 /// SessionDescription is a a well-defined format for conveying sufficient
 /// information to discover and participate in a multimedia session.
 #[derive(Debug, Default, Clone)]
-pub struct SessionDescription {
+pub(crate) struct SessionDescription {
     /// `v=0`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.1>
-    pub version: Version,
+    pub(crate) version: Version,
 
     /// `o=<username> <sess-id> <sess-version> <nettype> <addrtype> <unicast-address>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.2>
-    pub origin: Origin,
+    pub(crate) origin: Origin,
 
     /// `s=<session name>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.3>
-    pub session_name: SessionName,
+    pub(crate) session_name: SessionName,
 
     /// `i=<session description>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.4>
-    pub session_information: Option<Information>,
+    pub(crate) session_information: Option<Information>,
 
     /// `u=<uri>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.5>
-    pub uri: Option<Url>,
+    pub(crate) uri: Option<Url>,
 
     /// `e=<email-address>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.6>
-    pub email_address: Option<EmailAddress>,
+    pub(crate) email_address: Option<EmailAddress>,
 
     /// `p=<phone-number>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.6>
-    pub phone_number: Option<PhoneNumber>,
+    pub(crate) phone_number: Option<PhoneNumber>,
 
     /// `c=<nettype> <addrtype> <connection-address>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.7>
-    pub connection_information: Option<ConnectionInformation>,
+    pub(crate) connection_information: Option<ConnectionInformation>,
 
     /// `b=<bwtype>:<bandwidth>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.8>
-    pub bandwidth: Vec<Bandwidth>,
+    pub(crate) bandwidth: Vec<Bandwidth>,
 
     /// <https://tools.ietf.org/html/rfc4566#section-5.9>
     /// <https://tools.ietf.org/html/rfc4566#section-5.10>
-    pub time_descriptions: Vec<TimeDescription>,
+    pub(crate) time_descriptions: Vec<TimeDescription>,
 
     /// `z=<adjustment time> <offset> <adjustment time> <offset> ...`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.11>
-    pub time_zones: Vec<TimeZone>,
+    pub(crate) time_zones: Vec<TimeZone>,
 
     /// `k=<method>`
     ///
     /// `k=<method>:<encryption key>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.12>
-    pub encryption_key: Option<EncryptionKey>,
+    pub(crate) encryption_key: Option<EncryptionKey>,
 
     /// `a=<attribute>`
     ///
     /// `a=<attribute>:<value>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.13>
-    pub attributes: Vec<Attribute>,
+    pub(crate) attributes: Vec<Attribute>,
 
     /// <https://tools.ietf.org/html/rfc4566#section-5.14>
-    pub media_descriptions: Vec<MediaDescription>,
+    pub(crate) media_descriptions: Vec<MediaDescription>,
 }
 
 /// Reset cleans the SessionDescription, and sets all fields back to their default values
@@ -220,7 +220,7 @@ impl SessionDescription {
 
     /// NewJSEPSessionDescription creates a new SessionDescription with
     /// some settings that are required by the JSEP spec.
-    pub fn new_jsep_session_description(identity: bool) -> Self {
+    pub(crate) fn new_jsep_session_description(identity: bool) -> Self {
         let d = SessionDescription {
             version: 0,
             origin: Origin {
@@ -262,30 +262,30 @@ impl SessionDescription {
     }
 
     /// WithPropertyAttribute adds a property attribute 'a=key' to the session description
-    pub fn with_property_attribute(mut self, key: String) -> Self {
+    pub(crate) fn with_property_attribute(mut self, key: String) -> Self {
         self.attributes.push(Attribute::new(key, None));
         self
     }
 
     /// WithValueAttribute adds a value attribute 'a=key:value' to the session description
-    pub fn with_value_attribute(mut self, key: String, value: String) -> Self {
+    pub(crate) fn with_value_attribute(mut self, key: String, value: String) -> Self {
         self.attributes.push(Attribute::new(key, Some(value)));
         self
     }
 
     /// WithFingerprint adds a fingerprint to the session description
-    pub fn with_fingerprint(self, algorithm: String, value: String) -> Self {
+    pub(crate) fn with_fingerprint(self, algorithm: String, value: String) -> Self {
         self.with_value_attribute("fingerprint".to_string(), algorithm + " " + value.as_str())
     }
 
     /// WithMedia adds a media description to the session description
-    pub fn with_media(mut self, md: MediaDescription) -> Self {
+    pub(crate) fn with_media(mut self, md: MediaDescription) -> Self {
         self.media_descriptions.push(md);
         self
     }
 
     /// Attribute returns the value of an attribute and if it exists
-    pub fn attribute(&self, key: &str) -> Option<&String> {
+    pub(crate) fn attribute(&self, key: &str) -> Option<&String> {
         for a in &self.attributes {
             if a.key == key {
                 return a.value.as_ref();
@@ -327,7 +327,7 @@ impl SessionDescription {
     ///    b=* (zero or more bandwidth information lines)
     ///    k=* (encryption key)
     ///    a=* (zero or more media attribute lines)
-    pub fn marshal(&self) -> String {
+    pub(crate) fn marshal(&self) -> String {
         let mut result = String::new();
 
         result += key_value_build("v=", Some(&self.version.to_string())).as_str();
@@ -463,7 +463,7 @@ impl SessionDescription {
     /// |   s16  |    |    14 |    |     |    |  15 |   |    | 12 |   |   |     |   |   |    |   |    |
     /// +--------+----+-------+----+-----+----+-----+---+----+----+---+---+-----+---+---+----+---+----+
     /// ```
-    pub fn unmarshal<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<Self> {
         let mut lexer = Lexer {
             desc: SessionDescription {
                 version: 0,

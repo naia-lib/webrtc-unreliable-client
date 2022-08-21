@@ -6,18 +6,18 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 
-pub const PAYLOAD_DATA_ENDING_FRAGMENT_BITMASK: u8 = 1;
-pub const PAYLOAD_DATA_BEGINING_FRAGMENT_BITMASK: u8 = 2;
-pub const PAYLOAD_DATA_UNORDERED_BITMASK: u8 = 4;
-pub const PAYLOAD_DATA_IMMEDIATE_SACK: u8 = 8;
-pub const PAYLOAD_DATA_HEADER_SIZE: usize = 12;
+pub(crate) const PAYLOAD_DATA_ENDING_FRAGMENT_BITMASK: u8 = 1;
+pub(crate) const PAYLOAD_DATA_BEGINING_FRAGMENT_BITMASK: u8 = 2;
+pub(crate) const PAYLOAD_DATA_UNORDERED_BITMASK: u8 = 4;
+pub(crate) const PAYLOAD_DATA_IMMEDIATE_SACK: u8 = 8;
+pub(crate) const PAYLOAD_DATA_HEADER_SIZE: usize = 12;
 
 /// PayloadProtocolIdentifier is an enum for DataChannel payload types
 /// PayloadProtocolIdentifier enums
 /// https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml#sctp-parameters-25
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-pub enum PayloadProtocolIdentifier {
+pub(crate) enum PayloadProtocolIdentifier {
     Dcep = 50,
     String = 51,
     Binary = 53,
@@ -94,35 +94,35 @@ impl From<u32> for PayloadProtocolIdentifier {
 ///|             Table 1: Fragment Description Flags          |
 ///============================================================
 #[derive(Debug, Clone)]
-pub struct ChunkPayloadData {
-    pub unordered: bool,
-    pub beginning_fragment: bool,
-    pub ending_fragment: bool,
-    pub immediate_sack: bool,
+pub(crate) struct ChunkPayloadData {
+    pub(crate) unordered: bool,
+    pub(crate) beginning_fragment: bool,
+    pub(crate) ending_fragment: bool,
+    pub(crate) immediate_sack: bool,
 
-    pub tsn: u32,
-    pub stream_identifier: u16,
-    pub stream_sequence_number: u16,
-    pub payload_type: PayloadProtocolIdentifier,
-    pub user_data: Bytes,
+    pub(crate) tsn: u32,
+    pub(crate) stream_identifier: u16,
+    pub(crate) stream_sequence_number: u16,
+    pub(crate) payload_type: PayloadProtocolIdentifier,
+    pub(crate) user_data: Bytes,
 
     /// Whether this data chunk was acknowledged (received by peer)
-    pub acked: bool,
-    pub miss_indicator: u32,
+    pub(crate) acked: bool,
+    pub(crate) miss_indicator: u32,
 
     /// Partial-reliability parameters used only by sender
-    pub since: SystemTime,
+    pub(crate) since: SystemTime,
     /// number of transmission made for this chunk
-    pub nsent: u32,
+    pub(crate) nsent: u32,
 
     /// valid only with the first fragment
-    pub abandoned: Arc<AtomicBool>,
+    pub(crate) abandoned: Arc<AtomicBool>,
     /// valid only with the first fragment
-    pub all_inflight: Arc<AtomicBool>,
+    pub(crate) all_inflight: Arc<AtomicBool>,
 
     /// Retransmission flag set when T1-RTX timeout occurred and this
     /// chunk is still in the inflight queue
-    pub retransmit: bool,
+    pub(crate) retransmit: bool,
 }
 
 impl Default for ChunkPayloadData {
@@ -251,7 +251,7 @@ impl Chunk for ChunkPayloadData {
 }
 
 impl ChunkPayloadData {
-    pub fn abandoned(&self) -> bool {
+    pub(crate) fn abandoned(&self) -> bool {
         let (abandoned, all_inflight) = (
             self.abandoned.load(Ordering::SeqCst),
             self.all_inflight.load(Ordering::SeqCst),
@@ -260,11 +260,11 @@ impl ChunkPayloadData {
         abandoned && all_inflight
     }
 
-    pub fn set_abandoned(&self, abandoned: bool) {
+    pub(crate) fn set_abandoned(&self, abandoned: bool) {
         self.abandoned.store(abandoned, Ordering::SeqCst);
     }
 
-    pub fn set_all_inflight(&mut self) {
+    pub(crate) fn set_all_inflight(&mut self) {
         if self.ending_fragment {
             self.all_inflight.store(true, Ordering::SeqCst);
         }

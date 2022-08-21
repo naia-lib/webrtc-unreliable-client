@@ -3,7 +3,7 @@ use std::fmt;
 /// ICERole describes the role ice.Agent is playing in selecting the
 /// preferred the candidate pair.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceRole {
+pub(crate) enum RTCIceRole {
     Unspecified,
 
     /// ICERoleControlling indicates that the ICE agent that is responsible
@@ -42,37 +42,6 @@ impl fmt::Display for RTCIceRole {
             RTCIceRole::Controlling => write!(f, "{}", ICE_ROLE_CONTROLLING_STR),
             RTCIceRole::Controlled => write!(f, "{}", ICE_ROLE_CONTROLLED_STR),
             _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_role() {
-        let tests = vec![
-            ("Unspecified", RTCIceRole::Unspecified),
-            ("controlling", RTCIceRole::Controlling),
-            ("controlled", RTCIceRole::Controlled),
-        ];
-
-        for (role_string, expected_role) in tests {
-            assert_eq!(expected_role, RTCIceRole::from(role_string));
-        }
-    }
-
-    #[test]
-    fn test_ice_role_string() {
-        let tests = vec![
-            (RTCIceRole::Unspecified, "Unspecified"),
-            (RTCIceRole::Controlling, "controlling"),
-            (RTCIceRole::Controlled, "controlled"),
-        ];
-
-        for (proto, expected_string) in tests {
-            assert_eq!(expected_string, proto.to_string());
         }
     }
 }

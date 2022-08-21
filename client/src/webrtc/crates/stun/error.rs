@@ -4,11 +4,11 @@ use std::io;
 use std::string::FromUtf8Error;
 use tokio::sync::mpsc::error::SendError as MpscSendError;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error("attribute not found")]
     ErrAttributeNotFound,
     #[error("no default reason for ErrorCode")]
@@ -45,7 +45,7 @@ pub enum Error {
 
 #[derive(Debug, Error)]
 #[error("io error: {0}")]
-pub struct IoError(#[from] pub io::Error);
+pub(crate) struct IoError(#[from] pub(crate) io::Error);
 
 // Workaround for wanting PartialEq for io::Error.
 impl PartialEq for IoError {

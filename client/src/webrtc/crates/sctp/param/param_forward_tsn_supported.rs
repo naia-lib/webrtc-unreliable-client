@@ -11,7 +11,7 @@ use bytes::{Bytes, BytesMut};
 ///|    Parameter Type = 49152     |  Parameter Length = 4         |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamForwardTsnSupported;
+pub(crate) struct ParamForwardTsnSupported;
 
 impl fmt::Display for ParamForwardTsnSupported {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

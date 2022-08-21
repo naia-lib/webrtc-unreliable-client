@@ -3,25 +3,25 @@ use std::sync::Weak;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 
-pub const ACK_INTERVAL: Duration = Duration::from_millis(200);
+pub(crate) const ACK_INTERVAL: Duration = Duration::from_millis(200);
 
 /// ackTimerObserver is the inteface to an ack timer observer.
 #[async_trait]
-pub trait AckTimerObserver {
+pub(crate) trait AckTimerObserver {
     async fn on_ack_timeout(&mut self);
 }
 
 /// ackTimer provides the retnransmission timer conforms with RFC 4960 Sec 6.3.1
 #[derive(Default, Debug)]
-pub struct AckTimer<T: 'static + AckTimerObserver + Send> {
-    pub timeout_observer: Weak<Mutex<T>>,
-    pub interval: Duration,
-    pub close_tx: Option<mpsc::Sender<()>>,
+pub(crate) struct AckTimer<T: 'static + AckTimerObserver + Send> {
+    pub(crate) timeout_observer: Weak<Mutex<T>>,
+    pub(crate) interval: Duration,
+    pub(crate) close_tx: Option<mpsc::Sender<()>>,
 }
 
 impl<T: 'static + AckTimerObserver + Send> AckTimer<T> {
     /// newAckTimer creates a new acknowledgement timer used to enable delayed ack.
-    pub fn new(timeout_observer: Weak<Mutex<T>>, interval: Duration) -> Self {
+    pub(crate) fn new(timeout_observer: Weak<Mutex<T>>, interval: Duration) -> Self {
         AckTimer {
             timeout_observer,
             interval,
@@ -30,7 +30,7 @@ impl<T: 'static + AckTimerObserver + Send> AckTimer<T> {
     }
 
     /// start starts the timer.
-    pub fn start(&mut self) -> bool {
+    pub(crate) fn start(&mut self) -> bool {
         // this timer is already closed
         if self.close_tx.is_some() {
             return false;
@@ -61,7 +61,7 @@ impl<T: 'static + AckTimerObserver + Send> AckTimer<T> {
 
     /// stops the timer. this is similar to stop() but subsequent start() call
     /// will fail (the timer is no longer usable)
-    pub fn stop(&mut self) {
+    pub(crate) fn stop(&mut self) {
         self.close_tx.take();
     }
 }

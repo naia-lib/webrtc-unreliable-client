@@ -4,7 +4,7 @@ use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum StateChangeOp {
+pub(crate) enum StateChangeOp {
     SetLocal,
     SetRemote,
 }
@@ -27,7 +27,7 @@ impl fmt::Display for StateChangeOp {
 
 /// SignalingState indicates the signaling state of the offer/answer process.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCSignalingState {
+pub(crate) enum RTCSignalingState {
     Unspecified = 0,
 
     /// SignalingStateStable indicates there is no offer/answer exchange in
@@ -120,7 +120,7 @@ impl From<u8> for RTCSignalingState {
     }
 }
 
-pub fn check_next_signaling_state(
+pub(crate) fn check_next_signaling_state(
     cur: RTCSignalingState,
     next: RTCSignalingState,
     op: StateChangeOp,
@@ -209,154 +209,4 @@ pub fn check_next_signaling_state(
     };
 
     Err(Error::ErrSignalingStateProposedTransitionInvalid)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_signaling_state() {
-        let tests = vec![
-            ("Unspecified", RTCSignalingState::Unspecified),
-            ("stable", RTCSignalingState::Stable),
-            ("have-local-offer", RTCSignalingState::HaveLocalOffer),
-            ("have-remote-offer", RTCSignalingState::HaveRemoteOffer),
-            ("have-local-pranswer", RTCSignalingState::HaveLocalPranswer),
-            (
-                "have-remote-pranswer",
-                RTCSignalingState::HaveRemotePranswer,
-            ),
-            ("closed", RTCSignalingState::Closed),
-        ];
-
-        for (state_string, expected_state) in tests {
-            assert_eq!(expected_state, RTCSignalingState::from(state_string));
-        }
-    }
-
-    #[test]
-    fn test_signaling_state_string() {
-        let tests = vec![
-            (RTCSignalingState::Unspecified, "Unspecified"),
-            (RTCSignalingState::Stable, "stable"),
-            (RTCSignalingState::HaveLocalOffer, "have-local-offer"),
-            (RTCSignalingState::HaveRemoteOffer, "have-remote-offer"),
-            (RTCSignalingState::HaveLocalPranswer, "have-local-pranswer"),
-            (
-                RTCSignalingState::HaveRemotePranswer,
-                "have-remote-pranswer",
-            ),
-            (RTCSignalingState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string());
-        }
-    }
-
-    #[test]
-    fn test_signaling_state_transitions() {
-        let tests = vec![
-            (
-                "stable->SetLocal(offer)->have-local-offer",
-                RTCSignalingState::Stable,
-                RTCSignalingState::HaveLocalOffer,
-                StateChangeOp::SetLocal,
-                RTCSdpType::Offer,
-                None,
-            ),
-            (
-                "stable->SetRemote(offer)->have-remote-offer",
-                RTCSignalingState::Stable,
-                RTCSignalingState::HaveRemoteOffer,
-                StateChangeOp::SetRemote,
-                RTCSdpType::Offer,
-                None,
-            ),
-            (
-                "have-local-offer->SetRemote(answer)->stable",
-                RTCSignalingState::HaveLocalOffer,
-                RTCSignalingState::Stable,
-                StateChangeOp::SetRemote,
-                RTCSdpType::Answer,
-                None,
-            ),
-            (
-                "have-local-offer->SetRemote(pranswer)->have-remote-pranswer",
-                RTCSignalingState::HaveLocalOffer,
-                RTCSignalingState::HaveRemotePranswer,
-                StateChangeOp::SetRemote,
-                RTCSdpType::Pranswer,
-                None,
-            ),
-            (
-                "have-remote-pranswer->SetRemote(answer)->stable",
-                RTCSignalingState::HaveRemotePranswer,
-                RTCSignalingState::Stable,
-                StateChangeOp::SetRemote,
-                RTCSdpType::Answer,
-                None,
-            ),
-            (
-                "have-remote-offer->SetLocal(answer)->stable",
-                RTCSignalingState::HaveRemoteOffer,
-                RTCSignalingState::Stable,
-                StateChangeOp::SetLocal,
-                RTCSdpType::Answer,
-                None,
-            ),
-            (
-                "have-remote-offer->SetLocal(pranswer)->have-local-pranswer",
-                RTCSignalingState::HaveRemoteOffer,
-                RTCSignalingState::HaveLocalPranswer,
-                StateChangeOp::SetLocal,
-                RTCSdpType::Pranswer,
-                None,
-            ),
-            (
-                "have-local-pranswer->SetLocal(answer)->stable",
-                RTCSignalingState::HaveLocalPranswer,
-                RTCSignalingState::Stable,
-                StateChangeOp::SetLocal,
-                RTCSdpType::Answer,
-                None,
-            ),
-            (
-                "(invalid) stable->SetRemote(pranswer)->have-remote-pranswer",
-                RTCSignalingState::Stable,
-                RTCSignalingState::HaveRemotePranswer,
-                StateChangeOp::SetRemote,
-                RTCSdpType::Pranswer,
-                Some(Error::ErrSignalingStateProposedTransitionInvalid),
-            ),
-            (
-                "(invalid) stable->SetRemote(rollback)->have-local-offer",
-                RTCSignalingState::Stable,
-                RTCSignalingState::HaveLocalOffer,
-                StateChangeOp::SetRemote,
-                RTCSdpType::Rollback,
-                Some(Error::ErrSignalingStateCannotRollback),
-            ),
-        ];
-
-        for (desc, cur, next, op, sdp_type, expected_err) in tests {
-            let result = check_next_signaling_state(cur, next, op, sdp_type);
-            match (&result, &expected_err) {
-                (Ok(got), None) => {
-                    assert_eq!(*got, next, "{} state mismatch", desc);
-                }
-                (Err(got), Some(err)) => {
-                    assert_eq!(err.to_string(), got.to_string(), "{} error mismatch", desc);
-                }
-                _ => {
-                    assert!(
-                        false,
-                        "{}: expected {:?}, but got {:?}",
-                        desc, expected_err, result
-                    );
-                }
-            };
-        }
-    }
 }

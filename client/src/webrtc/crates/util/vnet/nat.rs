@@ -8,9 +8,6 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
-use tokio::time::Duration;
-
-const DEFAULT_NAT_MAPPING_LIFE_TIME: Duration = Duration::from_secs(30);
 
 // EndpointDependencyType defines a type of behavioral dependendency on the
 // remote endpoint's IP address or port number. This is used for the two
@@ -19,11 +16,9 @@ const DEFAULT_NAT_MAPPING_LIFE_TIME: Duration = Duration::from_secs(30);
 //  - Filtering behavior
 // See: https://tools.ietf.org/html/rfc4787
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum EndpointDependencyType {
+pub(crate) enum EndpointDependencyType {
     // EndpointIndependent means the behavior is independent of the endpoint's address or port
     EndpointIndependent,
-    // EndpointAddrPortDependent means the behavior is dependent on the endpoint's address and port
-    EndpointAddrPortDependent,
 }
 
 impl Default for EndpointDependencyType {
@@ -34,7 +29,7 @@ impl Default for EndpointDependencyType {
 
 // NATMode defines basic behavior of the NAT
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum NatMode {
+pub(crate) enum NatMode {
     // NATModeNormal means the NAT behaves as a standard NAPT (RFC 2663).
     Normal,
     // NATModeNAT1To1 exhibits 1:1 DNAT where the external IP address is statically mapped to
@@ -52,25 +47,13 @@ impl Default for NatMode {
 
 // NATType has a set of parameters that define the behavior of NAT.
 #[derive(Default, Debug, Copy, Clone)]
-pub struct NatType {
-    pub mode: NatMode,
-    pub mapping_behavior: EndpointDependencyType,
-    pub filtering_behavior: EndpointDependencyType,
-    pub hair_pining: bool,       // Not implemented yet
-    pub port_preservation: bool, // Not implemented yet
-    pub mapping_life_time: Duration,
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct NatConfig {
-    pub name: String,
-    pub nat_type: NatType,
-    pub mapped_ips: Vec<IpAddr>, // mapped IPv4
-    pub local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
+pub(crate) struct NatType {
+    pub(crate) mode: NatMode,
+    pub(crate) filtering_behavior: EndpointDependencyType,
 }
 
 #[derive(Debug, Clone)]
-pub struct Mapping {
+pub(crate) struct Mapping {
     proto: String,                        // "udp" or "tcp"
     local: String,                        // "<local-ip>:<local-port>"
     mapped: String,                       // "<mapped-ip>:<mapped-port>"
@@ -93,51 +76,18 @@ impl Default for Mapping {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct NetworkAddressTranslator {
-    pub name: String,
-    pub nat_type: NatType,
-    pub mapped_ips: Vec<IpAddr>, // mapped IPv4
-    pub local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
-    pub outbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<local-ip>:<local-port>[:remote-ip[:remote-port]]
-    pub inbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<mapped-ip>:<mapped-port>"
+pub(crate) struct NetworkAddressTranslator {
+    pub(crate) name: String,
+    pub(crate) nat_type: NatType,
+    pub(crate) mapped_ips: Vec<IpAddr>, // mapped IPv4
+    pub(crate) local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
+    pub(crate) outbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<local-ip>:<local-port>[:remote-ip[:remote-port]]
+    pub(crate) inbound_map: Arc<Mutex<HashMap<String, Arc<Mapping>>>>, // key: "<proto>:<mapped-ip>:<mapped-port>"
 }
 
 impl NetworkAddressTranslator {
-    pub fn new(config: NatConfig) -> Result<Self> {
-        let mut nat_type = config.nat_type;
 
-        if nat_type.mode == NatMode::Nat1To1 {
-            // 1:1 NAT behavior
-            nat_type.mapping_behavior = EndpointDependencyType::EndpointIndependent;
-            nat_type.filtering_behavior = EndpointDependencyType::EndpointIndependent;
-            nat_type.port_preservation = true;
-            nat_type.mapping_life_time = Duration::from_secs(0);
-
-            if config.mapped_ips.is_empty() {
-                return Err(Error::ErrNatRequriesMapping);
-            }
-            if config.mapped_ips.len() != config.local_ips.len() {
-                return Err(Error::ErrMismatchLengthIp);
-            }
-        } else {
-            // Normal (NAPT) behavior
-            nat_type.mode = NatMode::Normal;
-            if nat_type.mapping_life_time == Duration::from_secs(0) {
-                nat_type.mapping_life_time = DEFAULT_NAT_MAPPING_LIFE_TIME;
-            }
-        }
-
-        Ok(NetworkAddressTranslator {
-            name: config.name,
-            nat_type,
-            mapped_ips: config.mapped_ips,
-            local_ips: config.local_ips,
-            outbound_map: Arc::new(Mutex::new(HashMap::new())),
-            inbound_map: Arc::new(Mutex::new(HashMap::new())),
-        })
-    }
-
-    pub fn get_paired_local_ip(&self, mapped_ip: &IpAddr) -> Option<&IpAddr> {
+    pub(crate) fn get_paired_local_ip(&self, mapped_ip: &IpAddr) -> Option<&IpAddr> {
         for (i, ip) in self.mapped_ips.iter().enumerate() {
             if ip == mapped_ip {
                 return self.local_ips.get(i);
@@ -146,7 +96,7 @@ impl NetworkAddressTranslator {
         None
     }
 
-    pub async fn translate_inbound(
+    pub(crate) async fn translate_inbound(
         &self,
         from: &(dyn Chunk + Send + Sync),
     ) -> Result<Option<Box<dyn Chunk + Send + Sync>>> {
@@ -170,9 +120,6 @@ impl NetworkAddressTranslator {
                 // Normal (NAPT) behavior
                 let filter_key = match self.nat_type.filtering_behavior {
                     EndpointDependencyType::EndpointIndependent => "".to_owned(),
-                    EndpointDependencyType::EndpointAddrPortDependent => {
-                        from.source_addr().to_string()
-                    }
                 };
 
                 let i_key = format!("udp:{}", from.destination_addr());
@@ -221,7 +168,7 @@ impl NetworkAddressTranslator {
     }
 
     // caller must hold the mutex
-    pub async fn find_inbound_mapping(&self, i_key: &str) -> Option<Arc<Mapping>> {
+    pub(crate) async fn find_inbound_mapping(&self, i_key: &str) -> Option<Arc<Mapping>> {
         let mut expired = false;
         let (in_key, out_key) = {
             let inbound_map = self.inbound_map.lock().await;

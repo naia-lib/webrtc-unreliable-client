@@ -7,7 +7,7 @@ use regex::Regex;
 use tokio::sync::Mutex;
 
 // MaybeAddr
-struct MaybeAddr(pub ServerAddr);
+struct MaybeAddr(pub(crate) ServerAddr);
 
 // AddrCell
 #[derive(Clone)]
@@ -43,7 +43,7 @@ pub enum ServerAddr {
     Finding,
 }
 
-pub fn candidate_to_addr(candidate_str: &str) -> ServerAddr {
+pub(crate) fn candidate_to_addr(candidate_str: &str) -> ServerAddr {
     let pattern =
         Regex::new(r"\b(?P<ip_addr>(?:[0-9]{1,3}\.){3}[0-9]{1,3}) (?P<port>[0-9]{1,5})\b")
             .expect("failed to compile regex pattern");
@@ -58,22 +58,4 @@ pub fn candidate_to_addr(candidate_str: &str) -> ServerAddr {
     let port = &captures["port"].parse::<u16>().expect("not a valid port..");
 
     ServerAddr::Found(SocketAddr::new(IpAddr::V4(ip_addr), *port))
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::{candidate_to_addr, ServerAddr};
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-    #[test]
-    fn candidate_to_addr_works() {
-        assert_eq!(
-            candidate_to_addr("candidate:1 1 UDP 1755993416 127.0.0.1 14192 typ host"),
-            ServerAddr::Found(SocketAddr::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                14192
-            ))
-        );
-    }
 }

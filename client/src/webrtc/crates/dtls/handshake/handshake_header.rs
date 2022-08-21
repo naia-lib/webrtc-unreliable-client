@@ -5,23 +5,23 @@ use std::io::{Read, Write};
 
 // msg_len for Handshake messages assumes an extra 12 bytes for
 // sequence, Fragment and version information
-pub const HANDSHAKE_HEADER_LENGTH: usize = 12;
+pub(crate) const HANDSHAKE_HEADER_LENGTH: usize = 12;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
-pub struct HandshakeHeader {
-    pub handshake_type: HandshakeType,
-    pub length: u32, // uint24 in spec
-    pub message_sequence: u16,
-    pub fragment_offset: u32, // uint24 in spec
-    pub fragment_length: u32, // uint24 in spec
+pub(crate) struct HandshakeHeader {
+    pub(crate) handshake_type: HandshakeType,
+    pub(crate) length: u32, // uint24 in spec
+    pub(crate) message_sequence: u16,
+    pub(crate) fragment_offset: u32, // uint24 in spec
+    pub(crate) fragment_length: u32, // uint24 in spec
 }
 
 impl HandshakeHeader {
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         1 + 3 + 2 + 3 + 3
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u8(self.handshake_type as u8)?;
         writer.write_u24::<BigEndian>(self.length)?;
         writer.write_u16::<BigEndian>(self.message_sequence)?;
@@ -31,7 +31,7 @@ impl HandshakeHeader {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let handshake_type = reader.read_u8()?.into();
         let length = reader.read_u24::<BigEndian>()?;
         let message_sequence = reader.read_u16::<BigEndian>()?;

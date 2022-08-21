@@ -6,7 +6,7 @@ use std::fmt;
 
 /// DtlsRole indicates the role of the DTLS transport.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
-pub enum DTLSRole {
+pub(crate) enum DTLSRole {
     Unspecified = 0,
 
     /// DTLSRoleAuto defines the DTLS role is determined based on
@@ -27,7 +27,7 @@ pub enum DTLSRole {
 /// The endpoint that is the offerer MUST use the setup attribute
 /// value of setup:actpass and be prepared to receive a client_hello
 /// before it receives the answer.
-pub const DEFAULT_DTLS_ROLE_OFFER: DTLSRole = DTLSRole::Auto;
+pub(crate) const DEFAULT_DTLS_ROLE_OFFER: DTLSRole = DTLSRole::Auto;
 
 impl Default for DTLSRole {
     fn default() -> Self {
@@ -72,97 +72,12 @@ impl From<&SessionDescription> for DTLSRole {
 }
 
 impl DTLSRole {
-    pub fn to_connection_role(self) -> ConnectionRole {
+    pub(crate) fn to_connection_role(self) -> ConnectionRole {
         match self {
             DTLSRole::Client => ConnectionRole::Active,
             DTLSRole::Server => ConnectionRole::Passive,
             DTLSRole::Auto => ConnectionRole::Actpass,
             _ => ConnectionRole::Unspecified,
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::error::Result;
-
-    use super::*;
-
-    use std::io::Cursor;
-
-    #[test]
-    fn test_dtls_role_string() {
-        let tests = vec![
-            (DTLSRole::Unspecified, "Unspecified"),
-            (DTLSRole::Auto, "auto"),
-            (DTLSRole::Client, "client"),
-            (DTLSRole::Server, "server"),
-        ];
-
-        for (role, expected_string) in tests {
-            assert_eq!(expected_string, role.to_string(),)
-        }
-    }
-
-    #[test]
-    fn test_dtls_role_from_remote_sdp() -> Result<()> {
-        const NO_MEDIA: &str = "v=0
-o=- 4596489990601351948 2 IN IP4 127.0.0.1
-s=-
-t=0 0
-";
-
-        const MEDIA_NO_SETUP: &str = "v=0
-o=- 4596489990601351948 2 IN IP4 127.0.0.1
-s=-
-t=0 0
-m=application 47299 DTLS/SCTP 5000
-c=IN IP4 192.168.20.129
-";
-
-        const MEDIA_SETUP_DECLARED: &str = "v=0
-o=- 4596489990601351948 2 IN IP4 127.0.0.1
-s=-
-t=0 0
-m=application 47299 DTLS/SCTP 5000
-c=IN IP4 192.168.20.129
-a=setup:";
-
-        let tests = vec![
-            ("No MediaDescriptions", NO_MEDIA.to_owned(), DTLSRole::Auto),
-            (
-                "MediaDescription, no setup",
-                MEDIA_NO_SETUP.to_owned(),
-                DTLSRole::Auto,
-            ),
-            (
-                "MediaDescription, setup:actpass",
-                format!("{}{}\n", MEDIA_SETUP_DECLARED, "actpass"),
-                DTLSRole::Auto,
-            ),
-            (
-                "MediaDescription, setup:passive",
-                format!("{}{}\n", MEDIA_SETUP_DECLARED, "passive"),
-                DTLSRole::Server,
-            ),
-            (
-                "MediaDescription, setup:active",
-                format!("{}{}\n", MEDIA_SETUP_DECLARED, "active"),
-                DTLSRole::Client,
-            ),
-        ];
-
-        for (name, session_description_str, expected_role) in tests {
-            let mut reader = Cursor::new(session_description_str.as_bytes());
-            let session_description = SessionDescription::unmarshal(&mut reader)?;
-            assert_eq!(
-                expected_role,
-                DTLSRole::from(&session_description),
-                "{} failed",
-                name
-            );
-        }
-
-        Ok(())
     }
 }

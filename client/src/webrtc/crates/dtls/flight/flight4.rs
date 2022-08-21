@@ -32,7 +32,7 @@ use std::fmt;
 use std::io::BufWriter;
 
 #[derive(Debug, PartialEq)]
-pub struct Flight4;
+pub(crate) struct Flight4;
 
 impl fmt::Display for Flight4 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

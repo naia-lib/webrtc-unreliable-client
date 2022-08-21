@@ -8,7 +8,7 @@ use std::io::Write;
 
 // https://tools.ietf.org/html/rfc4346#section-6.2.1
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum ContentType {
+pub(crate) enum ContentType {
     ChangeCipherSpec = 20,
     Alert = 21,
     Handshake = 22,
@@ -35,7 +35,7 @@ impl Default for ContentType {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub enum Content {
+pub(crate) enum Content {
     ChangeCipherSpec(ChangeCipherSpec),
     Alert(Alert),
     Handshake(Handshake),
@@ -43,7 +43,7 @@ pub enum Content {
 }
 
 impl Content {
-    pub fn content_type(&self) -> ContentType {
+    pub(crate) fn content_type(&self) -> ContentType {
         match self {
             Content::ChangeCipherSpec(c) => c.content_type(),
             Content::Alert(c) => c.content_type(),
@@ -52,7 +52,7 @@ impl Content {
         }
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         match self {
             Content::ChangeCipherSpec(c) => c.size(),
             Content::Alert(c) => c.size(),
@@ -61,7 +61,7 @@ impl Content {
         }
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         match self {
             Content::ChangeCipherSpec(c) => c.marshal(writer),
             Content::Alert(c) => c.marshal(writer),

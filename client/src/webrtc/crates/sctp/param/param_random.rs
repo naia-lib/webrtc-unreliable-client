@@ -3,8 +3,8 @@ use super::{param_header::*, param_type::*, *};
 use bytes::{Bytes, BytesMut};
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamRandom {
-    pub random_data: Bytes,
+pub(crate) struct ParamRandom {
+    pub(crate) random_data: Bytes,
 }
 
 impl fmt::Display for ParamRandom {

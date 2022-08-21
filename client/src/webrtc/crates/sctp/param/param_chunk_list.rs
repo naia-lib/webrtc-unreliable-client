@@ -4,8 +4,8 @@ use crate::webrtc::sctp::chunk::chunk_type::*;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct ParamChunkList {
-    pub chunk_types: Vec<ChunkType>,
+pub(crate) struct ParamChunkList {
+    pub(crate) chunk_types: Vec<ChunkType>,
 }
 
 impl fmt::Display for ParamChunkList {

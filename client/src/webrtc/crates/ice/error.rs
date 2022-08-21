@@ -5,31 +5,11 @@ use std::net;
 use std::num::ParseIntError;
 use std::time::SystemTimeError;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
-
-    /// Indicates the scheme type could not be parsed.
-    #[error("unknown scheme type")]
-    ErrSchemeType,
-
-    /// Indicates query arguments are provided in a STUN URL.
-    #[error("queries not supported in stun address")]
-    ErrStunQuery,
-
-    /// Indicates an malformed query is provided.
-    #[error("invalid query")]
-    ErrInvalidQuery,
-
-    /// Indicates malformed hostname is provided.
-    #[error("invalid hostname")]
-    ErrHost,
-
-    /// Indicates malformed port is provided.
-    #[error("invalid port number")]
-    ErrPort,
+pub(crate) enum Error {
 
     /// Indicates local username fragment insufficient bits are provided.
     /// Have to be at least 24 bits long.
@@ -40,10 +20,6 @@ pub enum Error {
     /// Have to be at least 128 bits long.
     #[error("local password is less than 128 bits long")]
     ErrLocalPwdInsufficientBits,
-
-    /// Indicates an unsupported transport type was provided.
-    #[error("invalid transport protocol type")]
-    ErrProtoType,
 
     /// Indicates the agent is closed.
     #[error("the agent is closed")]
@@ -72,14 +48,6 @@ pub enum Error {
     /// Indicates GatherCandidates has been called multiple times.
     #[error("attempting to gather candidates during gathering state")]
     ErrMultipleGatherAttempted,
-
-    /// Indicates agent was give TURN URL with an empty Username.
-    #[error("username is empty")]
-    ErrUsernameEmpty,
-
-    /// Indicates agent was give TURN URL with an empty Password.
-    #[error("password is empty")]
-    ErrPasswordEmpty,
 
     /// Indicates we were unable to parse a candidate address.
     #[error("failed to parse address")]
@@ -115,11 +83,6 @@ pub enum Error {
     #[error("1:1 NAT IP mapping for host candidate ineffective")]
     ErrIneffectiveNat1to1IpMappingHost,
 
-    /// Indicates that 1:1 NAT IP mapping for srflx candidate is requested, but the srflx candidate
-    /// type is disabled.
-    #[error("1:1 NAT IP mapping for srflx candidate ineffective")]
-    ErrIneffectiveNat1to1IpMappingSrflx,
-
     /// Indicates an invalid MulticastDNSHostName.
     #[error("invalid mDNS HostName, must end with .local and can only contain a single '.'")]
     ErrInvalidMulticastDnshostName,
@@ -132,16 +95,12 @@ pub enum Error {
     ErrAttributeTooShortIceCandidate,
     #[error("could not parse related addresses")]
     ErrParseRelatedAddr,
-    #[error("could not parse type")]
-    ErrParseType,
     #[error("unknown candidate type")]
     ErrUnknownCandidateType,
     #[error("unable to determine networkType")]
     ErrDetermineNetworkType,
     #[error("username mismatch")]
     ErrMismatchUsername,
-    #[error("invalid url")]
-    ErrInvalidUrl,
 
     #[error("parse int: {0}")]
     ParseInt(#[from] ParseIntError),
@@ -155,10 +114,6 @@ pub enum Error {
     Stun(#[from] crate::webrtc::stun::Error),
     #[error("{0}")]
     ParseUrl(#[from] url::ParseError),
-    #[error("{0}")]
-    Mdns(#[from] crate::webrtc::mdns::Error),
-    #[error("{0}")]
-    Turn(#[from] crate::webrtc::turn::Error),
 
     #[error("{0}")]
     Other(String),
@@ -166,7 +121,7 @@ pub enum Error {
 
 #[derive(Debug, Error)]
 #[error("io error: {0}")]
-pub struct IoError(#[from] pub io::Error);
+pub(crate) struct IoError(#[from] pub(crate) io::Error);
 
 // Workaround for wanting PartialEq for io::Error.
 impl PartialEq for IoError {

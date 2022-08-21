@@ -2,7 +2,7 @@ use std::fmt;
 
 /// ICEGathererState represents the current state of the ICE gatherer.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceGathererState {
+pub(crate) enum RTCIceGathererState {
     Unspecified,
 
     /// ICEGathererStateNew indicates object has been created but
@@ -68,26 +68,6 @@ impl fmt::Display for RTCIceGathererState {
                 write!(f, "{}", ICE_GATHERED_STATE_CLOSED_STR)
             }
             _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_ice_gatherer_state_string() {
-        let tests = vec![
-            (RTCIceGathererState::Unspecified, "Unspecified"),
-            (RTCIceGathererState::New, "new"),
-            (RTCIceGathererState::Gathering, "gathering"),
-            (RTCIceGathererState::Complete, "complete"),
-            (RTCIceGathererState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string());
         }
     }
 }

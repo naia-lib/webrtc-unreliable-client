@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
-pub struct Flight6;
+pub(crate) struct Flight6;
 
 impl fmt::Display for Flight6 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

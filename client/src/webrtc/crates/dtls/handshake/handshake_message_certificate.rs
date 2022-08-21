@@ -3,22 +3,19 @@ use super::*;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
 
-#[cfg(test)]
-mod handshake_message_certificate_test;
-
 const HANDSHAKE_MESSAGE_CERTIFICATE_LENGTH_FIELD_SIZE: usize = 3;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct HandshakeMessageCertificate {
-    pub certificate: Vec<Vec<u8>>,
+pub(crate) struct HandshakeMessageCertificate {
+    pub(crate) certificate: Vec<Vec<u8>>,
 }
 
 impl HandshakeMessageCertificate {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::Certificate
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         let mut len = 3;
 
         for r in &self.certificate {
@@ -28,7 +25,7 @@ impl HandshakeMessageCertificate {
         len
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         let mut payload_size = 0;
         for r in &self.certificate {
             payload_size += HANDSHAKE_MESSAGE_CERTIFICATE_LENGTH_FIELD_SIZE + r.len();
@@ -48,7 +45,7 @@ impl HandshakeMessageCertificate {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let mut certificate: Vec<Vec<u8>> = vec![];
 
         let payload_size = reader.read_u24::<BigEndian>()? as usize;

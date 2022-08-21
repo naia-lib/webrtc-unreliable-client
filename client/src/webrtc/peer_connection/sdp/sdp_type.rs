@@ -3,7 +3,7 @@ use std::fmt;
 
 /// SDPType describes the type of an SessionDescription.
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum RTCSdpType {
+pub(crate) enum RTCSdpType {
     Unspecified = 0,
 
     /// indicates that a description MUST be treated as an SDP offer.
@@ -65,41 +65,6 @@ impl fmt::Display for RTCSdpType {
             RTCSdpType::Answer => write!(f, "{}", SDP_TYPE_ANSWER_STR),
             RTCSdpType::Rollback => write!(f, "{}", SDP_TYPE_ROLLBACK_STR),
             _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_sdp_type() {
-        let tests = vec![
-            ("Unspecified", RTCSdpType::Unspecified),
-            ("offer", RTCSdpType::Offer),
-            ("pranswer", RTCSdpType::Pranswer),
-            ("answer", RTCSdpType::Answer),
-            ("rollback", RTCSdpType::Rollback),
-        ];
-
-        for (sdp_type_string, expected_sdp_type) in tests {
-            assert_eq!(expected_sdp_type, RTCSdpType::from(sdp_type_string));
-        }
-    }
-
-    #[test]
-    fn test_sdp_type_string() {
-        let tests = vec![
-            (RTCSdpType::Unspecified, "Unspecified"),
-            (RTCSdpType::Offer, "offer"),
-            (RTCSdpType::Pranswer, "pranswer"),
-            (RTCSdpType::Answer, "answer"),
-            (RTCSdpType::Rollback, "rollback"),
-        ];
-
-        for (sdp_type, expected_string) in tests {
-            assert_eq!(expected_string, sdp_type.to_string());
         }
     }
 }

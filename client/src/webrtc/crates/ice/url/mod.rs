@@ -1,15 +1,10 @@
-#[cfg(test)]
-mod url_test;
 
-use crate::webrtc::ice::error::*;
-
-use std::borrow::Cow;
 use std::convert::From;
 use std::fmt;
 
 /// The type of server used in the ice.URL structure.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SchemeType {
+pub(crate) enum SchemeType {
     /// The URL represents a STUN server.
     Stun,
 
@@ -61,7 +56,7 @@ impl fmt::Display for SchemeType {
 
 /// The transport protocol type that is used in the `ice::url::Url` structure.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum ProtoType {
+pub(crate) enum ProtoType {
     /// The URL uses a UDP transport.
     Udp,
 
@@ -104,13 +99,11 @@ impl fmt::Display for ProtoType {
 
 /// Represents a STUN (rfc7064) or TURN (rfc7065) URL.
 #[derive(Debug, Clone, Default)]
-pub struct Url {
-    pub scheme: SchemeType,
-    pub host: String,
-    pub port: u16,
-    pub username: String,
-    pub password: String,
-    pub proto: ProtoType,
+pub(crate) struct Url {
+    pub(crate) scheme: SchemeType,
+    pub(crate) host: String,
+    pub(crate) port: u16,
+    pub(crate) proto: ProtoType,
 }
 
 impl fmt::Display for Url {
@@ -129,110 +122,5 @@ impl fmt::Display for Url {
         } else {
             write!(f, "{}:{}:{}", self.scheme, host, self.port)
         }
-    }
-}
-
-impl Url {
-    /// Parses a STUN or TURN urls following the ABNF syntax described in
-    /// [IETF rfc-7064](https://tools.ietf.org/html/rfc7064) and
-    /// [IETF rfc-7065](https://tools.ietf.org/html/rfc7065) respectively.
-    pub fn parse_url(raw: &str) -> Result<Self> {
-        // work around for url crate
-        if raw.contains("//") {
-            return Err(Error::ErrInvalidUrl);
-        }
-
-        let mut s = raw.to_string();
-        let pos = raw.find(':');
-        if let Some(p) = pos {
-            s.replace_range(p..=p, "://");
-        } else {
-            return Err(Error::ErrSchemeType);
-        }
-
-        let raw_parts = url::Url::parse(&s)?;
-
-        let scheme = raw_parts.scheme().into();
-
-        let host = if let Some(host) = raw_parts.host_str() {
-            host.trim()
-                .trim_start_matches('[')
-                .trim_end_matches(']')
-                .to_owned()
-        } else {
-            return Err(Error::ErrHost);
-        };
-
-        let port = if let Some(port) = raw_parts.port() {
-            port
-        } else if scheme == SchemeType::Stun || scheme == SchemeType::Turn {
-            3478
-        } else {
-            5349
-        };
-
-        let mut q_args = raw_parts.query_pairs();
-        let proto = match scheme {
-            SchemeType::Stun => {
-                if q_args.count() > 0 {
-                    return Err(Error::ErrStunQuery);
-                }
-                ProtoType::Udp
-            }
-            SchemeType::Stuns => {
-                if q_args.count() > 0 {
-                    return Err(Error::ErrStunQuery);
-                }
-                ProtoType::Tcp
-            }
-            SchemeType::Turn => {
-                if q_args.count() > 1 {
-                    return Err(Error::ErrInvalidQuery);
-                }
-                if let Some((key, value)) = q_args.next() {
-                    if key == Cow::Borrowed("transport") {
-                        let proto: ProtoType = value.as_ref().into();
-                        if proto == ProtoType::Unknown {
-                            return Err(Error::ErrProtoType);
-                        }
-                        proto
-                    } else {
-                        return Err(Error::ErrInvalidQuery);
-                    }
-                } else {
-                    ProtoType::Udp
-                }
-            }
-            SchemeType::Turns => {
-                if q_args.count() > 1 {
-                    return Err(Error::ErrInvalidQuery);
-                }
-                if let Some((key, value)) = q_args.next() {
-                    if key == Cow::Borrowed("transport") {
-                        let proto: ProtoType = value.as_ref().into();
-                        if proto == ProtoType::Unknown {
-                            return Err(Error::ErrProtoType);
-                        }
-                        proto
-                    } else {
-                        return Err(Error::ErrInvalidQuery);
-                    }
-                } else {
-                    ProtoType::Tcp
-                }
-            }
-            SchemeType::Unknown => {
-                return Err(Error::ErrSchemeType);
-            }
-        };
-
-        Ok(Self {
-            scheme,
-            host,
-            port,
-            username: "".to_owned(),
-            password: "".to_owned(),
-            proto,
-        })
     }
 }

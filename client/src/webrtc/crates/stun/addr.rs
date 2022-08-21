@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod addr_test;
 
 use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::error::*;
@@ -8,10 +6,10 @@ use crate::webrtc::stun::message::*;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-pub const FAMILY_IPV4: u16 = 0x01;
-pub const FAMILY_IPV6: u16 = 0x02;
-pub const IPV4LEN: usize = 4;
-pub const IPV6LEN: usize = 16;
+pub(crate) const FAMILY_IPV4: u16 = 0x01;
+pub(crate) const FAMILY_IPV6: u16 = 0x02;
+pub(crate) const IPV4LEN: usize = 4;
+pub(crate) const IPV6LEN: usize = 16;
 
 /// MappedAddress represents MAPPED-ADDRESS attribute.
 ///
@@ -19,9 +17,9 @@ pub const IPV6LEN: usize = 16;
 /// compatibility with RFC 3489 clients.
 ///
 /// RFC 5389 Section 15.1
-pub struct MappedAddress {
-    pub ip: IpAddr,
-    pub port: u16,
+pub(crate) struct MappedAddress {
+    pub(crate) ip: IpAddr,
+    pub(crate) port: u16,
 }
 
 impl fmt::Display for MappedAddress {
@@ -63,7 +61,7 @@ impl Getter for MappedAddress {
 
 impl MappedAddress {
     /// get_from_as decodes MAPPED-ADDRESS value in message m as an attribute of type t.
-    pub fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<()> {
+    pub(crate) fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<()> {
         let v = m.get(t)?;
         if v.len() <= 4 {
             return Err(Error::ErrUnexpectedEof);
@@ -91,7 +89,7 @@ impl MappedAddress {
     }
 
     /// add_to_as adds MAPPED-ADDRESS value to m as t attribute.
-    pub fn add_to_as(&self, m: &mut Message, t: AttrType) -> Result<()> {
+    pub(crate) fn add_to_as(&self, m: &mut Message, t: AttrType) -> Result<()> {
         let family = match self.ip {
             IpAddr::V4(_) => FAMILY_IPV4,
             IpAddr::V6(_) => FAMILY_IPV6,

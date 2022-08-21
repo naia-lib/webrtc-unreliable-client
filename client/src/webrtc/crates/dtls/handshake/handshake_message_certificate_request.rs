@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_certificate_request_test;
 
 use super::*;
 use crate::webrtc::dtls::client_certificate_type::*;
@@ -16,21 +14,21 @@ message (if it is sent; otherwise, this message follows the
 server's Certificate message).
 */
 #[derive(Clone, Debug, PartialEq)]
-pub struct HandshakeMessageCertificateRequest {
-    pub certificate_types: Vec<ClientCertificateType>,
-    pub signature_hash_algorithms: Vec<SignatureHashAlgorithm>,
+pub(crate) struct HandshakeMessageCertificateRequest {
+    pub(crate) certificate_types: Vec<ClientCertificateType>,
+    pub(crate) signature_hash_algorithms: Vec<SignatureHashAlgorithm>,
 }
 
 impl HandshakeMessageCertificateRequest {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::CertificateRequest
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         1 + self.certificate_types.len() + 2 + self.signature_hash_algorithms.len() * 2 + 2
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u8(self.certificate_types.len() as u8)?;
         for v in &self.certificate_types {
             writer.write_u8(*v as u8)?;
@@ -47,7 +45,7 @@ impl HandshakeMessageCertificateRequest {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let certificate_types_length = reader.read_u8()?;
 
         let mut certificate_types = vec![];

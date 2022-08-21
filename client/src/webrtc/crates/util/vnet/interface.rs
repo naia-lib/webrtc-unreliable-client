@@ -4,28 +4,28 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Default)]
-pub struct Interface {
-    pub name: String,
-    pub addrs: Vec<IpNet>,
+pub(crate) struct Interface {
+    pub(crate) name: String,
+    pub(crate) addrs: Vec<IpNet>,
 }
 
 impl Interface {
-    pub fn new(name: String, addrs: Vec<IpNet>) -> Self {
+    pub(crate) fn new(name: String, addrs: Vec<IpNet>) -> Self {
         Interface { name, addrs }
     }
 
-    pub fn add_addr(&mut self, addr: IpNet) {
+    pub(crate) fn add_addr(&mut self, addr: IpNet) {
         self.addrs.push(addr);
     }
 
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
-    pub fn addrs(&self) -> &[IpNet] {
+    pub(crate) fn addrs(&self) -> &[IpNet] {
         &self.addrs
     }
 
-    pub fn convert(addr: SocketAddr, mask: Option<SocketAddr>) -> Result<IpNet> {
+    pub(crate) fn convert(addr: SocketAddr, mask: Option<SocketAddr>) -> Result<IpNet> {
         let prefix = if let Some(mask) = mask {
             match (addr, mask) {
                 (SocketAddr::V4(_), SocketAddr::V4(mask)) => {

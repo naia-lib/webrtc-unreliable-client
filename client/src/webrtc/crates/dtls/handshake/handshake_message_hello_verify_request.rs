@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod handshake_message_hello_verify_request_test;
 
 use super::*;
 use crate::webrtc::dtls::record_layer::record_layer_header::*;
@@ -25,21 +23,21 @@ use std::io::{Read, Write};
    https://tools.ietf.org/html/rfc6347#section-4.2.1
 */
 #[derive(Clone, Debug, PartialEq)]
-pub struct HandshakeMessageHelloVerifyRequest {
-    pub version: ProtocolVersion,
-    pub cookie: Vec<u8>,
+pub(crate) struct HandshakeMessageHelloVerifyRequest {
+    pub(crate) version: ProtocolVersion,
+    pub(crate) cookie: Vec<u8>,
 }
 
 impl HandshakeMessageHelloVerifyRequest {
-    pub fn handshake_type(&self) -> HandshakeType {
+    pub(crate) fn handshake_type(&self) -> HandshakeType {
         HandshakeType::HelloVerifyRequest
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         1 + 1 + 1 + self.cookie.len()
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         if self.cookie.len() > 255 {
             return Err(Error::ErrCookieTooLong);
         }
@@ -52,7 +50,7 @@ impl HandshakeMessageHelloVerifyRequest {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
         let cookie_length = reader.read_u8()?;

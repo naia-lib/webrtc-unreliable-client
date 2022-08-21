@@ -2,7 +2,7 @@ use std::fmt;
 
 /// ICEGatheringState describes the state of the candidate gathering process.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCIceGatheringState {
+pub(crate) enum RTCIceGatheringState {
     Unspecified,
 
     /// ICEGatheringStateNew indicates that any of the ICETransports are
@@ -50,39 +50,6 @@ impl fmt::Display for RTCIceGatheringState {
                 write!(f, "{}", ICE_GATHERING_STATE_COMPLETE_STR)
             }
             _ => write!(f, "{}", crate::webrtc::UNSPECIFIED_STR),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_ice_gathering_state() {
-        let tests = vec![
-            ("Unspecified", RTCIceGatheringState::Unspecified),
-            ("new", RTCIceGatheringState::New),
-            ("gathering", RTCIceGatheringState::Gathering),
-            ("complete", RTCIceGatheringState::Complete),
-        ];
-
-        for (state_string, expected_state) in tests {
-            assert_eq!(expected_state, RTCIceGatheringState::from(state_string));
-        }
-    }
-
-    #[test]
-    fn test_ice_gathering_state_string() {
-        let tests = vec![
-            (RTCIceGatheringState::Unspecified, "Unspecified"),
-            (RTCIceGatheringState::New, "new"),
-            (RTCIceGatheringState::Gathering, "gathering"),
-            (RTCIceGatheringState::Complete, "complete"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string());
         }
     }
 }

@@ -1,8 +1,5 @@
 use super::*;
 use crate::webrtc::ice::candidate::candidate_host::CandidateHostConfig;
-use crate::webrtc::ice::candidate::candidate_peer_reflexive::CandidatePeerReflexiveConfig;
-use crate::webrtc::ice::candidate::candidate_relay::CandidateRelayConfig;
-use crate::webrtc::ice::candidate::candidate_server_reflexive::CandidateServerReflexiveConfig;
 use crate::webrtc::ice::error::*;
 use crate::webrtc::ice::util::*;
 
@@ -16,44 +13,40 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::{broadcast, Mutex};
 
 #[derive(Default)]
-pub struct CandidateBaseConfig {
-    pub candidate_id: String,
-    pub network: String,
-    pub address: String,
-    pub port: u16,
-    pub component: u16,
-    pub priority: u32,
-    pub foundation: String,
-    pub conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
-    pub initialized_ch: Option<broadcast::Receiver<()>>,
+pub(crate) struct CandidateBaseConfig {
+    pub(crate) candidate_id: String,
+    pub(crate) network: String,
+    pub(crate) address: String,
+    pub(crate) port: u16,
+    pub(crate) component: u16,
+    pub(crate) priority: u32,
+    pub(crate) foundation: String,
+    pub(crate) conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
 }
 
-pub struct CandidateBase {
-    pub id: String,
-    pub network_type: AtomicU8,
-    pub candidate_type: CandidateType,
+pub(crate) struct CandidateBase {
+    pub(crate) id: String,
+    pub(crate) network_type: AtomicU8,
+    pub(crate) candidate_type: CandidateType,
 
-    pub component: AtomicU16,
-    pub address: String,
-    pub port: u16,
-    pub related_address: Option<CandidateRelatedAddress>,
-    pub tcp_type: TcpType,
+    pub(crate) component: AtomicU16,
+    pub(crate) address: String,
+    pub(crate) port: u16,
+    pub(crate) related_address: Option<CandidateRelatedAddress>,
 
-    pub resolved_addr: Mutex<SocketAddr>,
+    pub(crate) resolved_addr: Mutex<SocketAddr>,
 
-    pub last_sent: AtomicU64,
-    pub last_received: AtomicU64,
+    pub(crate) last_sent: AtomicU64,
+    pub(crate) last_received: AtomicU64,
 
-    pub conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
-    pub closed_ch: Arc<Mutex<Option<broadcast::Sender<()>>>>,
+    pub(crate) conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
+    pub(crate) closed_ch: Arc<Mutex<Option<broadcast::Sender<()>>>>,
 
-    pub foundation_override: String,
-    pub priority_override: u32,
+    pub(crate) foundation_override: String,
+    pub(crate) priority_override: u32,
 
     //CandidateHost
-    pub network: String,
-    //CandidateRelay
-    pub relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
+    pub(crate) network: String,
 }
 
 impl Default for CandidateBase {
@@ -67,7 +60,6 @@ impl Default for CandidateBase {
             address: String::new(),
             port: 0,
             related_address: None,
-            tcp_type: TcpType::default(),
 
             resolved_addr: Mutex::new(SocketAddr::new(IpAddr::from([0, 0, 0, 0]), 0)),
 
@@ -80,7 +72,6 @@ impl Default for CandidateBase {
             foundation_override: String::new(),
             priority_override: 0,
             network: String::new(),
-            relay_client: None,
         }
     }
 }
@@ -196,10 +187,6 @@ impl Candidate for CandidateBase {
         self.candidate_type
     }
 
-    fn tcp_type(&self) -> TcpType {
-        self.tcp_type
-    }
-
     /// Returns the string representation of the ICECandidate.
     fn marshal(&self) -> String {
         let mut val = format!(
@@ -212,10 +199,6 @@ impl Candidate for CandidateBase {
             self.port(),
             self.candidate_type()
         );
-
-        if self.tcp_type != TcpType::Unspecified {
-            val += format!(" tcptype {}", self.tcp_type()).as_str();
-        }
 
         if let Some(related_address) = self.related_address() {
             val += format!(
@@ -241,10 +224,6 @@ impl Candidate for CandidateBase {
                 return Err(Error::ErrClosed);
             }
             closed_ch.take();
-        }
-
-        if let Some(relay_client) = &self.relay_client {
-            let _ = relay_client.close().await;
         }
 
         if let Some(conn) = &self.conn {
@@ -283,7 +262,6 @@ impl Candidate for CandidateBase {
             && self.candidate_type() == other.candidate_type()
             && self.address() == other.address()
             && self.port() == other.port()
-            && self.tcp_type() == other.tcp_type()
             && self.related_address() == other.related_address()
     }
 
@@ -309,84 +287,25 @@ impl Candidate for CandidateBase {
 }
 
 impl CandidateBase {
-    pub fn set_last_received(&self, d: Duration) {
+    pub(crate) fn set_last_received(&self, d: Duration) {
         #[allow(clippy::cast_possible_truncation)]
         self.last_received
             .store(d.as_nanos() as u64, Ordering::SeqCst);
     }
 
-    pub fn set_last_sent(&self, d: Duration) {
+    pub(crate) fn set_last_sent(&self, d: Duration) {
         #[allow(clippy::cast_possible_truncation)]
         self.last_sent.store(d.as_nanos() as u64, Ordering::SeqCst);
     }
 
     /// Returns the local preference for this candidate.
-    pub fn local_preference(&self) -> u16 {
-        if self.network_type().is_tcp() {
-            // RFC 6544, section 4.2
-            //
-            // In Section 4.1.2.1 of [RFC5245], a recommended formula for UDP ICE
-            // candidate prioritization is defined.  For TCP candidates, the same
-            // formula and candidate type preferences SHOULD be used, and the
-            // RECOMMENDED type preferences for the new candidate types defined in
-            // this document (see Section 5) are 105 for NAT-assisted candidates and
-            // 75 for UDP-tunneled candidates.
-            //
-            // (...)
-            //
-            // With TCP candidates, the local preference part of the recommended
-            // priority formula is updated to also include the directionality
-            // (active, passive, or simultaneous-open) of the TCP connection.  The
-            // RECOMMENDED local preference is then defined as:
-            //
-            //     local preference = (2^13) * direction-pref + other-pref
-            //
-            // The direction-pref MUST be between 0 and 7 (both inclusive), with 7
-            // being the most preferred.  The other-pref MUST be between 0 and 8191
-            // (both inclusive), with 8191 being the most preferred.  It is
-            // RECOMMENDED that the host, UDP-tunneled, and relayed TCP candidates
-            // have the direction-pref assigned as follows: 6 for active, 4 for
-            // passive, and 2 for S-O.  For the NAT-assisted and server reflexive
-            // candidates, the RECOMMENDED values are: 6 for S-O, 4 for active, and
-            // 2 for passive.
-            //
-            // (...)
-            //
-            // If any two candidates have the same type-preference and direction-
-            // pref, they MUST have a unique other-pref.  With this specification,
-            // this usually only happens with multi-homed hosts, in which case
-            // other-pref is the preference for the particular IP address from which
-            // the candidate was obtained.  When there is only a single IP address,
-            // this value SHOULD be set to the maximum allowed value (8191).
-            let other_pref: u16 = 8191;
-
-            let direction_pref: u16 = match self.candidate_type() {
-                CandidateType::Host | CandidateType::Relay => match self.tcp_type() {
-                    TcpType::Active => 6,
-                    TcpType::Passive => 4,
-                    TcpType::SimultaneousOpen => 2,
-                    TcpType::Unspecified => 0,
-                },
-                CandidateType::PeerReflexive | CandidateType::ServerReflexive => {
-                    match self.tcp_type() {
-                        TcpType::SimultaneousOpen => 6,
-                        TcpType::Active => 4,
-                        TcpType::Passive => 2,
-                        TcpType::Unspecified => 0,
-                    }
-                }
-                CandidateType::Unspecified => 0,
-            };
-
-            (1 << 13) * direction_pref + other_pref
-        } else {
-            DEFAULT_LOCAL_PREFERENCE
-        }
+    pub(crate) fn local_preference(&self) -> u16 {
+        DEFAULT_LOCAL_PREFERENCE
     }
 }
 
 /// Creates a Candidate from its string representation.
-pub async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
+pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
     let split: Vec<&str> = raw.split_whitespace().collect();
     if split.len() < 8 {
         return Err(Error::Other(format!(
@@ -416,10 +335,6 @@ pub async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
 
     let typ = split[7];
 
-    let mut rel_addr = String::new();
-    let mut rel_port = 0;
-    let mut tcp_type = TcpType::Unspecified;
-
     if split.len() > 8 {
         let split2 = &split[8..];
 
@@ -430,21 +345,6 @@ pub async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                     Error::ErrParseRelatedAddr
                 )));
             }
-
-            // RelatedAddress
-            rel_addr = split2[1].to_owned();
-
-            // RelatedPort
-            rel_port = split2[3].parse()?;
-        } else if split2[0] == "tcptype" {
-            if split2.len() < 2 {
-                return Err(Error::Other(format!(
-                    "{:?}: incorrect length",
-                    Error::ErrParseType
-                )));
-            }
-
-            tcp_type = TcpType::from(split2[1]);
         }
     }
 
@@ -459,60 +359,9 @@ pub async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                     priority,
                     foundation,
                     ..CandidateBaseConfig::default()
-                },
-                tcp_type,
+                }
             };
             config.new_candidate_host().await
-        }
-        "srflx" => {
-            let config = CandidateServerReflexiveConfig {
-                base_config: CandidateBaseConfig {
-                    network,
-                    address,
-                    port,
-                    component,
-                    priority,
-                    foundation,
-                    ..CandidateBaseConfig::default()
-                },
-                rel_addr,
-                rel_port,
-            };
-            config.new_candidate_server_reflexive().await
-        }
-        "prflx" => {
-            let config = CandidatePeerReflexiveConfig {
-                base_config: CandidateBaseConfig {
-                    network,
-                    address,
-                    port,
-                    component,
-                    priority,
-                    foundation,
-                    ..CandidateBaseConfig::default()
-                },
-                rel_addr,
-                rel_port,
-            };
-
-            config.new_candidate_peer_reflexive().await
-        }
-        "relay" => {
-            let config = CandidateRelayConfig {
-                base_config: CandidateBaseConfig {
-                    network,
-                    address,
-                    port,
-                    component,
-                    priority,
-                    foundation,
-                    ..CandidateBaseConfig::default()
-                },
-                rel_addr,
-                rel_port,
-                ..CandidateRelayConfig::default()
-            };
-            config.new_candidate_relay().await
         }
         _ => Err(Error::Other(format!(
             "{:?} ({})",

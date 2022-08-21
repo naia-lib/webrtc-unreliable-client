@@ -2,7 +2,7 @@ use std::fmt;
 
 /// PeerConnectionState indicates the state of the PeerConnection.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCPeerConnectionState {
+pub(crate) enum RTCPeerConnectionState {
     Unspecified,
 
     /// PeerConnectionStateNew indicates that any of the ICETransports or
@@ -88,75 +88,5 @@ impl fmt::Display for RTCPeerConnectionState {
             RTCPeerConnectionState::Unspecified => crate::webrtc::UNSPECIFIED_STR,
         };
         write!(f, "{}", s)
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum NegotiationNeededState {
-    /// NegotiationNeededStateEmpty not running and queue is empty
-    Empty,
-    /// NegotiationNeededStateEmpty running and queue is empty
-    Run,
-    /// NegotiationNeededStateEmpty running and queue
-    Queue,
-}
-
-impl Default for NegotiationNeededState {
-    fn default() -> Self {
-        NegotiationNeededState::Empty
-    }
-}
-
-impl From<u8> for NegotiationNeededState {
-    fn from(v: u8) -> Self {
-        match v {
-            1 => NegotiationNeededState::Run,
-            2 => NegotiationNeededState::Queue,
-            _ => NegotiationNeededState::Empty,
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_peer_connection_state() {
-        let tests = vec![
-            (crate::webrtc::UNSPECIFIED_STR, RTCPeerConnectionState::Unspecified),
-            ("new", RTCPeerConnectionState::New),
-            ("connecting", RTCPeerConnectionState::Connecting),
-            ("connected", RTCPeerConnectionState::Connected),
-            ("disconnected", RTCPeerConnectionState::Disconnected),
-            ("failed", RTCPeerConnectionState::Failed),
-            ("closed", RTCPeerConnectionState::Closed),
-        ];
-
-        for (state_string, expected_state) in tests {
-            assert_eq!(
-                expected_state,
-                RTCPeerConnectionState::from(state_string),
-                "testCase: {}",
-                expected_state,
-            );
-        }
-    }
-
-    #[test]
-    fn test_peer_connection_state_string() {
-        let tests = vec![
-            (RTCPeerConnectionState::Unspecified, crate::webrtc::UNSPECIFIED_STR),
-            (RTCPeerConnectionState::New, "new"),
-            (RTCPeerConnectionState::Connecting, "connecting"),
-            (RTCPeerConnectionState::Connected, "connected"),
-            (RTCPeerConnectionState::Disconnected, "disconnected"),
-            (RTCPeerConnectionState::Failed, "failed"),
-            (RTCPeerConnectionState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string(),)
-        }
     }
 }

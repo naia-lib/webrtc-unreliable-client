@@ -4,7 +4,7 @@ use crate::webrtc::stun::message::*;
 
 /// Represents PRIORITY attribute.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub struct PriorityAttr(pub u32);
+pub(crate) struct PriorityAttr(pub(crate) u32);
 
 const PRIORITY_SIZE: usize = 4; // 32 bit
 

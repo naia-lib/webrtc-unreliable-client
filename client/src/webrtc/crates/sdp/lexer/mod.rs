@@ -4,20 +4,20 @@ use super::error::{Error, Result};
 use std::io;
 use std::io::SeekFrom;
 
-pub const END_LINE: &str = "\r\n";
+pub(crate) const END_LINE: &str = "\r\n";
 
-pub struct Lexer<'a, R: io::BufRead + io::Seek> {
-    pub desc: SessionDescription,
-    pub reader: &'a mut R,
+pub(crate) struct Lexer<'a, R: io::BufRead + io::Seek> {
+    pub(crate) desc: SessionDescription,
+    pub(crate) reader: &'a mut R,
 }
 
-pub type StateFnType<'a, R> = fn(&mut Lexer<'a, R>) -> Result<Option<StateFn<'a, R>>>;
+pub(crate) type StateFnType<'a, R> = fn(&mut Lexer<'a, R>) -> Result<Option<StateFn<'a, R>>>;
 
-pub struct StateFn<'a, R: io::BufRead + io::Seek> {
-    pub f: StateFnType<'a, R>,
+pub(crate) struct StateFn<'a, R: io::BufRead + io::Seek> {
+    pub(crate) f: StateFnType<'a, R>,
 }
 
-pub fn read_type<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<(Vec<u8>, usize)> {
+pub(crate) fn read_type<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<(Vec<u8>, usize)> {
     let mut b = [0; 1];
 
     loop {
@@ -42,13 +42,13 @@ pub fn read_type<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<(Vec<u8>, 
     }
 }
 
-pub fn read_value<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<(String, usize)> {
+pub(crate) fn read_value<R: io::BufRead + io::Seek>(reader: &mut R) -> Result<(String, usize)> {
     let mut value = String::new();
     let num_bytes = reader.read_line(&mut value)?;
     Ok((value.trim().to_string(), num_bytes))
 }
 
-pub fn index_of(element: &str, data: &[&str]) -> i32 {
+pub(crate) fn index_of(element: &str, data: &[&str]) -> i32 {
     for (k, &v) in data.iter().enumerate() {
         if element == v {
             return k as i32;
@@ -57,7 +57,7 @@ pub fn index_of(element: &str, data: &[&str]) -> i32 {
     -1
 }
 
-pub fn key_value_build(key: &str, value: Option<&String>) -> String {
+pub(crate) fn key_value_build(key: &str, value: Option<&String>) -> String {
     if let Some(val) = value {
         format!("{}{}{}", key, val, END_LINE)
     } else {

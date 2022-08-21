@@ -1,17 +1,15 @@
-#[cfg(test)]
-mod replay_detector_test;
 
 use super::fixed_big_int::*;
 
 // ReplayDetector is the interface of sequence replay detector.
-pub trait ReplayDetector {
+pub(crate) trait ReplayDetector {
     // Check returns true if given sequence number is not replayed.
     // Call accept() to mark the packet is received properly.
     fn check(&mut self, seq: u64) -> bool;
     fn accept(&mut self);
 }
 
-pub struct SlidingWindowDetector {
+pub(crate) struct SlidingWindowDetector {
     accepted: bool,
     seq: u64,
     latest_seq: u64,
@@ -25,7 +23,7 @@ impl SlidingWindowDetector {
     // Created ReplayDetector doesn't allow wrapping.
     // It can handle monotonically increasing sequence number up to
     // full 64bit number. It is suitable for DTLS replay protection.
-    pub fn new(window_size: usize, max_seq: u64) -> Self {
+    pub(crate) fn new(window_size: usize, max_seq: u64) -> Self {
         SlidingWindowDetector {
             accepted: false,
             seq: 0,
@@ -76,7 +74,7 @@ impl ReplayDetector for SlidingWindowDetector {
     }
 }
 
-pub struct WrappedSlidingWindowDetector {
+pub(crate) struct WrappedSlidingWindowDetector {
     accepted: bool,
     seq: u64,
     latest_seq: u64,
@@ -151,7 +149,7 @@ impl ReplayDetector for WrappedSlidingWindowDetector {
 }
 
 #[derive(Default)]
-pub struct NoOpReplayDetector;
+pub(crate) struct NoOpReplayDetector;
 
 impl ReplayDetector for NoOpReplayDetector {
     fn check(&mut self, _: u64) -> bool {

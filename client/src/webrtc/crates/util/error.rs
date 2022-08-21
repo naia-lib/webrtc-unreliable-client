@@ -6,11 +6,11 @@ use std::num::ParseIntError;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub(crate) enum Error {
     #[error("buffer: full")]
     ErrBufferFull,
     #[error("buffer: closed")]
@@ -122,14 +122,14 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn from_std<T>(error: T) -> Self
+    pub(crate) fn from_std<T>(error: T) -> Self
     where
         T: std::error::Error + Send + Sync + 'static,
     {
         Error::Std(StdError(Box::new(error)))
     }
 
-    pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
+    pub(crate) fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
         if let Error::Std(s) = self {
             return s.0.downcast_ref();
         }
@@ -140,7 +140,7 @@ impl Error {
 
 #[derive(Debug, Error)]
 #[error("io error: {0}")]
-pub struct IoError(#[from] pub io::Error);
+pub(crate) struct IoError(#[from] pub(crate) io::Error);
 
 // Workaround for wanting PartialEq for io::Error.
 impl PartialEq for IoError {
@@ -165,7 +165,7 @@ impl From<io::Error> for Error {
 /// By using `util::Error::from_std` we can preserve the underlying error (and stack trace!).
 #[derive(Debug, Error)]
 #[error("{0}")]
-pub struct StdError(pub Box<dyn std::error::Error + Send + Sync>);
+pub(crate) struct StdError(pub(crate) Box<dyn std::error::Error + Send + Sync>);
 
 impl PartialEq for StdError {
     fn eq(&self, _: &Self) -> bool {

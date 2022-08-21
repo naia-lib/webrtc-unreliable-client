@@ -1,13 +1,13 @@
 use naia_server_socket::{PacketReceiver, PacketSender, ServerAddrs, Socket};
 use naia_socket_shared::SocketConfig;
 
-pub struct App {
+pub(crate) struct App {
     packet_sender: PacketSender,
     packet_receiver: PacketReceiver,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         info!("Naia Server Socket Demo started");
 
         let server_address = ServerAddrs::new(
@@ -31,7 +31,7 @@ impl App {
         }
     }
 
-    pub fn update(&mut self) {
+    pub(crate) fn update(&mut self) {
         match self.packet_receiver.receive() {
             Ok(Some((address, payload))) => {
                 let message_from_client = String::from_utf8_lossy(payload);

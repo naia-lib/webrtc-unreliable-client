@@ -20,27 +20,26 @@ use crate::webrtc::mux::endpoint::Endpoint;
 use crate::webrtc::mux::mux_func::MatchFunc;
 use crate::webrtc::mux::{Config, Mux};
 
-pub mod ice_candidate;
-pub mod ice_candidate_pair;
-pub mod ice_candidate_type;
-pub mod ice_connection_state;
-pub mod ice_credential_type;
-pub mod ice_gatherer;
-pub mod ice_gatherer_state;
-pub mod ice_gathering_state;
-pub mod ice_parameters;
-pub mod ice_protocol;
-pub mod ice_role;
-pub mod ice_server;
-pub mod ice_transport_state;
+pub(crate) mod ice_candidate;
+pub(crate) mod ice_candidate_pair;
+pub(crate) mod ice_candidate_type;
+pub(crate) mod ice_connection_state;
+pub(crate) mod ice_credential_type;
+pub(crate) mod ice_gatherer;
+pub(crate) mod ice_gatherer_state;
+pub(crate) mod ice_gathering_state;
+pub(crate) mod ice_parameters;
+pub(crate) mod ice_protocol;
+pub(crate) mod ice_role;
+pub(crate) mod ice_transport_state;
 
-pub type OnConnectionStateChangeHdlrFn = Box<
+pub(crate) type OnConnectionStateChangeHdlrFn = Box<
     dyn (FnMut(RTCIceTransportState) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
 >;
 
-pub type OnSelectedCandidatePairChangeHdlrFn = Box<
+pub(crate) type OnSelectedCandidatePairChangeHdlrFn = Box<
     dyn (FnMut(RTCIceCandidatePair) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
         + Send
         + Sync,
@@ -57,7 +56,7 @@ struct ICETransportInternal {
 /// ICETransport allows an application access to information about the ICE
 /// transport over which packets are sent and received.
 #[derive(Default)]
-pub struct RTCIceTransport {
+pub(crate) struct RTCIceTransport {
     gatherer: Arc<RTCIceGatherer>,
     on_connection_state_change_handler: Arc<Mutex<Option<OnConnectionStateChangeHdlrFn>>>,
     on_selected_candidate_pair_change_handler:
@@ -68,7 +67,7 @@ pub struct RTCIceTransport {
 
 impl RTCIceTransport {
     /// creates a new new_icetransport.
-    pub fn new(gatherer: Arc<RTCIceGatherer>) -> Self {
+    pub(crate) fn new(gatherer: Arc<RTCIceGatherer>) -> Self {
         RTCIceTransport {
             state: Arc::new(AtomicU8::new(RTCIceTransportState::New as u8)),
             gatherer,
@@ -77,7 +76,7 @@ impl RTCIceTransport {
     }
 
     /// Start incoming connectivity checks based on its configured role.
-    pub async fn start(&self, params: &RTCIceParameters, role: Option<RTCIceRole>) -> Result<()> {
+    pub(crate) async fn start(&self, params: &RTCIceParameters, role: Option<RTCIceRole>) -> Result<()> {
         if self.state() != RTCIceTransportState::New {
             return Err(Error::ErrICETransportNotInNew);
         }
@@ -180,14 +179,14 @@ impl RTCIceTransport {
 
     /// on_connection_state_change sets a handler that is fired when the ICE
     /// connection state changes.
-    pub async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
+    pub(crate) async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
         let mut on_connection_state_change_handler =
             self.on_connection_state_change_handler.lock().await;
         *on_connection_state_change_handler = Some(f);
     }
 
     /// adds a candidate associated with the remote ICETransport.
-    pub async fn add_remote_candidate(
+    pub(crate) async fn add_remote_candidate(
         &self,
         remote_candidate: Option<RTCIceCandidate>,
     ) -> Result<()> {
@@ -206,11 +205,11 @@ impl RTCIceTransport {
     }
 
     /// State returns the current ice transport state.
-    pub fn state(&self) -> RTCIceTransportState {
+    pub(crate) fn state(&self) -> RTCIceTransportState {
         RTCIceTransportState::from(self.state.load(Ordering::SeqCst))
     }
 
-    pub async fn new_endpoint(&self, f: MatchFunc) -> Option<Arc<Endpoint>> {
+    pub(crate) async fn new_endpoint(&self, f: MatchFunc) -> Option<Arc<Endpoint>> {
         let internal = self.internal.lock().await;
         if let Some(mux) = &internal.mux {
             Some(mux.new_endpoint(f).await)
@@ -219,7 +218,7 @@ impl RTCIceTransport {
         }
     }
 
-    pub async fn ensure_gatherer(&self) -> Result<()> {
+    pub(crate) async fn ensure_gatherer(&self) -> Result<()> {
         if self.gatherer.get_agent().await.is_none() {
             self.gatherer.create_agent().await
         } else {

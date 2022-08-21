@@ -11,7 +11,7 @@ use std::fmt;
 ///|   Type = 8    | Chunk  Flags  |      Length = 4               |
 ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[derive(Default, Debug, Clone)]
-pub struct ChunkShutdownAck;
+pub(crate) struct ChunkShutdownAck;
 
 /// makes chunkShutdownAck printable
 impl fmt::Display for ChunkShutdownAck {

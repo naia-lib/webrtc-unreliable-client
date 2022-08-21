@@ -2,7 +2,7 @@ use std::fmt;
 
 /// DataChannelState indicates the state of a data channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum RTCDataChannelState {
+pub(crate) enum RTCDataChannelState {
     Unspecified = 0,
 
     /// DataChannelStateConnecting indicates that the data channel is being
@@ -68,45 +68,5 @@ impl fmt::Display for RTCDataChannelState {
             RTCDataChannelState::Unspecified => crate::webrtc::UNSPECIFIED_STR,
         };
         write!(f, "{}", s)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_new_data_channel_state() {
-        let tests = vec![
-            (crate::webrtc::UNSPECIFIED_STR, RTCDataChannelState::Unspecified),
-            ("connecting", RTCDataChannelState::Connecting),
-            ("open", RTCDataChannelState::Open),
-            ("closing", RTCDataChannelState::Closing),
-            ("closed", RTCDataChannelState::Closed),
-        ];
-
-        for (state_string, expected_state) in tests {
-            assert_eq!(
-                expected_state,
-                RTCDataChannelState::from(state_string),
-                "testCase: {}",
-                expected_state,
-            );
-        }
-    }
-
-    #[test]
-    fn test_data_channel_state_string() {
-        let tests = vec![
-            (RTCDataChannelState::Unspecified, crate::webrtc::UNSPECIFIED_STR),
-            (RTCDataChannelState::Connecting, "connecting"),
-            (RTCDataChannelState::Open, "open"),
-            (RTCDataChannelState::Closing, "closing"),
-            (RTCDataChannelState::Closed, "closed"),
-        ];
-
-        for (state, expected_string) in tests {
-            assert_eq!(expected_string, state.to_string(),)
-        }
     }
 }

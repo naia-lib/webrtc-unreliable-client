@@ -4,20 +4,20 @@ use crate::webrtc::dtls::signature_hash_algorithm::*;
 
 // https://tools.ietf.org/html/rfc5246#section-7.4.1.4.1
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExtensionSupportedSignatureAlgorithms {
-    pub signature_hash_algorithms: Vec<SignatureHashAlgorithm>,
+pub(crate) struct ExtensionSupportedSignatureAlgorithms {
+    pub(crate) signature_hash_algorithms: Vec<SignatureHashAlgorithm>,
 }
 
 impl ExtensionSupportedSignatureAlgorithms {
-    pub fn extension_value(&self) -> ExtensionValue {
+    pub(crate) fn extension_value(&self) -> ExtensionValue {
         ExtensionValue::SupportedSignatureAlgorithms
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         2 + 2 + self.signature_hash_algorithms.len() * 2
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u16::<BigEndian>(2 + 2 * self.signature_hash_algorithms.len() as u16)?;
         writer.write_u16::<BigEndian>(2 * self.signature_hash_algorithms.len() as u16)?;
         for v in &self.signature_hash_algorithms {
@@ -28,7 +28,7 @@ impl ExtensionSupportedSignatureAlgorithms {
         Ok(writer.flush()?)
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let _ = reader.read_u16::<BigEndian>()?;
 
         let algorithm_count = reader.read_u16::<BigEndian>()? as usize / 2;

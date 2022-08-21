@@ -1,7 +1,4 @@
-pub mod record_layer_header;
-
-#[cfg(test)]
-mod record_layer_test;
+pub(crate) mod record_layer_header;
 
 use super::content::*;
 use super::error::*;
@@ -30,13 +27,13 @@ use std::io::{Read, Write};
  https://tools.ietf.org/html/rfc4347#section-4.1
 */
 #[derive(Debug, Clone, PartialEq)]
-pub struct RecordLayer {
-    pub record_layer_header: RecordLayerHeader,
-    pub content: Content,
+pub(crate) struct RecordLayer {
+    pub(crate) record_layer_header: RecordLayerHeader,
+    pub(crate) content: Content,
 }
 
 impl RecordLayer {
-    pub fn new(protocol_version: ProtocolVersion, epoch: u16, content: Content) -> Self {
+    pub(crate) fn new(protocol_version: ProtocolVersion, epoch: u16, content: Content) -> Self {
         RecordLayer {
             record_layer_header: RecordLayerHeader {
                 content_type: content.content_type(),
@@ -49,13 +46,13 @@ impl RecordLayer {
         }
     }
 
-    pub fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
+    pub(crate) fn marshal<W: Write>(&self, writer: &mut W) -> Result<()> {
         self.record_layer_header.marshal(writer)?;
         self.content.marshal(writer)?;
         Ok(())
     }
 
-    pub fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
+    pub(crate) fn unmarshal<R: Read>(reader: &mut R) -> Result<Self> {
         let record_layer_header = RecordLayerHeader::unmarshal(reader)?;
         let content = match record_layer_header.content_type {
             ContentType::Alert => Content::Alert(Alert::unmarshal(reader)?),
@@ -82,7 +79,7 @@ impl RecordLayer {
 // two DTLS messages into the same datagram: in the same record or in
 // separate records.
 // https://tools.ietf.org/html/rfc6347#section-4.2.3
-pub fn unpack_datagram(buf: &[u8]) -> Result<Vec<Vec<u8>>> {
+pub(crate) fn unpack_datagram(buf: &[u8]) -> Result<Vec<Vec<u8>>> {
     let mut out = vec![];
 
     let mut offset = 0;
