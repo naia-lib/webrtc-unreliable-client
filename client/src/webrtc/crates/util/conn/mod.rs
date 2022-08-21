@@ -7,7 +7,6 @@ pub(crate) mod conn_udp_listener;
 use async_trait::async_trait;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::net::ToSocketAddrs;
 
 use crate::webrtc::util::error::Result;
 
@@ -36,24 +35,4 @@ pub(crate) trait Listener {
 
     /// addr returns the listener's network address.
     async fn addr(&self) -> Result<SocketAddr>;
-}
-
-pub(crate) async fn lookup_host<T>(use_ipv4: bool, host: T) -> Result<SocketAddr>
-where
-    T: ToSocketAddrs,
-{
-    for remote_addr in tokio::net::lookup_host(host).await? {
-        if (use_ipv4 && remote_addr.is_ipv4()) || (!use_ipv4 && remote_addr.is_ipv6()) {
-            return Ok(remote_addr);
-        }
-    }
-
-    Err(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        format!(
-            "No available {} IP address found!",
-            if use_ipv4 { "ipv4" } else { "ipv6" },
-        ),
-    )
-    .into())
 }

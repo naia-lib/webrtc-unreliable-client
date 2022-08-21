@@ -6,7 +6,6 @@ pub(crate) use crates::sctp;
 pub(crate) use crates::util;
 pub(crate) use crates::dtls;
 pub(crate) use crates::ice;
-pub(crate) use crates::turn;
 pub(crate) use crates::sdp;
 pub(crate) use crates::stun;
 pub(crate) use crates::mdns;

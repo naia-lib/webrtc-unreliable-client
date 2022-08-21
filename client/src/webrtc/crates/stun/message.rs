@@ -464,10 +464,6 @@ impl Setter for MessageType {
 }
 
 impl MessageType {
-    // NewType returns new message type with provided method and class.
-    pub(crate) fn new(method: Method, class: MessageClass) -> Self {
-        MessageType { method, class }
-    }
 
     // Value returns bit representation of messageType.
     pub(crate) fn value(&self) -> u16 {

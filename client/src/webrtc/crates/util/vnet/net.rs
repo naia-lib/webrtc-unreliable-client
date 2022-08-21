@@ -5,12 +5,12 @@ use crate::webrtc::util::error::*;
 use crate::webrtc::util::vnet::chunk::Chunk;
 use crate::webrtc::util::vnet::conn::{ConnObserver, UdpConn};
 use crate::webrtc::util::vnet::router::*;
-use crate::webrtc::util::{conn, ifaces, Conn};
+use crate::webrtc::util::{ifaces, Conn};
 
 use async_trait::async_trait;
 use ipnet::IpNet;
 use std::collections::HashMap;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
@@ -144,13 +144,6 @@ impl Nic for VNet {
         Err(Error::ErrNotFound)
     }
 
-    async fn set_router(&self, r: Arc<Mutex<Router>>) -> Result<()> {
-        let mut vi = self.vi.lock().await;
-        vi.router = Some(r);
-
-        Ok(())
-    }
-
     async fn on_inbound_chunk(&self, c: Box<dyn Chunk + Send + Sync>) {
         if c.network() == UDP_STR {
             let vi = self.vi.lock().await;
@@ -262,55 +255,6 @@ impl VNet {
         }
 
         Err(Error::ErrPortSpaceExhausted)
-    }
-
-    pub(crate) async fn resolve_addr(&self, use_ipv4: bool, address: &str) -> Result<SocketAddr> {
-        let v: Vec<&str> = address.splitn(2, ':').collect();
-        if v.len() != 2 {
-            return Err(Error::ErrAddrNotUdpAddr);
-        }
-        let (host, port) = (v[0], v[1]);
-
-        // Check if host is a domain name
-        let ip: IpAddr = match host.parse() {
-            Ok(ip) => ip,
-            Err(_) => {
-                let host = host.to_lowercase();
-                if host == "localhost" {
-                    if use_ipv4 {
-                        Ipv4Addr::new(127, 0, 0, 1).into()
-                    } else {
-                        Ipv6Addr::from_str("::1")?.into()
-                    }
-                } else {
-                    // host is a domain name. resolve IP address by the name
-                    let vi = self.vi.lock().await;
-                    if let Some(router) = &vi.router {
-                        let r = router.lock().await;
-                        let resolver = r.resolver.lock().await;
-                        if let Some(ip) = resolver.lookup(host).await {
-                            ip
-                        } else {
-                            return Err(Error::ErrNotFound);
-                        }
-                    } else {
-                        return Err(Error::ErrNoRouterLinked);
-                    }
-                }
-            }
-        };
-
-        let port: u16 = port.parse()?;
-
-        let remote_addr = SocketAddr::new(ip, port);
-        if (use_ipv4 && remote_addr.is_ipv4()) || (!use_ipv4 && remote_addr.is_ipv6()) {
-            Ok(remote_addr)
-        } else {
-            Err(Error::Other(format!(
-                "No available {} IP address found!",
-                if use_ipv4 { "ipv4" } else { "ipv6" },
-            )))
-        }
     }
 
     // caller must hold the mutex
@@ -452,16 +396,6 @@ impl Net {
         match self {
             Net::VNet(_) => true,
             Net::Ifs(_) => false,
-        }
-    }
-
-    pub(crate) async fn resolve_addr(&self, use_ipv4: bool, address: &str) -> Result<SocketAddr> {
-        match self {
-            Net::VNet(vnet) => {
-                let net = vnet.lock().await;
-                net.resolve_addr(use_ipv4, address).await
-            }
-            Net::Ifs(_) => Ok(conn::lookup_host(use_ipv4, address).await?),
         }
     }
 

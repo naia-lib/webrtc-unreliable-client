@@ -16,16 +16,6 @@ const MAX_NONCE_B: usize = 763;
 // RFC 5389 Section 15.3
 pub(crate) type Username = TextAttribute;
 
-// Realm represents REALM attribute.
-//
-// RFC 5389 Section 15.7
-pub(crate) type Realm = TextAttribute;
-
-// Nonce represents NONCE attribute.
-//
-// RFC 5389 Section 15.8
-pub(crate) type Nonce = TextAttribute;
-
 // TextAttribute is helper for adding and getting text attributes.
 #[derive(Clone, Default)]
 pub(crate) struct TextAttribute {

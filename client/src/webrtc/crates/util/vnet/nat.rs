@@ -8,9 +8,6 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
-use tokio::time::Duration;
-
-const DEFAULT_NAT_MAPPING_LIFE_TIME: Duration = Duration::from_secs(30);
 
 // EndpointDependencyType defines a type of behavioral dependendency on the
 // remote endpoint's IP address or port number. This is used for the two
@@ -22,8 +19,6 @@ const DEFAULT_NAT_MAPPING_LIFE_TIME: Duration = Duration::from_secs(30);
 pub(crate) enum EndpointDependencyType {
     // EndpointIndependent means the behavior is independent of the endpoint's address or port
     EndpointIndependent,
-    // EndpointAddrPortDependent means the behavior is dependent on the endpoint's address and port
-    EndpointAddrPortDependent,
 }
 
 impl Default for EndpointDependencyType {
@@ -54,18 +49,7 @@ impl Default for NatMode {
 #[derive(Default, Debug, Copy, Clone)]
 pub(crate) struct NatType {
     pub(crate) mode: NatMode,
-    pub(crate) mapping_behavior: EndpointDependencyType,
     pub(crate) filtering_behavior: EndpointDependencyType,
-    pub(crate) port_preservation: bool, // Not implemented yet
-    pub(crate) mapping_life_time: Duration,
-}
-
-#[derive(Default, Debug, Clone)]
-pub(crate) struct NatConfig {
-    pub(crate) name: String,
-    pub(crate) nat_type: NatType,
-    pub(crate) mapped_ips: Vec<IpAddr>, // mapped IPv4
-    pub(crate) local_ips: Vec<IpAddr>,  // local IPv4, required only when the mode is NATModeNAT1To1
 }
 
 #[derive(Debug, Clone)]
@@ -102,39 +86,6 @@ pub(crate) struct NetworkAddressTranslator {
 }
 
 impl NetworkAddressTranslator {
-    pub(crate) fn new(config: NatConfig) -> Result<Self> {
-        let mut nat_type = config.nat_type;
-
-        if nat_type.mode == NatMode::Nat1To1 {
-            // 1:1 NAT behavior
-            nat_type.mapping_behavior = EndpointDependencyType::EndpointIndependent;
-            nat_type.filtering_behavior = EndpointDependencyType::EndpointIndependent;
-            nat_type.port_preservation = true;
-            nat_type.mapping_life_time = Duration::from_secs(0);
-
-            if config.mapped_ips.is_empty() {
-                return Err(Error::ErrNatRequriesMapping);
-            }
-            if config.mapped_ips.len() != config.local_ips.len() {
-                return Err(Error::ErrMismatchLengthIp);
-            }
-        } else {
-            // Normal (NAPT) behavior
-            nat_type.mode = NatMode::Normal;
-            if nat_type.mapping_life_time == Duration::from_secs(0) {
-                nat_type.mapping_life_time = DEFAULT_NAT_MAPPING_LIFE_TIME;
-            }
-        }
-
-        Ok(NetworkAddressTranslator {
-            name: config.name,
-            nat_type,
-            mapped_ips: config.mapped_ips,
-            local_ips: config.local_ips,
-            outbound_map: Arc::new(Mutex::new(HashMap::new())),
-            inbound_map: Arc::new(Mutex::new(HashMap::new())),
-        })
-    }
 
     pub(crate) fn get_paired_local_ip(&self, mapped_ip: &IpAddr) -> Option<&IpAddr> {
         for (i, ip) in self.mapped_ips.iter().enumerate() {
@@ -169,9 +120,6 @@ impl NetworkAddressTranslator {
                 // Normal (NAPT) behavior
                 let filter_key = match self.nat_type.filtering_behavior {
                     EndpointDependencyType::EndpointIndependent => "".to_owned(),
-                    EndpointDependencyType::EndpointAddrPortDependent => {
-                        from.source_addr().to_string()
-                    }
                 };
 
                 let i_key = format!("udp:{}", from.destination_addr());
