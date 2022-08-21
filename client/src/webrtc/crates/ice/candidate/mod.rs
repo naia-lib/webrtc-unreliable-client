@@ -1,9 +1,6 @@
 
 pub(crate) mod candidate_base;
 pub(crate) mod candidate_host;
-pub(crate) mod candidate_peer_reflexive;
-pub(crate) mod candidate_relay;
-pub(crate) mod candidate_server_reflexive;
 
 use crate::webrtc::ice::error::Result;
 use crate::webrtc::ice::network_type::*;
@@ -80,9 +77,6 @@ pub(crate) trait Candidate: fmt::Display {
 pub(crate) enum CandidateType {
     Unspecified,
     Host,
-    ServerReflexive,
-    PeerReflexive,
-    Relay,
 }
 
 // String makes CandidateType printable
@@ -90,9 +84,6 @@ impl fmt::Display for CandidateType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {
             CandidateType::Host => "host",
-            CandidateType::ServerReflexive => "srflx",
-            CandidateType::PeerReflexive => "prflx",
-            CandidateType::Relay => "relay",
             CandidateType::Unspecified => "Unknown candidate type",
         };
         write!(f, "{}", s)
@@ -116,26 +107,9 @@ impl CandidateType {
     pub(crate) const fn preference(self) -> u16 {
         match self {
             Self::Host => 126,
-            Self::PeerReflexive => 110,
-            Self::ServerReflexive => 100,
-            Self::Relay | CandidateType::Unspecified => 0,
+            CandidateType::Unspecified => 0,
         }
     }
-}
-
-pub(crate) fn contains_candidate_type(
-    candidate_type: CandidateType,
-    candidate_type_list: &[CandidateType],
-) -> bool {
-    if candidate_type_list.is_empty() {
-        return false;
-    }
-    for ct in candidate_type_list {
-        if *ct == candidate_type {
-            return true;
-        }
-    }
-    false
 }
 
 /// Convey transport addresses related to the candidate, useful for diagnostics and other purposes.

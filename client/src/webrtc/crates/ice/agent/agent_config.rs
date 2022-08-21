@@ -214,17 +214,6 @@ impl AgentConfig {
                 if !candi_host_enabled {
                     return Err(Error::ErrIneffectiveNat1to1IpMappingHost);
                 }
-            } else if ext_ip_mapper.candidate_type == CandidateType::ServerReflexive {
-                let mut candi_srflx_enabled = false;
-                for candi_type in candidate_types {
-                    if *candi_type == CandidateType::ServerReflexive {
-                        candi_srflx_enabled = true;
-                        break;
-                    }
-                }
-                if !candi_srflx_enabled {
-                    return Err(Error::ErrIneffectiveNat1to1IpMappingSrflx);
-                }
             }
 
             Ok(Some(ext_ip_mapper))

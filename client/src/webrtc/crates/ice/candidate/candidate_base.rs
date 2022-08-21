@@ -1,8 +1,5 @@
 use super::*;
 use crate::webrtc::ice::candidate::candidate_host::CandidateHostConfig;
-use crate::webrtc::ice::candidate::candidate_peer_reflexive::CandidatePeerReflexiveConfig;
-use crate::webrtc::ice::candidate::candidate_relay::CandidateRelayConfig;
-use crate::webrtc::ice::candidate::candidate_server_reflexive::CandidateServerReflexiveConfig;
 use crate::webrtc::ice::error::*;
 use crate::webrtc::ice::util::*;
 
@@ -51,8 +48,6 @@ pub(crate) struct CandidateBase {
 
     //CandidateHost
     pub(crate) network: String,
-    //CandidateRelay
-    pub(crate) relay_client: Option<Arc<crate::webrtc::turn::client::Client>>,
 }
 
 impl Default for CandidateBase {
@@ -79,7 +74,6 @@ impl Default for CandidateBase {
             foundation_override: String::new(),
             priority_override: 0,
             network: String::new(),
-            relay_client: None,
         }
     }
 }
@@ -242,10 +236,6 @@ impl Candidate for CandidateBase {
             closed_ch.take();
         }
 
-        if let Some(relay_client) = &self.relay_client {
-            let _ = relay_client.close().await;
-        }
-
         if let Some(conn) = &self.conn {
             let _ = conn.close().await;
         }
@@ -360,20 +350,12 @@ impl CandidateBase {
             let other_pref: u16 = 8191;
 
             let direction_pref: u16 = match self.candidate_type() {
-                CandidateType::Host | CandidateType::Relay => match self.tcp_type() {
+                CandidateType::Host => match self.tcp_type() {
                     TcpType::Active => 6,
                     TcpType::Passive => 4,
                     TcpType::SimultaneousOpen => 2,
                     TcpType::Unspecified => 0,
                 },
-                CandidateType::PeerReflexive | CandidateType::ServerReflexive => {
-                    match self.tcp_type() {
-                        TcpType::SimultaneousOpen => 6,
-                        TcpType::Active => 4,
-                        TcpType::Passive => 2,
-                        TcpType::Unspecified => 0,
-                    }
-                }
                 CandidateType::Unspecified => 0,
             };
 
@@ -415,8 +397,6 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
 
     let typ = split[7];
 
-    let mut rel_addr = String::new();
-    let mut rel_port = 0;
     let mut tcp_type = TcpType::Unspecified;
 
     if split.len() > 8 {
@@ -429,12 +409,6 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                     Error::ErrParseRelatedAddr
                 )));
             }
-
-            // RelatedAddress
-            rel_addr = split2[1].to_owned();
-
-            // RelatedPort
-            rel_port = split2[3].parse()?;
         } else if split2[0] == "tcptype" {
             if split2.len() < 2 {
                 return Err(Error::Other(format!(
@@ -462,56 +436,6 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                 tcp_type,
             };
             config.new_candidate_host().await
-        }
-        "srflx" => {
-            let config = CandidateServerReflexiveConfig {
-                base_config: CandidateBaseConfig {
-                    network,
-                    address,
-                    port,
-                    component,
-                    priority,
-                    foundation,
-                    ..CandidateBaseConfig::default()
-                },
-                rel_addr,
-                rel_port,
-            };
-            config.new_candidate_server_reflexive().await
-        }
-        "prflx" => {
-            let config = CandidatePeerReflexiveConfig {
-                base_config: CandidateBaseConfig {
-                    network,
-                    address,
-                    port,
-                    component,
-                    priority,
-                    foundation,
-                    ..CandidateBaseConfig::default()
-                },
-                rel_addr,
-                rel_port,
-            };
-
-            config.new_candidate_peer_reflexive().await
-        }
-        "relay" => {
-            let config = CandidateRelayConfig {
-                base_config: CandidateBaseConfig {
-                    network,
-                    address,
-                    port,
-                    component,
-                    priority,
-                    foundation,
-                    ..CandidateBaseConfig::default()
-                },
-                rel_addr,
-                rel_port,
-                ..CandidateRelayConfig::default()
-            };
-            config.new_candidate_relay().await
         }
         _ => Err(Error::Other(format!(
             "{:?} ({})",

@@ -74,7 +74,6 @@ impl ExternalIpMapper {
         if candidate_type == CandidateType::Unspecified {
             candidate_type = CandidateType::Host; // defaults to host
         } else if candidate_type != CandidateType::Host
-            && candidate_type != CandidateType::ServerReflexive
         {
             return Err(Error::ErrUnsupportedNat1to1IpCandidateType);
         }

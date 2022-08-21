@@ -134,8 +134,6 @@ impl Agent {
         }
 
         if !config.urls.is_empty()
-            && !contains_candidate_type(CandidateType::ServerReflexive, &candidate_types)
-            && !contains_candidate_type(CandidateType::Relay, &candidate_types)
         {
             return Err(Error::ErrUselessUrlsProvided);
         }

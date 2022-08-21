@@ -1,7 +1,5 @@
 use super::agent_transport::*;
 use super::*;
-use crate::webrtc::ice::candidate::candidate_base::CandidateBaseConfig;
-use crate::webrtc::ice::candidate::candidate_peer_reflexive::CandidatePeerReflexiveConfig;
 use crate::webrtc::ice::util::*;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 
@@ -863,7 +861,7 @@ impl AgentInternal {
             return;
         }
 
-        let mut remote_candidate = self
+        let remote_candidate = self
             .find_remote_candidate(local.network_type(), remote)
             .await;
         if m.typ.class == CLASS_SUCCESS_RESPONSE {
@@ -919,40 +917,11 @@ impl AgentInternal {
             }
 
             if remote_candidate.is_none() {
-                let (ip, port, network_type) = (remote.ip(), remote.port(), NetworkType::Udp4);
-
-                let prflx_candidate_config = CandidatePeerReflexiveConfig {
-                    base_config: CandidateBaseConfig {
-                        network: network_type.to_string(),
-                        address: ip.to_string(),
-                        port,
-                        component: local.component(),
-                        ..CandidateBaseConfig::default()
-                    },
-                    rel_addr: "".to_owned(),
-                    rel_port: 0,
-                };
-
-                match prflx_candidate_config.new_candidate_peer_reflexive().await {
-                    Ok(prflx_candidate) => remote_candidate = Some(Arc::new(prflx_candidate)),
-                    Err(err) => {
-                        log::error!(
-                            "[{}]: Failed to create new remote prflx candidate ({})",
-                            self.get_name(),
-                            err
-                        );
-                        return;
-                    }
-                };
-
-                log::debug!(
-                    "[{}]: adding a new peer-reflexive candidate: {} ",
+                log::error!(
+                    "[{}]: No remote candidate!",
                     self.get_name(),
-                    remote
                 );
-                if let Some(rc) = &remote_candidate {
-                    self.add_remote_candidate(rc).await;
-                }
+                return;
             }
 
             log::trace!(

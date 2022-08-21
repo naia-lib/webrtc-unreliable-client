@@ -3,9 +3,6 @@ use std::sync::Arc;
 
 use crate::webrtc::ice::candidate::candidate_base::CandidateBaseConfig;
 use crate::webrtc::ice::candidate::candidate_host::CandidateHostConfig;
-use crate::webrtc::ice::candidate::candidate_peer_reflexive::CandidatePeerReflexiveConfig;
-use crate::webrtc::ice::candidate::candidate_relay::CandidateRelayConfig;
-use crate::webrtc::ice::candidate::candidate_server_reflexive::CandidateServerReflexiveConfig;
 use crate::webrtc::ice::candidate::Candidate;
 use serde::{Deserialize, Serialize};
 
@@ -82,58 +79,6 @@ impl RTCIceCandidate {
                     ..Default::default()
                 };
                 config.new_candidate_host().await?
-            }
-            RTCIceCandidateType::Srflx => {
-                let config = CandidateServerReflexiveConfig {
-                    base_config: CandidateBaseConfig {
-                        candidate_id,
-                        network: self.protocol.to_string(),
-                        address: self.address.clone(),
-                        port: self.port,
-                        component: self.component,
-                        foundation: self.foundation.clone(),
-                        priority: self.priority,
-                        ..Default::default()
-                    },
-                    rel_addr: self.related_address.clone(),
-                    rel_port: self.related_port,
-                };
-                config.new_candidate_server_reflexive().await?
-            }
-            RTCIceCandidateType::Prflx => {
-                let config = CandidatePeerReflexiveConfig {
-                    base_config: CandidateBaseConfig {
-                        candidate_id,
-                        network: self.protocol.to_string(),
-                        address: self.address.clone(),
-                        port: self.port,
-                        component: self.component,
-                        foundation: self.foundation.clone(),
-                        priority: self.priority,
-                        ..Default::default()
-                    },
-                    rel_addr: self.related_address.clone(),
-                    rel_port: self.related_port,
-                };
-                config.new_candidate_peer_reflexive().await?
-            }
-            RTCIceCandidateType::Relay => {
-                let config = CandidateRelayConfig {
-                    base_config: CandidateBaseConfig {
-                        candidate_id,
-                        network: self.protocol.to_string(),
-                        address: self.address.clone(),
-                        port: self.port,
-                        component: self.component,
-                        foundation: self.foundation.clone(),
-                        priority: self.priority,
-                        ..Default::default()
-                    },
-                    rel_addr: self.related_address.clone(),
-                    rel_port: self.related_port,
-                    relay_client: None, //TODO?
-                };
-                config.new_candidate_relay().await?
             }
             _ => return Err(Error::ErrICECandidateTypeUnknown),
         };

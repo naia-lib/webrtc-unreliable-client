@@ -192,13 +192,6 @@ impl Transaction {
     pub(crate) fn get_result_channel(&mut self) -> Option<mpsc::Receiver<TransactionResult>> {
         self.result_ch_rx.take()
     }
-
-    // Close closes the transaction
-    pub(crate) fn close(&mut self) {
-        if self.result_ch_tx.is_some() {
-            self.result_ch_tx.take();
-        }
-    }
 }
 
 // TransactionMap is a thread-safe transaction map
@@ -227,13 +220,5 @@ impl TransactionMap {
     // Delete deletes a transaction by its key
     pub(crate) fn delete(&mut self, key: &str) -> Option<Transaction> {
         self.tr_map.remove(key)
-    }
-
-    // close_and_delete_all closes and deletes all transactions
-    pub(crate) fn close_and_delete_all(&mut self) {
-        for tr in self.tr_map.values_mut() {
-            tr.close();
-        }
-        self.tr_map.clear();
     }
 }

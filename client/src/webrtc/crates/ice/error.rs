@@ -83,11 +83,6 @@ pub(crate) enum Error {
     #[error("1:1 NAT IP mapping for host candidate ineffective")]
     ErrIneffectiveNat1to1IpMappingHost,
 
-    /// Indicates that 1:1 NAT IP mapping for srflx candidate is requested, but the srflx candidate
-    /// type is disabled.
-    #[error("1:1 NAT IP mapping for srflx candidate ineffective")]
-    ErrIneffectiveNat1to1IpMappingSrflx,
-
     /// Indicates an invalid MulticastDNSHostName.
     #[error("invalid mDNS HostName, must end with .local and can only contain a single '.'")]
     ErrInvalidMulticastDnshostName,
