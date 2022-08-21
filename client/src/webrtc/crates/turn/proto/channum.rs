@@ -7,13 +7,6 @@ use crate::webrtc::stun::message::*;
 // 16 bits of uint + 16 bits of RFFU = 0.
 const CHANNEL_NUMBER_SIZE: usize = 4;
 
-// See https://tools.ietf.org/html/rfc5766#section-11:
-//
-// 0x4000 through 0x7FFF: These values are the allowed channel
-// numbers (16,383 possible values).
-pub(crate) const MIN_CHANNEL_NUMBER: u16 = 0x4000;
-pub(crate) const MAX_CHANNEL_NUMBER: u16 = 0x7FFF;
-
 // ChannelNumber represents CHANNEL-NUMBER attribute.
 //
 // The CHANNEL-NUMBER attribute contains the number of the channel.
@@ -51,17 +44,5 @@ impl Getter for ChannelNumber {
         self.0 = u16::from_be_bytes([v[0], v[1]]);
         // v[2:4] is RFFU and equals to 0.
         Ok(())
-    }
-}
-
-impl ChannelNumber {
-    // is_channel_number_valid returns true if c in [0x4000, 0x7FFF].
-    fn is_channel_number_valid(&self) -> bool {
-        self.0 >= MIN_CHANNEL_NUMBER && self.0 <= MAX_CHANNEL_NUMBER
-    }
-
-    // Valid returns true if channel number has correct value that complies RFC 5766 Section 11 range.
-    pub(crate) fn valid(&self) -> bool {
-        self.is_channel_number_valid()
     }
 }

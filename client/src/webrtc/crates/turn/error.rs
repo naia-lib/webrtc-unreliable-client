@@ -20,20 +20,6 @@ pub(crate) enum Error {
     ErrMinPortNotZero,
     #[error("turn: MaxPort less than MinPort")]
     ErrMaxPortLessThanMinPort,
-    #[error("no binding found for channel")]
-    ErrChannelBindNotFound,
-    #[error("only one Allocate() caller is allowed")]
-    ErrOneAllocateOnly,
-    #[error("non-STUN message from STUN server")]
-    ErrNonStunmessage,
-    #[error("unexpected STUN request message")]
-    ErrUnexpectedStunrequestMessage,
-    #[error("channel number not in [0x4000, 0x7FFF]")]
-    ErrInvalidChannelNumber,
-    #[error("channelData length != len(Data)")]
-    ErrBadChannelDataLength,
-    #[error("unexpected EOF")]
-    ErrUnexpectedEof,
     #[error("try again")]
     ErrTryAgain,
     #[error("already closed")]

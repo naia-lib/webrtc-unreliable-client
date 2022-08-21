@@ -11,7 +11,6 @@ use crate::webrtc::ice::external_ip_mapper::*;
 use crate::webrtc::ice::mdns::*;
 use crate::webrtc::ice::network_type::*;
 use crate::webrtc::ice::state::*;
-use crate::webrtc::ice::url::*;
 use agent_config::*;
 use agent_internal::*;
 
@@ -91,7 +90,6 @@ pub(crate) struct Agent {
     pub(crate) ext_ip_mapper: Arc<Option<ExternalIpMapper>>,
     pub(crate) gathering_state: Arc<AtomicU8>, //GatheringState,
     pub(crate) candidate_types: Vec<CandidateType>,
-    pub(crate) urls: Vec<Url>,
     pub(crate) network_types: Vec<NetworkType>,
 
     pub(crate) gather_candidate_cancel: Option<GatherCandidateCancelFn>,
@@ -171,7 +169,6 @@ impl Agent {
             ext_ip_mapper: Arc::new(ext_ip_mapper),
             gathering_state: Arc::new(AtomicU8::new(0)), //GatheringState::New,
             candidate_types,
-            urls: config.urls.clone(),
             network_types: config.network_types.clone(),
 
             gather_candidate_cancel: None, //TODO: add cancel
@@ -375,7 +372,6 @@ impl Agent {
 
         let params = GatherCandidatesInternalParams {
             candidate_types: self.candidate_types.clone(),
-            urls: self.urls.clone(),
             network_types: self.network_types.clone(),
             mdns_mode: self.mdns_mode,
             mdns_name: self.mdns_name.clone(),

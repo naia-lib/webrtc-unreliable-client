@@ -549,10 +549,6 @@ impl RTCPeerConnection {
         // JSEP 5.4
         if desc.sdp.is_empty() {
             match desc.sdp_type {
-                RTCSdpType::Answer | RTCSdpType::Pranswer => {
-                    let last_answer = self.internal.last_answer.lock().await;
-                    desc.sdp = last_answer.clone();
-                }
                 RTCSdpType::Offer => {
                     let last_offer = self.internal.last_offer.lock().await;
                     desc.sdp = last_offer.clone();
@@ -563,29 +559,6 @@ impl RTCPeerConnection {
 
         desc.parsed = Some(desc.unmarshal()?);
         self.set_description(&desc, StateChangeOp::SetLocal).await?;
-
-        let we_answer = desc.sdp_type == RTCSdpType::Answer;
-        let remote_description = self.remote_description().await;
-        if we_answer {
-            if let Some(remote_desc) = remote_description {
-
-                let pci = Arc::clone(&self.internal);
-                let remote_desc = Arc::new(remote_desc);
-                self.internal
-                    .ops
-                    .enqueue(Operation(Box::new(move || {
-                        let pc = Arc::clone(&pci);
-                        let rd = Arc::clone(&remote_desc);
-                        Box::pin(async move {
-                            let _ = pc
-                                .maybe_start_sctp(rd)
-                                .await;
-                            false
-                        })
-                    })))
-                    .await?;
-            }
-        }
 
         if self.internal.ice_gatherer.state() == RTCIceGathererState::New {
             self.internal.ice_gatherer.gather().await

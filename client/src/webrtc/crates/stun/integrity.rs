@@ -4,12 +4,8 @@ use crate::webrtc::stun::checks::*;
 use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;
 
-use md5::{Digest, Md5};
 use ring::hmac;
 use std::fmt;
-
-// separator for credentials.
-pub(crate) const CREDENTIALS_SEP: &str = ":";
 
 // MessageIntegrity represents MESSAGE-INTEGRITY attribute.
 //
@@ -62,16 +58,6 @@ impl Setter for MessageIntegrity {
 pub(crate) const MESSAGE_INTEGRITY_SIZE: usize = 20;
 
 impl MessageIntegrity {
-    // new_long_term_integrity returns new MessageIntegrity with key for long-term
-    // credentials. Password, username, and realm must be SASL-prepared.
-    pub(crate) fn new_long_term_integrity(username: String, realm: String, password: String) -> Self {
-        let s = vec![username, realm, password].join(CREDENTIALS_SEP);
-
-        let mut h = Md5::new();
-        h.update(s.as_bytes());
-
-        MessageIntegrity(h.finalize().as_slice().to_vec())
-    }
 
     // new_short_term_integrity returns new MessageIntegrity with key for short-term
     // credentials. Password must be SASL-prepared.

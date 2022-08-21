@@ -55,13 +55,6 @@ pub(crate) struct BindingManager {
 }
 
 impl BindingManager {
-    pub(crate) fn new() -> Self {
-        BindingManager {
-            chan_map: HashMap::new(),
-            addr_map: HashMap::new(),
-            next: MIN_CHANNEL_NUMBER,
-        }
-    }
 
     pub(crate) fn assign_channel_number(&mut self) -> u16 {
         let n = self.next;
@@ -92,14 +85,6 @@ impl BindingManager {
 
     pub(crate) fn get_by_addr(&mut self, addr: &SocketAddr) -> Option<&mut Binding> {
         self.addr_map.get_mut(&addr.to_string())
-    }
-
-    pub(crate) fn find_by_number(&self, number: u16) -> Option<&Binding> {
-        if let Some(s) = self.chan_map.get(&number) {
-            self.addr_map.get(s)
-        } else {
-            None
-        }
     }
 
     pub(crate) fn delete_by_addr(&mut self, addr: &SocketAddr) -> bool {

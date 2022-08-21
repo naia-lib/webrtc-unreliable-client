@@ -103,8 +103,6 @@ pub(crate) struct Url {
     pub(crate) scheme: SchemeType,
     pub(crate) host: String,
     pub(crate) port: u16,
-    pub(crate) username: String,
-    pub(crate) password: String,
     pub(crate) proto: ProtoType,
 }
 

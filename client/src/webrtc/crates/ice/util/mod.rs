@@ -6,8 +6,7 @@ use crate::webrtc::ice::network_type::*;
 use std::collections::HashSet;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
-use crate::webrtc::stun::{agent::*, attributes::*, integrity::*, message::*, textattrs::*, xoraddr::*};
-use tokio::time::Duration;
+use crate::webrtc::stun::{attributes::*, integrity::*, message::*, textattrs::*};
 use crate::webrtc::util::{vnet::net::*, Conn};
 
 pub(crate) fn create_addr(_network: NetworkType, ip: IpAddr, port: u16) -> SocketAddr {
@@ -38,51 +37,6 @@ pub(crate) fn assert_inbound_username(m: &Message, expected_username: &str) -> R
 pub(crate) fn assert_inbound_message_integrity(m: &mut Message, key: &[u8]) -> Result<()> {
     let message_integrity_attr = MessageIntegrity(key.to_vec());
     Ok(message_integrity_attr.check(m)?)
-}
-
-/// Initiates a stun requests to `server_addr` using conn, reads the response and returns the
-/// `XORMappedAddress` returned by the stun server.
-/// Adapted from stun v0.2.
-pub(crate) async fn get_xormapped_addr(
-    conn: &Arc<dyn Conn + Send + Sync>,
-    server_addr: SocketAddr,
-    deadline: Duration,
-) -> Result<XorMappedAddress> {
-    let resp = stun_request(conn, server_addr, deadline).await?;
-    let mut addr = XorMappedAddress::default();
-    addr.get_from(&resp)?;
-    Ok(addr)
-}
-
-const MAX_MESSAGE_SIZE: usize = 1280;
-
-pub(crate) async fn stun_request(
-    conn: &Arc<dyn Conn + Send + Sync>,
-    server_addr: SocketAddr,
-    deadline: Duration,
-) -> Result<Message> {
-    let mut request = Message::new();
-    request.build(&[Box::new(BINDING_REQUEST), Box::new(TransactionId::new())])?;
-
-    conn.send_to(&request.raw, server_addr).await?;
-    let mut bs = vec![0_u8; MAX_MESSAGE_SIZE];
-    let (n, _) = if deadline > Duration::from_secs(0) {
-        match tokio::time::timeout(deadline, conn.recv_from(&mut bs)).await {
-            Ok(result) => match result {
-                Ok((n, addr)) => (n, addr),
-                Err(err) => return Err(Error::Other(err.to_string())),
-            },
-            Err(err) => return Err(Error::Other(err.to_string())),
-        }
-    } else {
-        conn.recv_from(&mut bs).await?
-    };
-
-    let mut res = Message::new();
-    res.raw = bs[..n].to_vec();
-    res.decode()?;
-
-    Ok(res)
 }
 
 pub(crate) async fn local_interfaces(

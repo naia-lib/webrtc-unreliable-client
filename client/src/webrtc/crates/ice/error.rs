@@ -49,14 +49,6 @@ pub(crate) enum Error {
     #[error("attempting to gather candidates during gathering state")]
     ErrMultipleGatherAttempted,
 
-    /// Indicates agent was give TURN URL with an empty Username.
-    #[error("username is empty")]
-    ErrUsernameEmpty,
-
-    /// Indicates agent was give TURN URL with an empty Password.
-    #[error("password is empty")]
-    ErrPasswordEmpty,
-
     /// Indicates we were unable to parse a candidate address.
     #[error("failed to parse address")]
     ErrAddressParseFailed,

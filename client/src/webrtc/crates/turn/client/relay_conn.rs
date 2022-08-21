@@ -25,7 +25,6 @@ use tokio::time::{Duration, Instant};
 
 use async_trait::async_trait;
 
-const PERM_REFRESH_INTERVAL: Duration = Duration::from_secs(120);
 const MAX_RETRY_ATTEMPTS: u16 = 3;
 
 pub(crate) struct InboundData {
@@ -48,16 +47,6 @@ pub(crate) trait RelayConnObserver {
     ) -> Result<TransactionResult, Error>;
 }
 
-// RelayConnConfig is a set of configuration params use by NewUDPConn
-pub(crate) struct RelayConnConfig {
-    pub(crate) relayed_addr: SocketAddr,
-    pub(crate) integrity: MessageIntegrity,
-    pub(crate) nonce: Nonce,
-    pub(crate) lifetime: Duration,
-    pub(crate) binding_mgr: Arc<Mutex<BindingManager>>,
-    pub(crate) read_ch_rx: Arc<Mutex<mpsc::Receiver<InboundData>>>,
-}
-
 pub(crate) struct RelayConnInternal<T: 'static + RelayConnObserver + Send + Sync> {
     obs: Arc<Mutex<T>>,
     perm_map: PermissionMap,
@@ -74,33 +63,6 @@ pub(crate) struct RelayConn<T: 'static + RelayConnObserver + Send + Sync> {
     relay_conn: Arc<Mutex<RelayConnInternal<T>>>,
     refresh_alloc_timer: PeriodicTimer,
     refresh_perms_timer: PeriodicTimer,
-}
-
-impl<T: 'static + RelayConnObserver + Send + Sync> RelayConn<T> {
-    // new creates a new instance of UDPConn
-    pub(crate) async fn new(obs: Arc<Mutex<T>>, config: RelayConnConfig) -> Self {
-        log::debug!("initial lifetime: {} seconds", config.lifetime.as_secs());
-
-        let c = RelayConn {
-            refresh_alloc_timer: PeriodicTimer::new(TimerIdRefresh::Alloc, config.lifetime / 2),
-            refresh_perms_timer: PeriodicTimer::new(TimerIdRefresh::Perms, PERM_REFRESH_INTERVAL),
-            relayed_addr: config.relayed_addr,
-            read_ch_rx: Arc::clone(&config.read_ch_rx),
-            relay_conn: Arc::new(Mutex::new(RelayConnInternal::new(obs, config))),
-        };
-
-        let rci1 = Arc::clone(&c.relay_conn);
-        let rci2 = Arc::clone(&c.relay_conn);
-
-        if c.refresh_alloc_timer.start(rci1).await {
-            log::debug!("refresh_alloc_timer started");
-        }
-        if c.refresh_perms_timer.start(rci2).await {
-            log::debug!("refresh_perms_timer started");
-        }
-
-        c
-    }
 }
 
 #[async_trait]
@@ -188,17 +150,6 @@ impl<T: RelayConnObserver + Send + Sync> Conn for RelayConn<T> {
 }
 
 impl<T: RelayConnObserver + Send + Sync> RelayConnInternal<T> {
-    // new creates a new instance of UDPConn
-    fn new(obs: Arc<Mutex<T>>, config: RelayConnConfig) -> Self {
-        RelayConnInternal {
-            obs,
-            perm_map: PermissionMap::new(),
-            binding_mgr: config.binding_mgr,
-            integrity: config.integrity,
-            nonce: config.nonce,
-            lifetime: config.lifetime,
-        }
-    }
 
     // write_to writes a packet with payload p to addr.
     // write_to can be made to time out and return
@@ -512,24 +463,6 @@ impl<T: RelayConnObserver + Send + Sync> RelayConnInternal<T> {
         Ok(())
     }
 
-    async fn refresh_permissions(&mut self) -> Result<(), Error> {
-        let addrs = self.perm_map.addrs();
-        if addrs.is_empty() {
-            log::debug!("no permission to refresh");
-            return Ok(());
-        }
-
-        if let Err(err) = self.create_permissions(&addrs).await {
-            if Error::ErrTryAgain != err {
-                log::error!("fail to refresh permissions: {}", err);
-            }
-            return Err(err);
-        }
-
-        log::debug!("refresh permissions successful");
-        Ok(())
-    }
-
     async fn bind(
         rc_obs: Arc<Mutex<T>>,
         bind_addr: SocketAddr,
@@ -575,46 +508,6 @@ impl<T: RelayConnObserver + Send + Sync> RelayConnInternal<T> {
 
         // Success.
         Ok(())
-    }
-}
-
-#[async_trait]
-impl<T: RelayConnObserver + Send + Sync> PeriodicTimerTimeoutHandler for RelayConnInternal<T> {
-    async fn on_timeout(&mut self, id: TimerIdRefresh) {
-        log::debug!("refresh timer {:?} expired", id);
-        match id {
-            TimerIdRefresh::Alloc => {
-                let lifetime = self.lifetime;
-                // limit the max retries on errTryAgain to 3
-                // when stale nonce returns, sencond retry should succeed
-                let mut result = Ok(());
-                for _ in 0..MAX_RETRY_ATTEMPTS {
-                    result = self.refresh_allocation(lifetime, false).await;
-                    if let Err(err) = &result {
-                        if Error::ErrTryAgain != *err {
-                            break;
-                        }
-                    }
-                }
-                if result.is_err() {
-                    log::warn!("refresh allocation failed");
-                }
-            }
-            TimerIdRefresh::Perms => {
-                let mut result = Ok(());
-                for _ in 0..MAX_RETRY_ATTEMPTS {
-                    result = self.refresh_permissions().await;
-                    if let Err(err) = &result {
-                        if Error::ErrTryAgain != *err {
-                            break;
-                        }
-                    }
-                }
-                if result.is_err() {
-                    log::warn!("refresh permissions failed");
-                }
-            }
-        }
     }
 }
 

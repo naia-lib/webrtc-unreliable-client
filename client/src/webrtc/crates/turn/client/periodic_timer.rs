@@ -1,15 +1,11 @@
 
 use tokio::sync::{mpsc, Mutex};
-use tokio::time::Duration;
-
-use std::sync::Arc;
 
 use async_trait::async_trait;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum TimerIdRefresh {
     Alloc,
-    Perms,
 }
 
 impl Default for TimerIdRefresh {
@@ -27,60 +23,10 @@ pub(crate) trait PeriodicTimerTimeoutHandler {
 // PeriodicTimer is a periodic timer
 #[derive(Default)]
 pub(crate) struct PeriodicTimer {
-    id: TimerIdRefresh,
-    interval: Duration,
     close_tx: Mutex<Option<mpsc::Sender<()>>>,
 }
 
 impl PeriodicTimer {
-    // create a new timer
-    pub(crate) fn new(id: TimerIdRefresh, interval: Duration) -> Self {
-        PeriodicTimer {
-            id,
-            interval,
-            close_tx: Mutex::new(None),
-        }
-    }
-
-    // Start starts the timer.
-    pub(crate) async fn start<T: 'static + PeriodicTimerTimeoutHandler + std::marker::Send>(
-        &self,
-        timeout_handler: Arc<Mutex<T>>,
-    ) -> bool {
-        // this is a noop if the timer is always running
-        {
-            let close_tx = self.close_tx.lock().await;
-            if close_tx.is_some() {
-                return false;
-            }
-        }
-
-        let (close_tx, mut close_rx) = mpsc::channel(1);
-        let interval = self.interval;
-        let id = self.id;
-
-        tokio::spawn(async move {
-            loop {
-                let timer = tokio::time::sleep(interval);
-                tokio::pin!(timer);
-
-                tokio::select! {
-                    _ = timer.as_mut() => {
-                        let mut handler = timeout_handler.lock().await;
-                        handler.on_timeout(id).await;
-                    }
-                    _ = close_rx.recv() => break,
-                }
-            }
-        });
-
-        {
-            let mut close = self.close_tx.lock().await;
-            *close = Some(close_tx);
-        }
-
-        true
-    }
 
     // Stop stops the timer.
     pub(crate) async fn stop(&self) {

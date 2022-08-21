@@ -46,11 +46,6 @@ pub(crate) struct PermissionMap {
 }
 
 impl PermissionMap {
-    pub(crate) fn new() -> PermissionMap {
-        PermissionMap {
-            perm_map: HashMap::new(),
-        }
-    }
 
     pub(crate) fn insert(&mut self, addr: &SocketAddr, p: Arc<Permission>) {
         self.perm_map.insert(addr.ip().to_string(), p);
@@ -62,15 +57,5 @@ impl PermissionMap {
 
     pub(crate) fn delete(&mut self, addr: &SocketAddr) {
         self.perm_map.remove(&addr.ip().to_string());
-    }
-
-    pub(crate) fn addrs(&self) -> Vec<SocketAddr> {
-        let mut a = vec![];
-        for k in self.perm_map.keys() {
-            if let Ok(ip) = k.parse() {
-                a.push(SocketAddr::new(ip, 0));
-            }
-        }
-        a
     }
 }

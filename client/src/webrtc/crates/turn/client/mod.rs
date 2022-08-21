@@ -6,31 +6,18 @@ pub(crate) mod relay_conn;
 pub(crate) mod transaction;
 
 use crate::webrtc::turn::error::*;
-use crate::webrtc::turn::proto::{
-    chandata::*, data::*, lifetime::*, peeraddr::*, relayaddr::*, reqtrans::*, PROTO_UDP,
-};
-use binding::*;
 use relay_conn::*;
 use transaction::*;
 
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
-use crate::webrtc::stun::agent::*;
-use crate::webrtc::stun::attributes::*;
-use crate::webrtc::stun::error_code::*;
-use crate::webrtc::stun::fingerprint::*;
-use crate::webrtc::stun::integrity::*;
 use crate::webrtc::stun::message::*;
 use crate::webrtc::stun::textattrs::*;
 use tokio::sync::{mpsc, Mutex};
-use crate::webrtc::util::{conn::*, vnet::net::*};
+use crate::webrtc::util::conn::*;
 
 use async_trait::async_trait;
-
-const DEFAULT_RTO_IN_MS: u16 = 200;
-const MAX_DATA_BUFFER_SIZE: usize = u16::MAX as usize; // message size limit for Chromium
-const MAX_READ_QUEUE_SIZE: usize = 1024;
 
 //              interval [msec]
 // 0: 0 ms      +500
@@ -42,28 +29,12 @@ const MAX_READ_QUEUE_SIZE: usize = 1024;
 // 6: 31500 ms  +32000
 // -: 63500 ms  failed
 
-// ClientConfig is a bag of config parameters for Client.
-pub(crate) struct ClientConfig {
-    pub(crate) stun_serv_addr: String, // STUN server address (e.g. "stun.abc.com:3478")
-    pub(crate) turn_serv_addr: String, // TURN server addrees (e.g. "turn.abc.com:3478")
-    pub(crate) username: String,
-    pub(crate) password: String,
-    pub(crate) realm: String,
-    pub(crate) rto_in_ms: u16,
-    pub(crate) conn: Arc<dyn Conn + Send + Sync>,
-    pub(crate) vnet: Option<Arc<Net>>,
-}
-
 struct ClientInternal {
     conn: Arc<dyn Conn + Send + Sync>,
-    stun_serv_addr: String,
     turn_serv_addr: String,
     username: Username,
-    password: String,
     realm: Realm,
-    integrity: MessageIntegrity,
     tr_map: Arc<Mutex<TransactionMap>>,
-    binding_mgr: Arc<Mutex<BindingManager>>,
     rto_in_ms: u16,
     read_ch_tx: Arc<Mutex<Option<mpsc::Sender<InboundData>>>>,
 }
@@ -146,266 +117,6 @@ impl RelayConnObserver for ClientInternal {
 }
 
 impl ClientInternal {
-    // new returns a new Client instance. listeningAddress is the address and port to listen on, default "0.0.0.0:0"
-    async fn new(config: ClientConfig) -> Result<Self> {
-        let net = if let Some(vnet) = config.vnet {
-            if vnet.is_virtual() {
-                log::warn!("vnet is enabled");
-            }
-            vnet
-        } else {
-            Arc::new(Net::new(None))
-        };
-
-        let stun_serv_addr = if config.stun_serv_addr.is_empty() {
-            String::new()
-        } else {
-            log::debug!("resolving {}", config.stun_serv_addr);
-            let local_addr = config.conn.local_addr().await?;
-            let stun_serv = net
-                .resolve_addr(local_addr.is_ipv4(), &config.stun_serv_addr)
-                .await?;
-            log::debug!("stunServ: {}", stun_serv);
-            stun_serv.to_string()
-        };
-
-        let turn_serv_addr = if config.turn_serv_addr.is_empty() {
-            String::new()
-        } else {
-            log::debug!("resolving {}", config.turn_serv_addr);
-            let local_addr = config.conn.local_addr().await?;
-            let turn_serv = net
-                .resolve_addr(local_addr.is_ipv4(), &config.turn_serv_addr)
-                .await?;
-            log::debug!("turnServ: {}", turn_serv);
-            turn_serv.to_string()
-        };
-
-        Ok(ClientInternal {
-            conn: Arc::clone(&config.conn),
-            stun_serv_addr,
-            turn_serv_addr,
-            username: Username::new(ATTR_USERNAME, config.username),
-            password: config.password,
-            realm: Realm::new(ATTR_REALM, config.realm),
-            tr_map: Arc::new(Mutex::new(TransactionMap::new())),
-            binding_mgr: Arc::new(Mutex::new(BindingManager::new())),
-            rto_in_ms: if config.rto_in_ms != 0 {
-                config.rto_in_ms
-            } else {
-                DEFAULT_RTO_IN_MS
-            },
-            integrity: MessageIntegrity::new_short_term_integrity(String::new()),
-            read_ch_tx: Arc::new(Mutex::new(None)),
-        })
-    }
-
-    // Listen will have this client start listening on the relay_conn provided via the config.
-    // This is optional. If not used, you will need to call handle_inbound method
-    // to supply incoming data, instead.
-    async fn listen(&self) -> Result<()> {
-        let conn = Arc::clone(&self.conn);
-        let stun_serv_str = self.stun_serv_addr.clone();
-        let tr_map = Arc::clone(&self.tr_map);
-        let read_ch_tx = Arc::clone(&self.read_ch_tx);
-        let binding_mgr = Arc::clone(&self.binding_mgr);
-
-        tokio::spawn(async move {
-            let mut buf = vec![0u8; MAX_DATA_BUFFER_SIZE];
-            loop {
-                //TODO: gracefully exit loop
-                let (n, from) = match conn.recv_from(&mut buf).await {
-                    Ok((n, from)) => (n, from),
-                    Err(err) => {
-                        log::debug!("exiting read loop: {}", err);
-                        break;
-                    }
-                };
-
-                log::debug!("received {} bytes of udp from {}", n, from);
-
-                if let Err(err) = ClientInternal::handle_inbound(
-                    &read_ch_tx,
-                    &buf[..n],
-                    from,
-                    &stun_serv_str,
-                    &tr_map,
-                    &binding_mgr,
-                )
-                .await
-                {
-                    log::debug!("exiting read loop: {}", err);
-                    break;
-                }
-            }
-        });
-
-        Ok(())
-    }
-
-    // handle_inbound handles data received.
-    // This method handles incoming packet demultiplex it by the source address
-    // and the types of the message.
-    // This return a booleen (handled or not) and if there was an error.
-    // Caller should check if the packet was handled by this client or not.
-    // If not handled, it is assumed that the packet is application data.
-    // If an error is returned, the caller should discard the packet regardless.
-    async fn handle_inbound(
-        read_ch_tx: &Arc<Mutex<Option<mpsc::Sender<InboundData>>>>,
-        data: &[u8],
-        from: SocketAddr,
-        stun_serv_str: &str,
-        tr_map: &Arc<Mutex<TransactionMap>>,
-        binding_mgr: &Arc<Mutex<BindingManager>>,
-    ) -> Result<()> {
-        // +-------------------+-------------------------------+
-        // |   Return Values   |                               |
-        // +-------------------+       Meaning / Action        |
-        // | handled |  error  |                               |
-        // |=========+=========+===============================+
-        // |  false  |   nil   | Handle the packet as app data |
-        // |---------+---------+-------------------------------+
-        // |  true   |   nil   |        Nothing to do          |
-        // |---------+---------+-------------------------------+
-        // |  false  |  error  |     (shouldn't happen)        |
-        // |---------+---------+-------------------------------+
-        // |  true   |  error  | Error occurred while handling |
-        // +---------+---------+-------------------------------+
-        // Possible causes of the error:
-        //  - Malformed packet (parse error)
-        //  - STUN message was a request
-        //  - Non-STUN message from the STUN server
-
-        if is_message(data) {
-            ClientInternal::handle_stun_message(tr_map, read_ch_tx, data).await
-        } else if ChannelData::is_channel_data(data) {
-            ClientInternal::handle_channel_data(binding_mgr, read_ch_tx, data).await
-        } else if !stun_serv_str.is_empty() && from.to_string() == *stun_serv_str {
-            // received from STUN server but it is not a STUN message
-            Err(Error::ErrNonStunmessage)
-        } else {
-            // assume, this is an application data
-            log::trace!("non-STUN/TURN packect, unhandled");
-            Ok(())
-        }
-    }
-
-    async fn handle_stun_message(
-        tr_map: &Arc<Mutex<TransactionMap>>,
-        read_ch_tx: &Arc<Mutex<Option<mpsc::Sender<InboundData>>>>,
-        data: &[u8],
-    ) -> Result<()> {
-        let mut msg = Message::new();
-        msg.raw = data.to_vec();
-        msg.decode()?;
-
-        if msg.typ.class == CLASS_REQUEST {
-            return Err(Error::Other(format!(
-                "{:?} : {}",
-                Error::ErrUnexpectedStunrequestMessage,
-                msg
-            )));
-        }
-
-        if msg.typ.class == CLASS_INDICATION {
-            if msg.typ.method == METHOD_DATA {
-                let mut peer_addr = PeerAddress::default();
-                peer_addr.get_from(&msg)?;
-                let from = SocketAddr::new(peer_addr.ip, peer_addr.port);
-
-                let mut data = Data::default();
-                data.get_from(&msg)?;
-
-                log::debug!("data indication received from {}", from);
-
-                let _ = ClientInternal::handle_inbound_relay_conn(read_ch_tx, &data.0, from).await;
-            }
-
-            return Ok(());
-        }
-
-        // This is a STUN response message (transactional)
-        // The type is either:
-        // - stun.ClassSuccessResponse
-        // - stun.ClassErrorResponse
-
-        let tr_key = base64::encode(&msg.transaction_id.0);
-
-        let mut tm = tr_map.lock().await;
-        if tm.find(&tr_key).is_none() {
-            // silently discard
-            log::debug!("no transaction for {}", msg);
-            return Ok(());
-        }
-
-        if let Some(mut tr) = tm.delete(&tr_key) {
-            // End the transaction
-            tr.stop_rtx_timer();
-
-            if !tr
-                .write_result(TransactionResult {
-                    msg,
-                    ..Default::default()
-                })
-                .await
-            {
-                log::debug!("no listener for msg.raw {:?}", data);
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn handle_channel_data(
-        binding_mgr: &Arc<Mutex<BindingManager>>,
-        read_ch_tx: &Arc<Mutex<Option<mpsc::Sender<InboundData>>>>,
-        data: &[u8],
-    ) -> Result<()> {
-        let mut ch_data = ChannelData {
-            raw: data.to_vec(),
-            ..Default::default()
-        };
-        ch_data.decode()?;
-
-        let addr = ClientInternal::find_addr_by_channel_number(binding_mgr, ch_data.number.0)
-            .await
-            .ok_or(Error::ErrChannelBindNotFound)?;
-
-        log::trace!(
-            "channel data received from {} (ch={})",
-            addr,
-            ch_data.number.0
-        );
-
-        let _ = ClientInternal::handle_inbound_relay_conn(read_ch_tx, &ch_data.data, addr).await;
-
-        Ok(())
-    }
-
-    // handle_inbound_relay_conn passes inbound data in RelayConn
-    async fn handle_inbound_relay_conn(
-        read_ch_tx: &Arc<Mutex<Option<mpsc::Sender<InboundData>>>>,
-        data: &[u8],
-        from: SocketAddr,
-    ) -> Result<()> {
-        let read_ch_tx_opt = read_ch_tx.lock().await;
-        log::debug!("read_ch_tx_opt = {}", read_ch_tx_opt.is_some());
-        if let Some(tx) = &*read_ch_tx_opt {
-            log::debug!("try_send data = {:?}, from = {}", data, from);
-            if tx
-                .try_send(InboundData {
-                    data: data.to_vec(),
-                    from,
-                })
-                .is_err()
-            {
-                log::warn!("receive buffer full");
-            }
-            Ok(())
-        } else {
-            Err(Error::ErrAlreadyClosed)
-        }
-    }
 
     // Close closes this client
     async fn close(&mut self) {
@@ -418,108 +129,6 @@ impl ClientInternal {
             tm.close_and_delete_all();
         }
     }
-
-    // find_addr_by_channel_number returns a peer address associated with the
-    // channel number on this UDPConn
-    async fn find_addr_by_channel_number(
-        binding_mgr: &Arc<Mutex<BindingManager>>,
-        ch_num: u16,
-    ) -> Option<SocketAddr> {
-        let bm = binding_mgr.lock().await;
-        bm.find_by_number(ch_num).map(|b| b.addr)
-    }
-
-    // Allocate sends a TURN allocation request to the given transport address
-    async fn allocate(&mut self) -> Result<RelayConnConfig> {
-        {
-            let read_ch_tx = self.read_ch_tx.lock().await;
-            log::debug!("allocate check: read_ch_tx_opt = {}", read_ch_tx.is_some());
-            if read_ch_tx.is_some() {
-                return Err(Error::ErrOneAllocateOnly);
-            }
-        }
-
-        let mut msg = Message::new();
-        msg.build(&[
-            Box::new(TransactionId::new()),
-            Box::new(MessageType::new(METHOD_ALLOCATE, CLASS_REQUEST)),
-            Box::new(RequestedTransport {
-                protocol: PROTO_UDP,
-            }),
-            Box::new(FINGERPRINT),
-        ])?;
-
-        log::debug!("client.Allocate call PerformTransaction 1");
-        let tr_res = self
-            .perform_transaction(&msg, &self.turn_serv_addr.clone(), false)
-            .await?;
-        let res = tr_res.msg;
-
-        // Anonymous allocate failed, trying to authenticate.
-        let nonce = Nonce::get_from_as(&res, ATTR_NONCE)?;
-        self.realm = Realm::get_from_as(&res, ATTR_REALM)?;
-
-        self.integrity = MessageIntegrity::new_long_term_integrity(
-            self.username.text.clone(),
-            self.realm.text.clone(),
-            self.password.clone(),
-        );
-
-        // Trying to authorize.
-        msg.build(&[
-            Box::new(TransactionId::new()),
-            Box::new(MessageType::new(METHOD_ALLOCATE, CLASS_REQUEST)),
-            Box::new(RequestedTransport {
-                protocol: PROTO_UDP,
-            }),
-            Box::new(self.username.clone()),
-            Box::new(self.realm.clone()),
-            Box::new(nonce.clone()),
-            Box::new(self.integrity.clone()),
-            Box::new(FINGERPRINT),
-        ])?;
-
-        log::debug!("client.Allocate call PerformTransaction 2");
-        let tr_res = self
-            .perform_transaction(&msg, &self.turn_serv_addr.clone(), false)
-            .await?;
-        let res = tr_res.msg;
-
-        if res.typ.class == CLASS_ERROR_RESPONSE {
-            let mut code = ErrorCodeAttribute::default();
-            let result = code.get_from(&res);
-            if result.is_err() {
-                return Err(Error::Other(format!("{}", res.typ)));
-            } else {
-                return Err(Error::Other(format!("{} (error {})", res.typ, code)));
-            }
-        }
-
-        // Getting relayed addresses from response.
-        let mut relayed = RelayedAddress::default();
-        relayed.get_from(&res)?;
-        let relayed_addr = SocketAddr::new(relayed.ip, relayed.port);
-
-        // Getting lifetime from response
-        let mut lifetime = Lifetime::default();
-        lifetime.get_from(&res)?;
-
-        let (read_ch_tx, read_ch_rx) = mpsc::channel(MAX_READ_QUEUE_SIZE);
-        {
-            let mut read_ch_tx_opt = self.read_ch_tx.lock().await;
-            *read_ch_tx_opt = Some(read_ch_tx);
-            log::debug!("allocate: read_ch_tx_opt = {}", read_ch_tx_opt.is_some());
-        }
-
-        Ok(RelayConnConfig {
-            relayed_addr,
-            integrity: self.integrity.clone(),
-            nonce,
-            lifetime: lifetime.0,
-            binding_mgr: Arc::clone(&self.binding_mgr),
-            read_ch_rx: Arc::new(Mutex::new(read_ch_rx)),
-        })
-    }
 }
 
 // Client is a STUN server client
@@ -529,26 +138,6 @@ pub(crate) struct Client {
 }
 
 impl Client {
-    pub(crate) async fn new(config: ClientConfig) -> Result<Self> {
-        let ci = ClientInternal::new(config).await?;
-        Ok(Client {
-            client_internal: Arc::new(Mutex::new(ci)),
-        })
-    }
-
-    pub(crate) async fn listen(&self) -> Result<()> {
-        let ci = self.client_internal.lock().await;
-        ci.listen().await
-    }
-
-    pub(crate) async fn allocate(&self) -> Result<impl Conn> {
-        let config = {
-            let mut ci = self.client_internal.lock().await;
-            ci.allocate().await?
-        };
-
-        Ok(RelayConn::new(Arc::clone(&self.client_internal), config).await)
-    }
 
     pub(crate) async fn close(&self) -> Result<()> {
         let mut ci = self.client_internal.lock().await;

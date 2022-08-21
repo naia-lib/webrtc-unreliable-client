@@ -1,6 +1,5 @@
 
 use super::channum::*;
-use crate::webrtc::turn::error::*;
 
 const PADDING: usize = 4;
 
@@ -54,29 +53,6 @@ impl ChannelData {
         }
     }
 
-    // Decode decodes The ChannelData Message from Raw.
-    pub(crate) fn decode(&mut self) -> Result<()> {
-        let buf = &self.raw;
-        if buf.len() < CHANNEL_DATA_HEADER_SIZE {
-            return Err(Error::ErrUnexpectedEof);
-        }
-        let num = u16::from_be_bytes([buf[0], buf[1]]);
-        self.number = ChannelNumber(num);
-        if !self.number.valid() {
-            return Err(Error::ErrInvalidChannelNumber);
-        }
-        let l = u16::from_be_bytes([
-            buf[CHANNEL_DATA_NUMBER_SIZE],
-            buf[CHANNEL_DATA_NUMBER_SIZE + 1],
-        ]) as usize;
-        if l > buf[CHANNEL_DATA_HEADER_SIZE..].len() {
-            return Err(Error::ErrBadChannelDataLength);
-        }
-        self.data = buf[CHANNEL_DATA_HEADER_SIZE..CHANNEL_DATA_HEADER_SIZE + l].to_vec();
-
-        Ok(())
-    }
-
     // WriteHeader writes channel number and length.
     pub(crate) fn write_header(&mut self) {
         if self.raw.len() < CHANNEL_DATA_HEADER_SIZE {
@@ -87,24 +63,5 @@ impl ChannelData {
         self.raw[..CHANNEL_DATA_NUMBER_SIZE].copy_from_slice(&self.number.0.to_be_bytes());
         self.raw[CHANNEL_DATA_NUMBER_SIZE..CHANNEL_DATA_HEADER_SIZE]
             .copy_from_slice(&(self.data.len() as u16).to_be_bytes());
-    }
-
-    // is_channel_data returns true if buf looks like the ChannelData Message.
-    pub(crate) fn is_channel_data(buf: &[u8]) -> bool {
-        if buf.len() < CHANNEL_DATA_HEADER_SIZE {
-            return false;
-        }
-
-        if u16::from_be_bytes([
-            buf[CHANNEL_DATA_NUMBER_SIZE],
-            buf[CHANNEL_DATA_NUMBER_SIZE + 1],
-        ]) > buf[CHANNEL_DATA_HEADER_SIZE..].len() as u16
-        {
-            return false;
-        }
-
-        // Quick check for channel number.
-        let num = ChannelNumber(u16::from_be_bytes([buf[0], buf[1]]));
-        num.valid()
     }
 }

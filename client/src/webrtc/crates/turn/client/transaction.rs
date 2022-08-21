@@ -180,13 +180,6 @@ impl Transaction {
         });
     }
 
-    // stop_rtx_timer stop the transaction timer
-    pub(crate) fn stop_rtx_timer(&mut self) {
-        if self.timer_ch_tx.is_some() {
-            self.timer_ch_tx.take();
-        }
-    }
-
     // write_result writes the result to the result channel
     pub(crate) async fn write_result(&self, res: TransactionResult) -> bool {
         if let Some(result_ch) = &self.result_ch_tx {
@@ -215,12 +208,6 @@ pub(crate) struct TransactionMap {
 }
 
 impl TransactionMap {
-    // NewTransactionMap create a new instance of the transaction map
-    pub(crate) fn new() -> TransactionMap {
-        TransactionMap {
-            tr_map: HashMap::new(),
-        }
-    }
 
     // Insert inserts a trasaction to the map
     pub(crate) fn insert(&mut self, key: String, tr: Transaction) -> bool {
