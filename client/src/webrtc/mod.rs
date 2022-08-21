@@ -1,7 +1,7 @@
 mod crates;
 
 // re-export sub-crates
-pub(crate) use crates::data;
+pub(crate) use data_channel::data;
 pub(crate) use crates::sctp;
 pub(crate) use crates::util;
 pub(crate) use crates::dtls;

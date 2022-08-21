@@ -1,5 +1,6 @@
 
 pub(crate) mod data_channel_state;
+pub(crate) mod data;
 
 use std::future::Future;
 use std::pin::Pin;

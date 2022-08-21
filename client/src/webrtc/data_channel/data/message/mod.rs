@@ -7,7 +7,7 @@ use message_channel_ack::*;
 use message_channel_open::*;
 use message_type::*;
 
-use crate::webrtc::data::error::Error;
+use crate::webrtc::data_channel::data::error::Error;
 
 use crate::webrtc::util::marshal::*;
 

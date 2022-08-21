@@ -1,4 +1,3 @@
-pub(crate) mod data;
 pub(crate) mod sctp;
 pub(crate) mod util;
 pub(crate) mod dtls;

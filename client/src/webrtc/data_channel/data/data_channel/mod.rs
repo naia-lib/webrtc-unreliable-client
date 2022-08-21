@@ -1,6 +1,6 @@
 
-use crate::webrtc::data::error::Result;
-use crate::webrtc::data::{
+use crate::webrtc::data_channel::data::error::Result;
+use crate::webrtc::data_channel::data::{
     message::message_channel_open::*, message::*,
 };
 
@@ -50,7 +50,7 @@ impl DataChannel {
     }
 
     /// Client opens a data channel over an SCTP stream
-    pub(crate) async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
+    async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
 
         let msg = Message::DataChannelOpen(DataChannelOpen {
             label: config.label.bytes().collect(),

@@ -8,9 +8,9 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::webrtc::{
-    peer_connection::{sdp::session_description::RTCSessionDescription, RTCPeerConnection},
-    data::data_channel::DataChannel
+    peer_connection::{RTCPeerConnection, sdp::session_description::RTCSessionDescription}
 };
+use crate::webrtc::data_channel::data::data_channel::DataChannel;
 
 use super::addr_cell::AddrCell;
 
