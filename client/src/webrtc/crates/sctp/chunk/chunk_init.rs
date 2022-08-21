@@ -5,6 +5,7 @@ use crate::webrtc::sctp::util::get_padding_size;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::fmt;
+use crate::webrtc::sctp::param::param_forward_tsn_supported::ParamForwardTsnSupported;
 
 ///chunkInitCommon represents an SCTP Chunk body of type INIT and INIT ACK
 ///
@@ -273,13 +274,8 @@ impl Chunk for ChunkInit {
 }
 
 impl ChunkInit {
-    pub(crate) fn set_supported_extensions(&mut self) {
-        // TODO RFC5061 https://tools.ietf.org/html/rfc6525#section-5.2
-        // An implementation supporting this (Supported Extensions Parameter)
-        // extension MUST list the ASCONF, the ASCONF-ACK, and the AUTH chunks
-        // in its INIT and INIT-ACK parameters.
-        self.params.push(Box::new(ParamSupportedExtensions {
-            chunk_types: vec![CT_RECONFIG, CT_FORWARD_TSN],
-        }));
+    pub(crate) fn set_forward_tsn_supported(&mut self) {
+        // Changed this to work as webrtc-unreliable requires
+        self.params.push(Box::new(ParamForwardTsnSupported));
     }
 }

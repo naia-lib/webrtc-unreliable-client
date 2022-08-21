@@ -271,7 +271,7 @@ impl Association {
             advertised_receiver_window_credit: ai.max_receive_buffer_size,
             ..Default::default()
         };
-        init.set_supported_extensions();
+        init.set_forward_tsn_supported();
 
         let name1 = name.clone();
         let name2 = name.clone();

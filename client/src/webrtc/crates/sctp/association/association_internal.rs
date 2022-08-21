@@ -725,7 +725,7 @@ impl AssociationInternal {
             init_ack.params = vec![Box::new(my_cookie.clone())];
         }
 
-        init_ack.set_supported_extensions();
+        init_ack.set_forward_tsn_supported();
 
         outbound.chunks = vec![Box::new(init_ack)];
 
