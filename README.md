@@ -5,12 +5,9 @@
 [s3]: https://img.shields.io/badge/license-MIT%2FApache-blue.svg
 [l3]: docs/LICENSE-MIT
 
-Just enough hacks to connect a native client to a [webrtc-unreliable](https://github.com/triplehex/webrtc-unreliable) server
+Just enough hacks to connect a native client to a [webrtc-unreliable](https://github.com/triplehex/webrtc-unreliable) server.
 
-Currently the codebase is slimmed down quite a bit from it's [webrtc-rs](https://github.com/webrtc-rs/webrtc)
-roots, however, many more optimizations can be done in order to optimize
-compile-time and code size. There is so much code here that will never be ran in the
-scenario it is meant to be used.
+At first this was going to just wrap [webrtc-rs](https://github.com/webrtc-rs/webrtc), but I experienced absurd compile times going that route .. Knowing that I very likely needed a much smaller subset of functionality to get an unreliable, unordered datachannel set up to connect to a `webrtc-unreliable` server, I cloned all `webrtc-rs` and started to cut it down. I'm not so sure this was the correct path. Protocols like DTLS, SCTP, SDP really don't have a lot of fat to trim, so it seems. However, I believe this is progress.
 
 If anyone knows of a good way to anayze during run-time which functions are never called, please get in touch!
 
