@@ -29,8 +29,15 @@ impl AddrCell {
         cell.0 = candidate_to_addr(candidate_str);
     }
 
-    pub async fn get(&self) -> ServerAddr {
-        self.cell.lock().await.0
+    pub fn get(&self) -> ServerAddr {
+        match self.cell.try_lock() {
+            Ok(addr) => {
+                addr.0
+            }
+            Err(_) => {
+                ServerAddr::Finding
+            }
+        }
     }
 }
 

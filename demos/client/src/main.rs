@@ -52,7 +52,7 @@ async fn read_loop(
             }
         };
 
-        let addr = match addr_cell.get().await {
+        let addr = match addr_cell.get() {
             ServerAddr::Found(addr) => addr.to_string(),
             ServerAddr::Finding => "".to_string(),
         };
@@ -69,22 +69,28 @@ async fn write_loop(
     to_server_sender: mpsc::Sender<Box<[u8]>>,
 ) -> Result<()> {
 
+    let mut count = 0;
+
     loop {
         let timeout = tokio::time::sleep(Duration::from_secs(1));
         tokio::pin!(timeout);
 
         tokio::select! {
             _ = timeout.as_mut() =>{
-                let addr = match addr_cell.get().await {
-                    ServerAddr::Found(addr) => addr.to_string(),
-                    ServerAddr::Finding => "".to_string(),
-                };
-                let message = "PING".to_string();
-                log::info!("Client send -> {}: {}", addr, message);
-                match to_server_sender.send(message.as_bytes().into()).await {
-                    Ok(_) => {},
-                    Err(e) => {
-                        return Err(Error::new(e));
+                if count < 10 {
+                    count += 1;
+
+                    let addr = match addr_cell.get() {
+                        ServerAddr::Found(addr) => addr.to_string(),
+                        ServerAddr::Finding => "".to_string(),
+                    };
+                    let message = "PING".to_string();
+                    log::info!("Client send -> {}: {}", addr, message);
+                    match to_server_sender.send(message.as_bytes().into()).await {
+                        Ok(_) => {},
+                        Err(e) => {
+                            return Err(Error::new(e));
+                        }
                     }
                 }
             }
