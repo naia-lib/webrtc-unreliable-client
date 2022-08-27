@@ -1,4 +1,3 @@
-
 use crate::webrtc::util::error::*;
 use crate::webrtc::util::vnet::chunk::Chunk;
 use crate::webrtc::util::vnet::net::UDP_STR;
@@ -86,7 +85,6 @@ pub(crate) struct NetworkAddressTranslator {
 }
 
 impl NetworkAddressTranslator {
-
     pub(crate) fn get_paired_local_ip(&self, mapped_ip: &IpAddr) -> Option<&IpAddr> {
         for (i, ip) in self.mapped_ips.iter().enumerate() {
             if ip == mapped_ip {

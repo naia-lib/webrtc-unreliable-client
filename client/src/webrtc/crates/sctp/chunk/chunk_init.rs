@@ -2,9 +2,9 @@ use super::{chunk_header::*, chunk_type::*, *};
 use crate::webrtc::sctp::param::{param_header::*, *};
 use crate::webrtc::sctp::util::get_padding_size;
 
+use crate::webrtc::sctp::param::param_forward_tsn_supported::ParamForwardTsnSupported;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::fmt;
-use crate::webrtc::sctp::param::param_forward_tsn_supported::ParamForwardTsnSupported;
 
 ///chunkInitCommon represents an SCTP Chunk body of type INIT and INIT ACK
 ///

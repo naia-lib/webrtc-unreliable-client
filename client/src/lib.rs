@@ -6,10 +6,10 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 
-mod socket;
 mod addr_cell;
+mod socket;
 
-pub use socket::Socket;
 pub use addr_cell::{AddrCell, ServerAddr};
+pub use socket::Socket;
 
 mod webrtc;

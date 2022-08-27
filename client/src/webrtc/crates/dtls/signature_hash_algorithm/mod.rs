@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 use crate::webrtc::dtls::crypto::*;
@@ -139,6 +138,4 @@ pub(crate) fn select_signature_scheme(
 // SignatureScheme identifies a signature algorithm supported by TLS. See
 // RFC 8446, Section 4.2.3.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) enum SignatureScheme {
-
-}
+pub(crate) enum SignatureScheme {}

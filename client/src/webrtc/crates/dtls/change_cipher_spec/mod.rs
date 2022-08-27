@@ -1,4 +1,3 @@
-
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
 

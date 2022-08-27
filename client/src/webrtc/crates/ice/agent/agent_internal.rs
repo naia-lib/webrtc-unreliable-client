@@ -917,10 +917,7 @@ impl AgentInternal {
             }
 
             if remote_candidate.is_none() {
-                log::error!(
-                    "[{}]: No remote candidate!",
-                    self.get_name(),
-                );
+                log::error!("[{}]: No remote candidate!", self.get_name(),);
                 return;
             }
 

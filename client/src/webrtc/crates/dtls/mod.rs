@@ -1,4 +1,3 @@
-
 pub(crate) mod alert;
 pub(crate) mod application_data;
 pub(crate) mod change_cipher_spec;

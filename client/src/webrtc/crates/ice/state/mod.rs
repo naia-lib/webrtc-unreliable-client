@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 /// An enum showing the state of a ICE Connection List of supported States.

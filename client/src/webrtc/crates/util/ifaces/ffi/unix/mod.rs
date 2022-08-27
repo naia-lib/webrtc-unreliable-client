@@ -82,7 +82,9 @@ extern "C" {
     pub(crate) fn if_nametoindex(ifname: *const ::std::os::raw::c_char) -> ::std::os::raw::c_uint;
 }
 
-pub(crate) fn nix_socketaddr_to_sockaddr(sa: *mut nix::sys::socket::sockaddr) -> Option<net::SocketAddr> {
+pub(crate) fn nix_socketaddr_to_sockaddr(
+    sa: *mut nix::sys::socket::sockaddr,
+) -> Option<net::SocketAddr> {
     if sa.is_null() {
         return None;
     }

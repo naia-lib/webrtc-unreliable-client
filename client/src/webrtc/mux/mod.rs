@@ -1,4 +1,3 @@
-
 pub(crate) mod endpoint;
 pub(crate) mod mux_func;
 
@@ -6,12 +5,12 @@ use crate::webrtc::error::Result;
 use crate::webrtc::mux::endpoint::Endpoint;
 use crate::webrtc::mux::mux_func::MatchFunc;
 
+use crate::webrtc::util::{Buffer, Conn};
+use crate::webrtc::RECEIVE_MTU;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
-use crate::webrtc::util::{Buffer, Conn};
-use crate::webrtc::RECEIVE_MTU;
 
 /// mux multiplexes packets on a single socket (RFC7983)
 

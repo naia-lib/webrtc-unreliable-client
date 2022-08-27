@@ -10,7 +10,6 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
 pub(crate) enum Error {
-
     /// Indicates local username fragment insufficient bits are provided.
     /// Have to be at least 24 bits long.
     #[error("local username fragment is less than 24 bits long")]

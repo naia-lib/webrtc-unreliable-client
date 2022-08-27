@@ -214,7 +214,6 @@ impl Flight for Flight5 {
                     ))),
                 ),
                 should_encrypt: false,
-
             });
         }
 
@@ -239,7 +238,6 @@ impl Flight for Flight5 {
                 ))),
             ),
             should_encrypt: false,
-
         });
 
         let server_key_exchange_data = cache
@@ -445,7 +443,6 @@ impl Flight for Flight5 {
                     ))),
                 ),
                 should_encrypt: false,
-
             };
 
             let h = match &mut p.record.content {
@@ -489,7 +486,6 @@ impl Flight for Flight5 {
                 Content::ChangeCipherSpec(ChangeCipherSpec {}),
             ),
             should_encrypt: false,
-
         });
 
         if state.local_verify_data.is_empty() {

@@ -80,7 +80,6 @@ impl Flight for Flight6 {
                 Content::ChangeCipherSpec(ChangeCipherSpec {}),
             ),
             should_encrypt: false,
-
         }];
 
         if state.local_verify_data.is_empty() {

@@ -1,10 +1,10 @@
 use thiserror::Error;
 
+use crate::webrtc::util::KeyingMaterialExporterError;
 use rcgen::RcgenError;
 use std::io;
 use std::string::FromUtf8Error;
 use tokio::sync::mpsc::error::SendError as MpscSendError;
-use crate::webrtc::util::KeyingMaterialExporterError;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 

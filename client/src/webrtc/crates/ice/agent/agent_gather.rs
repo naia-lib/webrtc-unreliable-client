@@ -144,24 +144,20 @@ impl Agent {
             //TODO: for network in networks
             let network = UDP.to_owned();
 
-            let conn: Arc<dyn Conn + Send + Sync> = match listen_udp_in_port_range(
-                &net,
-                SocketAddr::new(ip, 0),
-            )
-            .await
-            {
-                Ok(conn) => conn,
-                Err(err) => {
-                    log::warn!(
-                        "[{}]: could not listen {} {}: {}",
-                        agent_internal.get_name(),
-                        network,
-                        ip,
-                        err
-                    );
-                    continue;
-                }
-            };
+            let conn: Arc<dyn Conn + Send + Sync> =
+                match listen_udp_in_port_range(&net, SocketAddr::new(ip, 0)).await {
+                    Ok(conn) => conn,
+                    Err(err) => {
+                        log::warn!(
+                            "[{}]: could not listen {} {}: {}",
+                            agent_internal.get_name(),
+                            network,
+                            ip,
+                            err
+                        );
+                        continue;
+                    }
+                };
 
             let port = match conn.local_addr().await {
                 Ok(addr) => addr.port(),

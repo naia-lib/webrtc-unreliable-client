@@ -1,4 +1,3 @@
-
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
@@ -10,7 +9,7 @@ use crate::webrtc::error::Result;
 
 /// Operation is a function
 pub(crate) struct Operation(
-    pub(crate) Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = bool> + Send + 'static>>) + Send + Sync>,
+    pub Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = bool> + Send + 'static>>) + Send + Sync>,
 );
 
 impl fmt::Debug for Operation {

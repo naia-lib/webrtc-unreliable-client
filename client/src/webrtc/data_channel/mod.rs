@@ -1,4 +1,3 @@
-
 pub(crate) mod data_channel_state;
 pub(crate) mod internal;
 
@@ -23,7 +22,6 @@ pub(crate) type OnOpenHdlrFn =
 /// which can be used for bidirectional peer-to-peer transfers of arbitrary data
 #[derive(Default)]
 pub(crate) struct RTCDataChannel {
-
     label: String,
     protocol: String,
 
@@ -50,7 +48,6 @@ pub(crate) struct RTCDataChannel {
 impl RTCDataChannel {
     // create the DataChannel object before the networking is set up.
     pub(crate) fn new(label: &str, protocol: &str) -> Self {
-
         RTCDataChannel {
             label: label.to_string(),
             protocol: protocol.to_string(),
@@ -77,7 +74,8 @@ impl RTCDataChannel {
                 protocol: self.protocol.clone(),
             };
 
-            let dc = crate::webrtc::internal::data_channel::DataChannel::dial(&association, 0, cfg).await?;
+            let dc = crate::webrtc::internal::data_channel::DataChannel::dial(&association, 0, cfg)
+                .await?;
 
             // buffered_amount_low_threshold and on_buffered_amount_low might be set earlier
             dc.set_buffered_amount_low_threshold(
@@ -132,7 +130,10 @@ impl RTCDataChannel {
         });
     }
 
-    pub(crate) async fn handle_open(&self, dc: Arc<crate::webrtc::internal::data_channel::DataChannel>) {
+    pub(crate) async fn handle_open(
+        &self,
+        dc: Arc<crate::webrtc::internal::data_channel::DataChannel>,
+    ) {
         {
             let mut data_channel = self.data_channel.lock().await;
             *data_channel = Some(Arc::clone(&dc));
@@ -157,8 +158,9 @@ impl RTCDataChannel {
     /// Please refer to the data-channels-detach example and the
     /// pion/datachannel documentation for the correct way to handle the
     /// resulting DataChannel object.
-    pub(crate) async fn detach(&self) -> Result<Arc<crate::webrtc::internal::data_channel::DataChannel>> {
-
+    pub(crate) async fn detach(
+        &self,
+    ) -> Result<Arc<crate::webrtc::internal::data_channel::DataChannel>> {
         let data_channel = self.data_channel.lock().await;
         if let Some(dc) = &*data_channel {
             self.detach_called.store(true, Ordering::SeqCst);

@@ -1,4 +1,3 @@
-
 use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;
 
@@ -72,7 +71,6 @@ impl fmt::Display for AttrType {
 }
 
 impl AttrType {
-
     /// value returns uint16 representation of attribute type.
     pub(crate) fn value(&self) -> u16 {
         self.0

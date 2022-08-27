@@ -526,7 +526,6 @@ impl Flight for Flight4 {
                 ))),
             ),
             should_encrypt: false,
-
         }];
 
         if cfg.local_psk_callback.is_none() {
@@ -558,7 +557,6 @@ impl Flight for Flight4 {
                     ))),
                 ),
                 should_encrypt: false,
-
             });
 
             let mut server_random = vec![];
@@ -630,7 +628,6 @@ impl Flight for Flight4 {
                         ))),
                     ),
                     should_encrypt: false,
-
                 });
             }
 
@@ -650,7 +647,6 @@ impl Flight for Flight4 {
                         ))),
                     ),
                     should_encrypt: false,
-
                 });
             }
         } else if let Some(local_psk_identity_hint) = &cfg.local_psk_identity_hint {
@@ -678,7 +674,6 @@ impl Flight for Flight4 {
                     ))),
                 ),
                 should_encrypt: false,
-
             });
         }
 
@@ -691,7 +686,6 @@ impl Flight for Flight4 {
                 ))),
             ),
             should_encrypt: false,
-
         });
 
         Ok(pkts)

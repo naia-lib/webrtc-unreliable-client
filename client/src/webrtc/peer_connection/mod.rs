@@ -1,4 +1,3 @@
-
 pub(crate) mod certificate;
 pub(crate) mod operation;
 mod peer_connection_internal;
@@ -12,9 +11,7 @@ use crate::webrtc::data_channel::data_channel_state::RTCDataChannelState;
 use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
 use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
-use crate::webrtc::dtls_transport::dtls_role::{
-    DTLSRole, DEFAULT_DTLS_ROLE_OFFER,
-};
+use crate::webrtc::dtls_transport::dtls_role::{DTLSRole, DEFAULT_DTLS_ROLE_OFFER};
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::error::{Error, Result};
@@ -97,7 +94,6 @@ pub(crate) type OnDataChannelHdlrFn = Box<
 /// peer-to-peer communications with another PeerConnection instance in a
 /// browser, or to another endpoint implementing the required protocols.
 pub(crate) struct RTCPeerConnection {
-
     idp_login_url: Option<String>,
 
     pub(crate) internal: Arc<PeerConnectionInternal>,
@@ -162,9 +158,7 @@ impl RTCPeerConnection {
 
     /// create_offer starts the PeerConnection and generates the localDescription
     /// <https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-createoffer>
-    pub(crate) async fn create_offer(
-        &self,
-    ) -> Result<RTCSessionDescription> {
+    pub(crate) async fn create_offer(&self) -> Result<RTCSessionDescription> {
         let use_identity = self.idp_login_url.is_some();
         if use_identity {
             return Err(Error::ErrIdentityProviderNotImplemented);
@@ -179,7 +173,6 @@ impl RTCPeerConnection {
         let offer;
 
         loop {
-
             // in-parallel steps to create an offer
             // https://w3c.github.io/webrtc-pc/#dfn-in-parallel-steps-to-create-an-offer
             let is_plan_b = {
@@ -221,7 +214,6 @@ impl RTCPeerConnection {
                         }
                     }
                 }
-
             }
 
             let current_remote_description_is_none = {
@@ -231,11 +223,7 @@ impl RTCPeerConnection {
             };
 
             let mut d = if current_remote_description_is_none {
-                self.internal
-                    .generate_unmatched_sdp(
-                        use_identity,
-                    )
-                    .await?
+                self.internal.generate_unmatched_sdp(use_identity).await?
             } else {
                 self.internal
                     .generate_matched_sdp(
@@ -541,7 +529,10 @@ impl RTCPeerConnection {
     }
 
     /// set_local_description sets the SessionDescription of the local peer
-    pub(crate) async fn set_local_description(&self, mut desc: RTCSessionDescription) -> Result<()> {
+    pub(crate) async fn set_local_description(
+        &self,
+        mut desc: RTCSessionDescription,
+    ) -> Result<()> {
         if self.internal.is_closed.load(Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);
         }
@@ -579,7 +570,10 @@ impl RTCPeerConnection {
     }
 
     /// set_remote_description sets the SessionDescription of the remote peer
-    pub(crate) async fn set_remote_description(&self, mut desc: RTCSessionDescription) -> Result<()> {
+    pub(crate) async fn set_remote_description(
+        &self,
+        mut desc: RTCSessionDescription,
+    ) -> Result<()> {
         if self.internal.is_closed.load(Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);
         }
@@ -589,7 +583,6 @@ impl RTCPeerConnection {
             .await?;
 
         if let Some(parsed) = &desc.parsed {
-
             let we_offer = true;
 
             let (remote_ufrag, remote_pwd, candidates) = extract_ice_details(parsed).await?;
@@ -684,7 +677,6 @@ impl RTCPeerConnection {
         label: &str,
         protocol: &str,
     ) -> Result<Arc<RTCDataChannel>> {
-
         // https://w3c.github.io/webrtc-pc/#peer-to-peer-data-api (Step #2)
         if self.internal.is_closed.load(Ordering::SeqCst) {
             return Err(Error::ErrConnectionClosed);

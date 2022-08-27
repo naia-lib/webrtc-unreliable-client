@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 /// ConnectionRole indicates which of the end points should initiate the connection establishment

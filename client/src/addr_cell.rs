@@ -31,12 +31,8 @@ impl AddrCell {
 
     pub fn get(&self) -> ServerAddr {
         match self.cell.try_lock() {
-            Ok(addr) => {
-                addr.0
-            }
-            Err(_) => {
-                ServerAddr::Finding
-            }
+            Ok(addr) => addr.0,
+            Err(_) => ServerAddr::Finding,
         }
     }
 }

@@ -74,7 +74,7 @@ impl RTCCertificate {
             certificate: crate::webrtc::dtls::crypto::Certificate {
                 certificate: vec![rustls::Certificate(certificate)],
                 private_key,
-            }
+            },
         })
     }
 

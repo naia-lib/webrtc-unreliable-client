@@ -1,4 +1,3 @@
-
 use crate::webrtc::stun::attributes::ATTR_PRIORITY;
 use crate::webrtc::stun::message::*;
 

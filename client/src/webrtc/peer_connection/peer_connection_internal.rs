@@ -75,8 +75,7 @@ impl PeerConnectionInternal {
         pc.ice_transport = pc.create_ice_transport().await;
 
         // Create the DTLS transport
-        pc.dtls_transport =
-            Arc::new(API::new_dtls_transport(Arc::clone(&pc.ice_transport))?);
+        pc.dtls_transport = Arc::new(API::new_dtls_transport(Arc::clone(&pc.ice_transport))?);
 
         // Create the SCTP transport
         pc.sctp_transport = Arc::new(API::new_sctp_transport(Arc::clone(&pc.dtls_transport))?);
@@ -102,7 +101,6 @@ impl PeerConnectionInternal {
         self: &Arc<Self>,
         remote_desc: Arc<RTCSessionDescription>,
     ) -> Result<()> {
-
         let dtls_transport = Arc::clone(&self.dtls_transport);
         let notify = Arc::new(Notify::new());
 
@@ -299,7 +297,6 @@ impl PeerConnectionInternal {
 
         // If we are offering also include unmatched local transceivers
         if include_unmatched {
-
             if self
                 .sctp_transport
                 .data_channels_requested

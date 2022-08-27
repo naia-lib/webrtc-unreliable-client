@@ -1,10 +1,10 @@
 use super::*;
 use crate::webrtc::ice::error::*;
 
+use crate::webrtc::util::Conn;
 use async_trait::async_trait;
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
-use crate::webrtc::util::Conn;
 
 impl Agent {
     /// Connects to the remote agent, acting as the controlling ice agent.
@@ -153,7 +153,10 @@ impl AgentConn {
 
 #[async_trait]
 impl Conn for AgentConn {
-    async fn connect(&self, _addr: SocketAddr) -> std::result::Result<(), crate::webrtc::util::Error> {
+    async fn connect(
+        &self,
+        _addr: SocketAddr,
+    ) -> std::result::Result<(), crate::webrtc::util::Error> {
         Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
     }
 
@@ -189,7 +192,9 @@ impl Conn for AgentConn {
         }
 
         if is_message(buf) {
-            return Err(crate::webrtc::util::Error::Other("ErrIceWriteStunMessage".into()));
+            return Err(crate::webrtc::util::Error::Other(
+                "ErrIceWriteStunMessage".into(),
+            ));
         }
 
         let result = if let Some(pair) = self.get_selected_pair().await {

@@ -1,4 +1,3 @@
-
 use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::checks::*;
 use crate::webrtc::stun::error::*;
@@ -58,7 +57,6 @@ impl Setter for MessageIntegrity {
 pub(crate) const MESSAGE_INTEGRITY_SIZE: usize = 20;
 
 impl MessageIntegrity {
-
     // new_short_term_integrity returns new MessageIntegrity with key for short-term
     // credentials. Password must be SASL-prepared.
     pub(crate) fn new_short_term_integrity(password: String) -> Self {

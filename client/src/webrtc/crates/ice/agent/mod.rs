@@ -1,4 +1,3 @@
-
 pub(crate) mod agent_config;
 pub(crate) mod agent_gather;
 pub(crate) mod agent_internal;
@@ -14,10 +13,12 @@ use crate::webrtc::ice::state::*;
 use agent_config::*;
 use agent_internal::*;
 
+use crate::webrtc::stun::{
+    agent::*, attributes::*, fingerprint::*, integrity::*, message::*, xoraddr::*,
+};
+use crate::webrtc::util::{vnet::net::*, Buffer};
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddr};
-use crate::webrtc::stun::{agent::*, attributes::*, fingerprint::*, integrity::*, message::*, xoraddr::*};
-use crate::webrtc::util::{vnet::net::*, Buffer};
 
 use crate::webrtc::ice::agent::agent_gather::GatherCandidatesInternalParams;
 use crate::webrtc::ice::rand::*;
@@ -132,8 +133,7 @@ impl Agent {
             return Err(Error::ErrLiteUsingNonHostCandidates);
         }
 
-        if !config.urls.is_empty()
-        {
+        if !config.urls.is_empty() {
             return Err(Error::ErrUselessUrlsProvided);
         }
 
@@ -197,7 +197,10 @@ impl Agent {
     }
 
     /// Sets a handler that is fired when the final candidate pair is selected.
-    pub(crate) async fn on_selected_candidate_pair_change(&self, f: OnSelectedCandidatePairChangeHdlrFn) {
+    pub(crate) async fn on_selected_candidate_pair_change(
+        &self,
+        f: OnSelectedCandidatePairChangeHdlrFn,
+    ) {
         let mut on_selected_candidate_pair_change_hdlr = self
             .internal
             .on_selected_candidate_pair_change_hdlr
@@ -214,8 +217,10 @@ impl Agent {
     }
 
     /// Adds a new remote candidate.
-    pub(crate) async fn add_remote_candidate(&self, c: &Arc<dyn Candidate + Send + Sync>) -> Result<()> {
-
+    pub(crate) async fn add_remote_candidate(
+        &self,
+        c: &Arc<dyn Candidate + Send + Sync>,
+    ) -> Result<()> {
         // If we have a mDNS Candidate lets fully resolve it before adding it locally
         if c.candidate_type() == CandidateType::Host && c.address().ends_with(".local") {
             if self.mdns_mode == MulticastDnsMode::Disabled {
@@ -241,7 +246,9 @@ impl Agent {
     }
 
     /// Returns the local candidates.
-    pub(crate) async fn get_local_candidates(&self) -> Result<Vec<Arc<dyn Candidate + Send + Sync>>> {
+    pub(crate) async fn get_local_candidates(
+        &self,
+    ) -> Result<Vec<Arc<dyn Candidate + Send + Sync>>> {
         let mut res = vec![];
 
         {

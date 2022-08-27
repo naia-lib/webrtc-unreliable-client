@@ -26,18 +26,18 @@ pub(crate) trait Nic {
 
 #[derive(Default)]
 pub(crate) struct RouterInternal {
-    pub(crate) nat: NetworkAddressTranslator,      // read-only
+    pub(crate) nat: NetworkAddressTranslator, // read-only
 }
 
 // Router ...
 #[derive(Default)]
 pub(crate) struct Router {
-    name: String,                              // read-only
-    queue: Arc<ChunkQueue>,                    // read-only
-    interfaces: Vec<Interface>,                // read-only
-    static_ips: Vec<IpAddr>,                   // read-only
-    done: Option<mpsc::Sender<()>>,            // requires mutex [x]
-    push_ch: Option<mpsc::Sender<()>>,         // writer requires mutex
+    name: String,                      // read-only
+    queue: Arc<ChunkQueue>,            // read-only
+    interfaces: Vec<Interface>,        // read-only
+    static_ips: Vec<IpAddr>,           // read-only
+    done: Option<mpsc::Sender<()>>,    // requires mutex [x]
+    push_ch: Option<mpsc::Sender<()>>, // writer requires mutex
     router_internal: Arc<Mutex<RouterInternal>>,
 }
 
@@ -92,7 +92,6 @@ impl Nic for Router {
 }
 
 impl Router {
-
     pub(crate) async fn push(&self, mut c: Box<dyn Chunk + Send + Sync>) {
         log::debug!("[{}] route {}", self.name, c);
         if self.done.is_some() {

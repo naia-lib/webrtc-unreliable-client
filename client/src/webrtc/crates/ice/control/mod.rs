@@ -1,4 +1,3 @@
-
 use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::checks::*;
 use crate::webrtc::stun::message::*;
@@ -13,7 +12,11 @@ pub(crate) const TIE_BREAKER_SIZE: usize = 8; // 64 bit
 
 impl TieBreaker {
     /// Adds Tiebreaker value to m as t attribute.
-    pub(crate) fn add_to_as(self, m: &mut Message, t: AttrType) -> Result<(), crate::webrtc::stun::Error> {
+    pub(crate) fn add_to_as(
+        self,
+        m: &mut Message,
+        t: AttrType,
+    ) -> Result<(), crate::webrtc::stun::Error> {
         let mut v = vec![0; TIE_BREAKER_SIZE];
         v.copy_from_slice(&(self.0 as u64).to_be_bytes());
         m.add(t, &v);
@@ -21,7 +24,11 @@ impl TieBreaker {
     }
 
     /// Decodes Tiebreaker value in message getting it as for t type.
-    pub(crate) fn get_from_as(&mut self, m: &Message, t: AttrType) -> Result<(), crate::webrtc::stun::Error> {
+    pub(crate) fn get_from_as(
+        &mut self,
+        m: &Message,
+        t: AttrType,
+    ) -> Result<(), crate::webrtc::stun::Error> {
         let v = m.get(t)?;
         check_size(t, v.len(), TIE_BREAKER_SIZE)?;
         self.0 = u64::from_be_bytes([v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]]);

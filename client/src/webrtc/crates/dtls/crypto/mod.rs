@@ -1,4 +1,3 @@
-
 pub(crate) mod crypto_cbc;
 pub(crate) mod crypto_ccm;
 pub(crate) mod crypto_gcm;
@@ -7,7 +6,9 @@ pub(crate) mod padding;
 use crate::webrtc::dtls::curve::named_curve::*;
 use crate::webrtc::dtls::error::*;
 use crate::webrtc::dtls::record_layer::record_layer_header::*;
-use crate::webrtc::dtls::signature_hash_algorithm::{HashAlgorithm, SignatureAlgorithm, SignatureHashAlgorithm};
+use crate::webrtc::dtls::signature_hash_algorithm::{
+    HashAlgorithm, SignatureAlgorithm, SignatureHashAlgorithm,
+};
 
 use ring::rand::SystemRandom;
 use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};

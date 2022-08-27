@@ -1,4 +1,3 @@
-
 mod association_internal;
 mod association_stats;
 
@@ -38,6 +37,7 @@ use crate::webrtc::sctp::util::*;
 use association_internal::*;
 use association_stats::*;
 
+use crate::webrtc::util::Conn;
 use bytes::Bytes;
 use rand::random;
 use std::collections::{HashMap, VecDeque};
@@ -46,7 +46,6 @@ use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::{broadcast, mpsc, Mutex};
-use crate::webrtc::util::Conn;
 
 pub(crate) const RECEIVE_MTU: usize = 8192;
 /// MTU for inbound packet (from DTLS)
@@ -214,7 +213,6 @@ pub(crate) struct Association {
 }
 
 impl Association {
-
     /// Client opens a SCTP stream over a conn
     pub(crate) async fn client(config: Config) -> Result<Self> {
         let (a, mut handshake_completed_ch_rx) = Association::new(config, true).await?;
@@ -475,10 +473,7 @@ impl Association {
     }
 
     /// open_stream opens a stream
-    pub(crate) async fn open_stream(
-        &self,
-        stream_identifier: u16,
-    ) -> Result<Arc<Stream>> {
+    pub(crate) async fn open_stream(&self, stream_identifier: u16) -> Result<Arc<Stream>> {
         let mut ai = self.association_internal.lock().await;
         ai.open_stream(stream_identifier)
     }

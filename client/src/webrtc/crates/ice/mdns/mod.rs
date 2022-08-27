@@ -1,4 +1,3 @@
-
 use uuid::Uuid;
 
 /// Represents the different Multicast modes that ICE can run.

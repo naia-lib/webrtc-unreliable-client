@@ -81,7 +81,6 @@ pub(crate) struct Bridge {
 }
 
 impl Bridge {
-
     pub(crate) async fn push(&self, b: &[u8], id: usize) -> Result<usize> {
         // Push rate should be limited as same as Tick rate.
         // Otherwise, queue grows too fast on free running Write.

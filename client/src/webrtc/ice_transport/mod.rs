@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use crate::webrtc::ice::candidate::Candidate;
 use crate::webrtc::ice::state::ConnectionState;
-use tokio::sync::{mpsc, Mutex};
 use crate::webrtc::util::Conn;
+use tokio::sync::{mpsc, Mutex};
 
 use ice_candidate::RTCIceCandidate;
 use ice_candidate_pair::RTCIceCandidatePair;
@@ -76,7 +76,11 @@ impl RTCIceTransport {
     }
 
     /// Start incoming connectivity checks based on its configured role.
-    pub(crate) async fn start(&self, params: &RTCIceParameters, role: Option<RTCIceRole>) -> Result<()> {
+    pub(crate) async fn start(
+        &self,
+        params: &RTCIceParameters,
+        role: Option<RTCIceRole>,
+    ) -> Result<()> {
         if self.state() != RTCIceTransportState::New {
             return Err(Error::ErrICETransportNotInNew);
         }

@@ -1,4 +1,3 @@
-
 use super::fixed_big_int::*;
 
 // ReplayDetector is the interface of sequence replay detector.

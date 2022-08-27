@@ -359,7 +359,7 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
                     priority,
                     foundation,
                     ..CandidateBaseConfig::default()
-                }
+                },
             };
             config.new_candidate_host().await
         }

@@ -1,4 +1,3 @@
-
 use crate::webrtc::ice::error::*;
 
 use std::fmt;
@@ -8,10 +7,7 @@ pub(crate) const UDP: &str = "udp";
 
 #[must_use]
 pub(crate) fn supported_network_types() -> Vec<NetworkType> {
-    vec![
-        NetworkType::Udp4,
-        NetworkType::Udp6,
-    ]
+    vec![NetworkType::Udp4, NetworkType::Udp6]
 }
 
 /// Represents the type of network.
@@ -54,7 +50,6 @@ impl Default for NetworkType {
 }
 
 impl NetworkType {
-
     /// Returns the short network description.
     #[must_use]
     pub(crate) fn network_short(self) -> String {

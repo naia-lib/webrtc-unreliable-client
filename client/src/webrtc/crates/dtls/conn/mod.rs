@@ -1,4 +1,3 @@
-
 use crate::webrtc::dtls::alert::*;
 use crate::webrtc::dtls::application_data::*;
 use crate::webrtc::dtls::cipher_suite::*;
@@ -109,14 +108,21 @@ type UtilResult<T> = std::result::Result<T, crate::webrtc::util::Error>;
 #[async_trait]
 impl Conn for DTLSConn {
     async fn connect(&self, _addr: SocketAddr) -> UtilResult<()> {
-        Err(crate::webrtc::util::Error::Other("Not applicable".to_owned()))
+        Err(crate::webrtc::util::Error::Other(
+            "Not applicable".to_owned(),
+        ))
     }
     async fn recv(&self, buf: &mut [u8]) -> UtilResult<usize> {
-        self.read(buf, None).await.map_err(crate::webrtc::util::Error::from_std)
+        self.read(buf, None)
+            .await
+            .map_err(crate::webrtc::util::Error::from_std)
     }
     async fn recv_from(&self, buf: &mut [u8]) -> UtilResult<(usize, SocketAddr)> {
         if let Some(raddr) = self.conn.remote_addr().await {
-            let n = self.read(buf, None).await.map_err(crate::webrtc::util::Error::from_std)?;
+            let n = self
+                .read(buf, None)
+                .await
+                .map_err(crate::webrtc::util::Error::from_std)?;
             Ok((n, raddr))
         } else {
             Err(crate::webrtc::util::Error::Other(
@@ -125,10 +131,14 @@ impl Conn for DTLSConn {
         }
     }
     async fn send(&self, buf: &[u8]) -> UtilResult<usize> {
-        self.write(buf, None).await.map_err(crate::webrtc::util::Error::from_std)
+        self.write(buf, None)
+            .await
+            .map_err(crate::webrtc::util::Error::from_std)
     }
     async fn send_to(&self, _buf: &[u8], _target: SocketAddr) -> UtilResult<usize> {
-        Err(crate::webrtc::util::Error::Other("Not applicable".to_owned()))
+        Err(crate::webrtc::util::Error::Other(
+            "Not applicable".to_owned(),
+        ))
     }
     async fn local_addr(&self) -> UtilResult<SocketAddr> {
         self.conn.local_addr().await
@@ -137,7 +147,9 @@ impl Conn for DTLSConn {
         self.conn.remote_addr().await
     }
     async fn close(&self) -> UtilResult<()> {
-        self.close().await.map_err(crate::webrtc::util::Error::from_std)
+        self.close()
+            .await
+            .map_err(crate::webrtc::util::Error::from_std)
     }
 }
 
@@ -439,7 +451,6 @@ impl DTLSConn {
                 Content::ApplicationData(ApplicationData { data: p.to_vec() }),
             ),
             should_encrypt: true,
-
         }];
 
         if let Some(d) = duration {
@@ -492,7 +503,6 @@ impl DTLSConn {
                 }),
             ),
             should_encrypt: self.is_handshake_completed_successfully(),
-
         }])
         .await
     }
@@ -759,7 +769,6 @@ impl DTLSConn {
                                 }),
                             ),
                             should_encrypt: handshake_completed_successfully.load(Ordering::SeqCst),
-
                         }],
                         None,
                     ))
@@ -840,7 +849,6 @@ impl DTLSConn {
                                 }),
                             ),
                             should_encrypt: handshake_completed_successfully.load(Ordering::SeqCst),
-
                         }],
                         None,
                     ))

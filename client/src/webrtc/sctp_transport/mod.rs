@@ -1,4 +1,3 @@
-
 pub(crate) mod sctp_transport_capabilities;
 pub(crate) mod sctp_transport_state;
 
@@ -11,12 +10,12 @@ use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCap
 
 use crate::webrtc::sctp::association::Association;
 
+use crate::webrtc::util::Conn;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
 use std::sync::Arc;
 use tokio::sync::{Mutex, Notify};
-use crate::webrtc::util::Conn;
 
 pub(crate) type OnDataChannelHdlrFn = Box<
     dyn (FnMut(Arc<RTCDataChannel>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
@@ -55,9 +54,7 @@ pub(crate) struct RTCSctpTransport {
 }
 
 impl RTCSctpTransport {
-    pub(crate) fn new(
-        dtls_transport: Arc<RTCDtlsTransport>
-    ) -> Self {
+    pub(crate) fn new(dtls_transport: Arc<RTCDtlsTransport>) -> Self {
         RTCSctpTransport {
             setting_engine: true,
             max_message_size: true,
@@ -91,12 +88,14 @@ impl RTCSctpTransport {
         let dtls_transport = self.transport();
         if let Some(net_conn) = &dtls_transport.conn().await {
             let sctp_association = Arc::new(
-                crate::webrtc::sctp::association::Association::client(crate::webrtc::sctp::association::Config {
-                    net_conn: Arc::clone(net_conn) as Arc<dyn Conn + Send + Sync>,
-                    max_receive_buffer_size: 0,
-                    max_message_size: 0,
-                    name: String::new(),
-                })
+                crate::webrtc::sctp::association::Association::client(
+                    crate::webrtc::sctp::association::Config {
+                        net_conn: Arc::clone(net_conn) as Arc<dyn Conn + Send + Sync>,
+                        max_receive_buffer_size: 0,
+                        max_message_size: 0,
+                        name: String::new(),
+                    },
+                )
                 .await?,
             );
 

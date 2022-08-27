@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 // SCHEME definitions from RFC 7064 Section 3.2.

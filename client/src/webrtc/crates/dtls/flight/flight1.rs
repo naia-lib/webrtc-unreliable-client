@@ -186,7 +186,6 @@ impl Flight for Flight1 {
                 ))),
             ),
             should_encrypt: false,
-
         }])
     }
 }

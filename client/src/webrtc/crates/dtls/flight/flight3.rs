@@ -406,7 +406,6 @@ impl Flight for Flight3 {
                 ))),
             ),
             should_encrypt: false,
-
         }])
     }
 }

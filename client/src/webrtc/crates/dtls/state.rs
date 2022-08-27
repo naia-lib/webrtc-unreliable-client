@@ -5,14 +5,14 @@ use super::extension::extension_use_srtp::SrtpProtectionProfile;
 use super::handshake::handshake_random::*;
 use super::prf::*;
 
+use crate::webrtc::util::KeyingMaterialExporter;
+use crate::webrtc::util::KeyingMaterialExporterError;
 use async_trait::async_trait;
 use std::io::BufWriter;
 use std::marker::{Send, Sync};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::webrtc::util::KeyingMaterialExporter;
-use crate::webrtc::util::KeyingMaterialExporterError;
 
 // State holds the dtls connection state and implements both encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
 pub(crate) struct State {

@@ -1,4 +1,3 @@
-
 use crate::webrtc::util::error::{Error, Result};
 
 use std::sync::Arc;
@@ -185,7 +184,11 @@ impl Buffer {
     // Blocks until data is available or the buffer is closed.
     // Returns io.ErrShortBuffer is the packet is too small to copy the Write.
     // Returns io.EOF if the buffer is closed.
-    pub(crate) async fn read(&self, packet: &mut [u8], duration: Option<Duration>) -> Result<usize> {
+    pub(crate) async fn read(
+        &self,
+        packet: &mut [u8],
+        duration: Option<Duration>,
+    ) -> Result<usize> {
         loop {
             {
                 // use {} to let LockGuard RAII

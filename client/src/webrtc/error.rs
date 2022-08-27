@@ -11,7 +11,6 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 #[derive(Error, Debug, PartialEq)]
 #[non_exhaustive]
 pub(crate) enum Error {
-
     /// ErrConnectionClosed indicates an operation executed after connection
     /// has already been closed.
     #[error("connection closed")]

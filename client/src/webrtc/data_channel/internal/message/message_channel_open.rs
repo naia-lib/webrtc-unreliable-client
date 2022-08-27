@@ -94,9 +94,6 @@ impl Unmarshal for DataChannelOpen {
         buf.copy_to_slice(&mut label[..]);
         buf.copy_to_slice(&mut protocol[..]);
 
-        Ok(Self {
-            label,
-            protocol,
-        })
+        Ok(Self { label, protocol })
     }
 }

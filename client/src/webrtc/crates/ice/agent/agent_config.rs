@@ -42,9 +42,7 @@ pub(crate) const MAX_BUFFER_SIZE: usize = 1000 * 1000; // 1MB
 pub(crate) const MAX_BINDING_REQUEST_TIMEOUT: Duration = Duration::from_millis(4000);
 
 pub(crate) fn default_candidate_types() -> Vec<CandidateType> {
-    vec![
-        CandidateType::Host
-    ]
+    vec![CandidateType::Host]
 }
 
 pub(crate) type InterfaceFilterFn = Box<dyn (Fn(&str) -> bool) + Send + Sync>;

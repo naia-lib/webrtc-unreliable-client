@@ -1,4 +1,3 @@
-
 use crate::webrtc::stun::attributes::ATTR_FINGERPRINT;
 use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;

@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 // FixedBigInt is the fix-sized multi-word integer.

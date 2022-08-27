@@ -1,10 +1,10 @@
 use crate::webrtc::dtls::config::*;
 use crate::webrtc::dtls::conn::DTLSConn;
 
+use crate::webrtc::util::conn::*;
 use async_trait::async_trait;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use crate::webrtc::util::conn::*;
 
 /// DTLSListener represents a DTLS listener
 pub(crate) struct DTLSListener {

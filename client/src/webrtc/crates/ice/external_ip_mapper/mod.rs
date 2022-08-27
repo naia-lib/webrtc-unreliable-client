@@ -1,4 +1,3 @@
-
 use crate::webrtc::ice::candidate::*;
 use crate::webrtc::ice::error::*;
 
@@ -73,8 +72,7 @@ impl ExternalIpMapper {
         }
         if candidate_type == CandidateType::Unspecified {
             candidate_type = CandidateType::Host; // defaults to host
-        } else if candidate_type != CandidateType::Host
-        {
+        } else if candidate_type != CandidateType::Host {
             return Err(Error::ErrUnsupportedNat1to1IpCandidateType);
         }
 

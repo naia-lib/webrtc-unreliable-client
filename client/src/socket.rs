@@ -7,10 +7,10 @@ use tinyjson::JsonValue;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::webrtc::{
-    peer_connection::{RTCPeerConnection, sdp::session_description::RTCSessionDescription}
-};
 use crate::webrtc::data_channel::internal::data_channel::DataChannel;
+use crate::webrtc::peer_connection::{
+    sdp::session_description::RTCSessionDescription, RTCPeerConnection,
+};
 
 use super::addr_cell::AddrCell;
 
@@ -20,10 +20,13 @@ const CLIENT_CHANNEL_SIZE: usize = 8;
 pub struct Socket;
 
 impl Socket {
-    pub async fn connect(server_url: &str) -> (AddrCell, mpsc::Sender<Box<[u8]>>, mpsc::Receiver<Box<[u8]>>) {
-
-        let (to_server_sender, to_server_receiver) = mpsc::channel::<Box<[u8]>>(CLIENT_CHANNEL_SIZE);
-        let (to_client_sender, to_client_receiver) = mpsc::channel::<Box<[u8]>>(CLIENT_CHANNEL_SIZE);
+    pub async fn connect(
+        server_url: &str,
+    ) -> (AddrCell, mpsc::Sender<Box<[u8]>>, mpsc::Receiver<Box<[u8]>>) {
+        let (to_server_sender, to_server_receiver) =
+            mpsc::channel::<Box<[u8]>>(CLIENT_CHANNEL_SIZE);
+        let (to_client_sender, to_client_receiver) =
+            mpsc::channel::<Box<[u8]>>(CLIENT_CHANNEL_SIZE);
 
         let addr_cell = AddrCell::default();
 
@@ -78,10 +81,16 @@ impl Socket {
             .await;
 
         // create an offer to send to the server
-        let offer = peer_connection.create_offer().await.expect("cannot create offer");
+        let offer = peer_connection
+            .create_offer()
+            .await
+            .expect("cannot create offer");
 
         // sets the LocalDescription, and starts our UDP listeners
-        peer_connection.set_local_description(offer).await.expect("cannot set local description");
+        peer_connection
+            .set_local_description(offer)
+            .await
+            .expect("cannot set local description");
 
         // send a request to server to initiate connection (signaling, essentially)
         let http_client = HttpClient::new();
@@ -106,7 +115,8 @@ impl Socket {
         let session_response: JsSessionResponse = get_session_response(response_string.as_str());
 
         // apply the server's response as the remote description
-        let session_description = RTCSessionDescription::answer(session_response.answer.sdp).unwrap();
+        let session_description =
+            RTCSessionDescription::answer(session_response.answer.sdp).unwrap();
 
         peer_connection
             .set_remote_description(session_description)
@@ -118,7 +128,10 @@ impl Socket {
             .await;
 
         // add ice candidate to connection
-        if let Err(error) = peer_connection.add_ice_candidate(session_response.candidate.candidate).await {
+        if let Err(error) = peer_connection
+            .add_ice_candidate(session_response.candidate.candidate)
+            .await
+        {
             panic!("Error during add_ice_candidate: {:?}", error);
         }
 
@@ -142,7 +155,7 @@ async fn read_loop(
         };
 
         match to_client_sender.send(buffer[..message_length].into()).await {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => {
                 return Err(Error::new(e));
             }
@@ -158,7 +171,7 @@ async fn write_loop(
     loop {
         if let Some(write_message) = to_server_receiver.recv().await {
             match data_channel.write(&Bytes::from(write_message)).await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     return Err(Error::new(e));
                 }
@@ -194,8 +207,6 @@ fn get_session_response(input: &str) -> JsSessionResponse {
 
     JsSessionResponse {
         answer: SessionAnswer { sdp },
-        candidate: SessionCandidate {
-            candidate
-        },
+        candidate: SessionCandidate { candidate },
     }
 }

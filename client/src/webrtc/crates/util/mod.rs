@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use thiserror::Error;
 use std::io;
+use thiserror::Error;
 
 pub(crate) mod fixed_big_int;
 pub(crate) mod replay_detector;
@@ -50,8 +50,8 @@ impl From<io::Error> for KeyingMaterialExporterError {
 pub(crate) mod buffer;
 pub(crate) mod conn;
 pub(crate) mod ifaces;
-pub(crate) mod vnet;
 pub(crate) mod marshal;
+pub(crate) mod vnet;
 pub(crate) use crate::webrtc::util::buffer::Buffer;
 pub(crate) use crate::webrtc::util::conn::Conn;
 

@@ -1,4 +1,3 @@
-
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -6,8 +5,8 @@ use std::sync::Arc;
 
 use crate::webrtc::dtls::config::ClientAuthType;
 use crate::webrtc::dtls::conn::DTLSConn;
-use tokio::sync::Mutex;
 use crate::webrtc::util::Conn;
+use tokio::sync::Mutex;
 
 use dtls_role::*;
 
@@ -126,7 +125,7 @@ impl RTCDtlsTransport {
                 true,
                 None,
             )
-                .await
+            .await
         } else {
             Err(crate::webrtc::dtls::Error::Other(
                 "ice_transport.new_endpoint failed".to_owned(),

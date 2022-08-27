@@ -1,6 +1,4 @@
-
 use super::*;
-
 
 pub(crate) type EllipticCurvePointFormat = u8;
 

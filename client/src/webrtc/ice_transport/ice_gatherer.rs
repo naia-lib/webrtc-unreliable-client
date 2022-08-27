@@ -6,12 +6,12 @@ use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 use crate::webrtc::ice::agent::Agent;
 use crate::webrtc::ice::candidate::{Candidate, CandidateType};
 
+use crate::webrtc::ice::mdns::MulticastDnsMode;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::webrtc::ice::mdns::MulticastDnsMode;
 
 pub(crate) type OnLocalCandidateHdlrFn = Box<
     dyn (FnMut(Option<RTCIceCandidate>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
@@ -34,7 +34,6 @@ pub(crate) type OnGatheringCompleteHdlrFn =
 /// exchanged in signaling.
 #[derive(Default)]
 pub(crate) struct RTCIceGatherer {
-
     pub(crate) state: Arc<AtomicU8>, //ICEGathererState,
     pub(crate) agent: Mutex<Option<Arc<crate::webrtc::ice::agent::Agent>>>,
 
@@ -75,7 +74,7 @@ impl RTCIceGatherer {
             failed_timeout: None,
             keepalive_interval: None,
             candidate_types: Vec::new(),
-            host_acceptance_min_wait:  None,
+            host_acceptance_min_wait: None,
             srflx_acceptance_min_wait: None,
             prflx_acceptance_min_wait: None,
             relay_acceptance_min_wait: None,
@@ -93,7 +92,9 @@ impl RTCIceGatherer {
 
         {
             let mut agent = self.agent.lock().await;
-            *agent = Some(Arc::new(crate::webrtc::ice::agent::Agent::new(config).await?));
+            *agent = Some(Arc::new(
+                crate::webrtc::ice::agent::Agent::new(config).await?,
+            ));
         }
 
         Ok(())

@@ -1,8 +1,5 @@
-
 use crate::webrtc::data_channel::internal::error::Result;
-use crate::webrtc::data_channel::internal::{
-    message::message_channel_open::*, message::*,
-};
+use crate::webrtc::data_channel::internal::{message::message_channel_open::*, message::*};
 
 use crate::webrtc::sctp::{
     association::Association, chunk::chunk_payload_data::PayloadProtocolIdentifier, stream::*,
@@ -42,21 +39,18 @@ impl DataChannel {
         identifier: u16,
         config: Config,
     ) -> Result<Self> {
-        let stream = association
-            .open_stream(identifier)
-            .await?;
+        let stream = association.open_stream(identifier).await?;
 
         Self::client(stream, config).await
     }
 
     /// Client opens a data channel over an SCTP stream
     async fn client(stream: Arc<Stream>, config: Config) -> Result<Self> {
-
         let msg = Message::DataChannelOpen(DataChannelOpen {
             label: config.label.bytes().collect(),
             protocol: config.protocol.bytes().collect(),
         })
-            .marshal()?;
+        .marshal()?;
 
         stream
             .write_sctp(&msg, PayloadProtocolIdentifier::Dcep)
@@ -115,8 +109,8 @@ impl DataChannel {
     }
 
     async fn handle_dcep<B>(&self, data: &mut B) -> Result<()>
-        where
-            B: Buf,
+    where
+        B: Buf,
     {
         let msg = Message::unmarshal(data)?;
 

@@ -1,4 +1,3 @@
-
 use std::sync::atomic::AtomicBool;
 
 use async_trait::async_trait;
@@ -1042,10 +1041,7 @@ impl AssociationInternal {
         }
     }
 
-    pub(crate) fn open_stream(
-        &mut self,
-        stream_identifier: u16,
-    ) -> Result<Arc<Stream>> {
+    pub(crate) fn open_stream(&mut self, stream_identifier: u16) -> Result<Arc<Stream>> {
         if self.streams.contains_key(&stream_identifier) {
             return Err(Error::ErrStreamAlreadyExist);
         }

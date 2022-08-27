@@ -1,4 +1,3 @@
-
 use crate::webrtc::stun::agent::*;
 use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::error::*;
@@ -464,7 +463,6 @@ impl Setter for MessageType {
 }
 
 impl MessageType {
-
     // Value returns bit representation of messageType.
     pub(crate) fn value(&self) -> u16 {
         //	 0                 1

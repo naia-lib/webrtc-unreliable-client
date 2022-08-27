@@ -1,4 +1,3 @@
-
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
 use crate::webrtc::ice_transport::ice_gatherer::RTCIceGatherer;
 use crate::webrtc::ice_transport::RTCIceTransport;
@@ -17,7 +16,6 @@ use std::sync::Arc;
 pub(crate) struct API;
 
 impl API {
-
     /// new_ice_gatherer creates a new ice gatherer.
     /// This constructor is part of the ORTC API. It is not
     /// meant to be used together with the basic WebRTC API.
@@ -42,10 +40,7 @@ impl API {
         let cert = RTCCertificate::from_key_pair(kp)?;
         let certificates = vec![cert];
 
-        Ok(RTCDtlsTransport::new(
-            ice_transport,
-            certificates,
-        ))
+        Ok(RTCDtlsTransport::new(ice_transport, certificates))
     }
 
     /// new_sctp_transport creates a new SCTPTransport.
@@ -54,8 +49,6 @@ impl API {
     pub(crate) fn new_sctp_transport(
         dtls_transport: Arc<RTCDtlsTransport>,
     ) -> Result<RTCSctpTransport> {
-        Ok(RTCSctpTransport::new(
-            dtls_transport
-        ))
+        Ok(RTCSctpTransport::new(dtls_transport))
     }
 }

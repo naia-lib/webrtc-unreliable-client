@@ -2,7 +2,7 @@ use anyhow::{Error, Result};
 use tokio::sync::mpsc;
 use tokio::time::Duration;
 
-use webrtc_unreliable_client::{Socket, ServerAddr, AddrCell};
+use webrtc_unreliable_client::{AddrCell, ServerAddr, Socket};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -19,7 +19,8 @@ async fn main() -> Result<()> {
 
     log::info!("Client Demo started");
 
-    let (addr_cell, to_server_sender, to_client_receiver) = Socket::connect("http://127.0.0.1:14191/rtc_session").await;
+    let (addr_cell, to_server_sender, to_client_receiver) =
+        Socket::connect("http://127.0.0.1:14191/rtc_session").await;
 
     let addr_cell_1 = addr_cell.clone();
     let addr_cell_2 = addr_cell.clone();
@@ -44,7 +45,6 @@ async fn read_loop(
     mut to_client_receiver: mpsc::Receiver<Box<[u8]>>,
 ) -> Result<()> {
     loop {
-
         let message = match to_client_receiver.recv().await {
             Some(message) => message,
             None => {
@@ -64,11 +64,7 @@ async fn read_loop(
     }
 }
 
-async fn write_loop(
-    addr_cell: AddrCell,
-    to_server_sender: mpsc::Sender<Box<[u8]>>,
-) -> Result<()> {
-
+async fn write_loop(addr_cell: AddrCell, to_server_sender: mpsc::Sender<Box<[u8]>>) -> Result<()> {
     let mut count = 0;
 
     loop {

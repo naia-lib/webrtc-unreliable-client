@@ -1,4 +1,3 @@
-
 use rand::{thread_rng, Rng};
 
 const RUNES_ALPHA: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

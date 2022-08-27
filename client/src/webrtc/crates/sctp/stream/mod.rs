@@ -1,4 +1,3 @@
-
 use crate::webrtc::sctp::association::AssociationState;
 use crate::webrtc::sctp::chunk::chunk_payload_data::{ChunkPayloadData, PayloadProtocolIdentifier};
 use crate::webrtc::sctp::error::{Error, Result};
@@ -101,7 +100,10 @@ impl Stream {
     /// Protocol Identifier.
     /// Returns EOF when the stream is reset or an error if the stream is closed
     /// otherwise.
-    pub(crate) async fn read_sctp(&self, p: &mut [u8]) -> Result<(usize, PayloadProtocolIdentifier)> {
+    pub(crate) async fn read_sctp(
+        &self,
+        p: &mut [u8],
+    ) -> Result<(usize, PayloadProtocolIdentifier)> {
         while !self.closed.load(Ordering::SeqCst) {
             let result = {
                 let mut reassembly_queue = self.reassembly_queue.lock().await;
@@ -142,7 +144,6 @@ impl Stream {
     }
 
     pub(crate) async fn handle_forward_tsn_for_unordered(&self, new_cumulative_tsn: u32) {
-
         // Remove all chunks older than or equal to the new TSN from
         // the reassembly_queue.
         let readable = {
@@ -159,12 +160,15 @@ impl Stream {
 
     /// write writes len(p) bytes from p with the default Payload Protocol Identifier
     pub(crate) async fn write(&self, p: &Bytes) -> Result<usize> {
-        self.write_sctp(p, PayloadProtocolIdentifier::Binary)
-            .await
+        self.write_sctp(p, PayloadProtocolIdentifier::Binary).await
     }
 
     /// write_sctp writes len(p) bytes from p to the DTLS connection
-    pub(crate) async fn write_sctp(&self, p: &Bytes, ppi: PayloadProtocolIdentifier) -> Result<usize> {
+    pub(crate) async fn write_sctp(
+        &self,
+        p: &Bytes,
+        ppi: PayloadProtocolIdentifier,
+    ) -> Result<usize> {
         if p.len() > self.max_message_size.load(Ordering::SeqCst) as usize {
             return Err(Error::ErrOutboundPacketTooLarge);
         }
@@ -191,8 +195,7 @@ impl Stream {
         // From draft-ietf-rtcweb-data-protocol-09, section 6:
         //   All Data Channel Establishment Protocol messages MUST be sent using
         //   ordered delivery and reliable transmission.
-        let unordered =
-            ppi != PayloadProtocolIdentifier::Dcep;
+        let unordered = ppi != PayloadProtocolIdentifier::Dcep;
 
         let mut chunks = vec![];
 

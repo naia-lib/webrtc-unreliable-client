@@ -1,4 +1,3 @@
-
 use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate::RTCIceCandidate;
@@ -9,9 +8,9 @@ use crate::webrtc::ice_transport::ice_parameters::RTCIceParameters;
 pub(crate) mod sdp_type;
 pub(crate) mod session_description;
 
-use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
 use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
 use crate::webrtc::ice::candidate::Candidate;
+use crate::webrtc::peer_connection::MEDIA_SECTION_APPLICATION;
 use crate::webrtc::sdp::description::common::{Address, ConnectionInformation};
 use crate::webrtc::sdp::description::media::{MediaDescription, MediaName, RangedPort};
 use crate::webrtc::sdp::description::session::*;
@@ -198,7 +197,6 @@ pub(crate) async fn populate_sdp(
     };
 
     for (i, m) in media_sections.iter().enumerate() {
-
         let should_add_candidates = i == 0;
 
         let should_add_id = if m.data {
