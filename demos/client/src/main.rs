@@ -1,3 +1,5 @@
+use std::env;
+
 use anyhow::{Error, Result};
 use tokio::sync::mpsc;
 use tokio::time::Duration;
@@ -19,8 +21,11 @@ async fn main() -> Result<()> {
 
     log::info!("Client Demo started");
 
+    let server_address = env::var("SERVER_ADDRESS").unwrap_or("127.0.0.1".to_string());
+    let server_url = format!("http://{}:14191/rtc_session", server_address);
+
     let (addr_cell, to_server_sender, to_client_receiver) =
-        Socket::connect("http://127.0.0.1:14191/rtc_session").await;
+        Socket::connect(server_url.as_str()).await;
 
     let addr_cell_1 = addr_cell.clone();
     let addr_cell_2 = addr_cell.clone();

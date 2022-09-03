@@ -59,6 +59,15 @@ pub(crate) enum SiocgifFlags {
     Dynamic = 0x8000,   /* Dialup device with changing addresses.  */
 }
 
+#[derive(PartialEq, Eq, Debug, Clone)]
+enum Kind {
+    Packet,
+    Link,
+    Ipv4,
+    Ipv6,
+    Unknow(i32),
+}
+
 #[repr(C)]
 pub(crate) struct union_ifa_ifu {
     pub(crate) data: *mut ::std::os::raw::c_void,
