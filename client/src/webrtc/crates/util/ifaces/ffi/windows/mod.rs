@@ -28,7 +28,7 @@ use winapi::shared::ws2ipdef::SOCKADDR_IN6;
 
 const PREALLOC_ADAPTERS_LEN: usize = 15 * 1024;
 
-use crate::webrtc::util::ifaces::{Interface, Kind, NextHop};
+use crate::webrtc::util::ifaces::{Interface};
 
 #[link(name = "iphlpapi")]
 extern "system" {
@@ -92,7 +92,6 @@ pub(crate) struct IpAdaptersAddressesVista {
     first_gateway_address: *const IpAdapterGatewayAddress,
     ipv4_metric: ULONG,
     ipv6_metric: ULONG,
-    luid: IfLuid,
     dhcpv4_server: SOCKET_ADDRESS,
     compartment_id: UINT32,
     network_guid: GUID,
@@ -173,14 +172,6 @@ pub(crate) struct IpAdapterGatewayAddress {
 pub(crate) struct IpAdapterDnsSuffix {
     next: *const IpAdapterDnsSuffix,
     string: [WCHAR; MAX_DNS_SUFFIX_STRING_LENGTH],
-}
-
-bitflags! {
-    struct IfLuid: ULONG64 {
-        const Reserved = 0x0000000000FFFFFF;
-        const NetLuidIndex = 0x0000FFFFFF000000;
-        const IfType = 0xFFFF00000000000;
-    }
 }
 
 #[repr(C)]
@@ -332,10 +323,8 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
                 if is_ipv4_enabled(&curr_unicast_addr) {
                     adapter_addresses.push(Interface {
                         name: "".to_string(),
-                        kind: Kind::Ipv4,
                         addr: Some(SocketAddr::V4(v4_socket_from_adapter(&curr_unicast_addr))),
                         mask: None,
-                        hop: None,
                     });
                 } else if is_ipv6_enabled(&curr_unicast_addr) {
                     let mut v6_sock = v6_socket_from_adapter(&curr_unicast_addr);
@@ -343,10 +332,8 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
                     v6_sock.set_scope_id(curr_adapter_addr.xp.ipv6_if_index);
                     adapter_addresses.push(Interface {
                         name: "".to_string(),
-                        kind: Kind::Ipv6,
                         addr: Some(SocketAddr::V6(v6_sock)),
                         mask: None,
-                        hop: None,
                     });
                 }
             }

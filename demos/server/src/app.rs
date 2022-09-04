@@ -1,3 +1,5 @@
+use std::env;
+
 use naia_server_socket::{PacketReceiver, PacketSender, ServerAddrs, Socket};
 use naia_socket_shared::SocketConfig;
 
@@ -10,16 +12,18 @@ impl App {
     pub(crate) fn new() -> Self {
         info!("Naia Server Socket Demo started");
 
+        let listen_address = env::var("LISTEN_ADDRESS").unwrap_or("127.0.0.1".to_string());
+
         let server_address = ServerAddrs::new(
-            "127.0.0.1:14191"
+            format!("{}:14191", listen_address)
                 .parse()
                 .expect("could not parse Session address/port"),
             // IP Address to listen on for UDP WebRTC data channels
-            "127.0.0.1:14192"
+            format!("{}:14192", listen_address)
                 .parse()
                 .expect("could not parse WebRTC data address/port"),
             // The public WebRTC IP address to advertise
-            "http://127.0.0.1:14192",
+            format!("http://{}:14192", listen_address).as_str(),
         );
 
         let mut socket = Socket::new(&SocketConfig::new(None, None));
