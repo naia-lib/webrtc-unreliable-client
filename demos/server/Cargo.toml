@@ -10,7 +10,6 @@ publish = false
 [features]
 
 [dependencies]
-naia-server-socket = { path = "../../../naia/socket/server", features = [ "use-webrtc" ] } # version = "0.10",
-naia-socket-shared = { path = "../../../naia/socket/shared" } # version = "0.10"
+naia-server-socket = { version = "0.12" }
 log = "0.4"
 simple_logger = { version = "=2.0.0" }

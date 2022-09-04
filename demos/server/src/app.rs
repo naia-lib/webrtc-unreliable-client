@@ -1,7 +1,6 @@
 use std::env;
 
-use naia_server_socket::{PacketReceiver, PacketSender, ServerAddrs, Socket};
-use naia_socket_shared::SocketConfig;
+use naia_server_socket::{shared::SocketConfig, PacketReceiver, PacketSender, ServerAddrs, Socket};
 
 pub(crate) struct App {
     packet_sender: PacketSender,
@@ -12,7 +11,7 @@ impl App {
     pub(crate) fn new() -> Self {
         info!("Naia Server Socket Demo started");
 
-        let listen_address = env::var("LISTEN_ADDRESS").unwrap_or("127.0.0.1".to_string());
+        let listen_address = "127.0.0.1";
 
         let server_address = ServerAddrs::new(
             format!("{}:14191", listen_address)

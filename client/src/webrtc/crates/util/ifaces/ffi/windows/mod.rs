@@ -28,7 +28,7 @@ use winapi::shared::ws2ipdef::SOCKADDR_IN6;
 
 const PREALLOC_ADAPTERS_LEN: usize = 15 * 1024;
 
-use crate::webrtc::util::ifaces::{Interface};
+use crate::webrtc::util::ifaces::Interface;
 
 #[link(name = "iphlpapi")]
 extern "system" {

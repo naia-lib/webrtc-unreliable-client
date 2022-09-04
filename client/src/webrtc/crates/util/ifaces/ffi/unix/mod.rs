@@ -4,7 +4,7 @@ use std::{net, ptr};
 
 use std::net::IpAddr;
 
-use crate::webrtc::util::ifaces::{Interface, Kind};
+use crate::webrtc::util::ifaces::Interface;
 
 // https://github.com/Exa-Networks/exaproxy/blob/master/lib/exaproxy/util/interfaces.py
 

@@ -13,6 +13,5 @@ publish = false
 webrtc-unreliable-client = { path = "../../client" }
 tokio = { version = "1.15", features = ["full"] }
 anyhow = "1.0"
-# env_logger = { version = "0.9" }
 log = { version = "0.4" }
 simple_logger = { version = "=2.0.0" }

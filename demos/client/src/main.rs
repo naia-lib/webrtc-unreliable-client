@@ -1,19 +1,11 @@
-use std::env;
 
 use anyhow::{Error, Result};
-use tokio::sync::mpsc;
-use tokio::time::Duration;
+use tokio::{sync::mpsc, time::Duration};
 
 use webrtc_unreliable_client::{AddrCell, ServerAddr, Socket};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // setup logging
-
-    // env_logger::Builder::new()
-    //     .filter(None, log::LevelFilter::Trace)
-    //     .init();
-
     simple_logger::SimpleLogger::new()
         .with_level(log::LevelFilter::Info)
         .init()
@@ -21,7 +13,7 @@ async fn main() -> Result<()> {
 
     log::info!("Client Demo started");
 
-    let server_address = env::var("SERVER_ADDRESS").unwrap_or("127.0.0.1".to_string());
+    let server_address = "127.0.0.1";
     let server_url = format!("http://{}:14191/rtc_session", server_address);
 
     let (addr_cell, to_server_sender, to_client_receiver) =
