@@ -65,16 +65,15 @@ impl Socket {
                     let detached_data_channel_1 = Arc::clone(&detached_data_channel);
                     let detached_data_channel_2 = Arc::clone(&detached_data_channel);
                     tokio::spawn(async move {
-                        read_loop(detached_data_channel_1, to_client_sender)
-                            .await
-                            .expect("error in read_loop!");
+                        let _loop_result = read_loop(detached_data_channel_1, to_client_sender).await;
+                        // do nothing with result, just close thread
                     });
 
                     // Handle writing to the data channel
                     tokio::spawn(async move {
-                        write_loop(detached_data_channel_2, to_server_receiver)
-                            .await
-                            .expect("error in write_loop!");
+                        let _loop_result = write_loop(detached_data_channel_2, to_server_receiver)
+                            .await;
+                        // do nothing with result, just close thread
                     });
                 })
             }))
