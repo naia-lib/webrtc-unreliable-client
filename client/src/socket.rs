@@ -1,16 +1,17 @@
-use std::sync::Arc;
+use std::{time::Duration, sync::Arc};
 
 use anyhow::{Error, Result};
 use bytes::Bytes;
-use reqwest::Client as HttpClient;
+use reqwest::{Client as HttpClient, Response};
 use tinyjson::JsonValue;
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::{sync::mpsc, time::sleep};
+use log::warn;
 
-use crate::webrtc::data_channel::internal::data_channel::DataChannel;
-use crate::webrtc::peer_connection::{
-    sdp::session_description::RTCSessionDescription, RTCPeerConnection,
-};
+use crate::webrtc::{
+    peer_connection::{
+        sdp::session_description::RTCSessionDescription, RTCPeerConnection,
+    },
+    data_channel::internal::data_channel::DataChannel};
 
 use super::addr_cell::AddrCell;
 
@@ -96,17 +97,25 @@ impl Socket {
 
         let sdp = peer_connection.local_description().await.unwrap().sdp;
 
-        let request = http_client
-            .post(server_url)
-            .header("Content-Length", sdp.len())
-            .body(sdp);
+        let sdp_len = sdp.len();
 
         // wait to receive a response from server
-        let response = match request.send().await {
-            Ok(resp) => resp,
-            Err(err) => {
-                panic!("Could not send request, original error: {:?}", err);
-            }
+        let response: Response = loop {
+
+            let request = http_client
+                .post(server_url)
+                .header("Content-Length", sdp_len)
+                .body(sdp.clone());
+
+            match request.send().await {
+                Ok(resp) => {
+                    break resp;
+                },
+                Err(err) => {
+                    warn!("Could not send request, original error: {:?}", err);
+                    sleep(Duration::from_secs(1)).await;
+                }
+            };
         };
         let response_string = response.text().await.unwrap();
 
@@ -141,7 +150,7 @@ impl Socket {
 // read_loop shows how to read from the datachannel directly
 async fn read_loop(
     data_channel: Arc<DataChannel>,
-    to_client_sender: Sender<Box<[u8]>>,
+    to_client_sender: mpsc::Sender<Box<[u8]>>,
 ) -> Result<()> {
     let mut buffer = vec![0u8; MESSAGE_SIZE];
     loop {
@@ -165,7 +174,7 @@ async fn read_loop(
 // write_loop shows how to write to the datachannel directly
 async fn write_loop(
     data_channel: Arc<DataChannel>,
-    mut to_server_receiver: Receiver<Box<[u8]>>,
+    mut to_server_receiver: mpsc::Receiver<Box<[u8]>>,
 ) -> Result<()> {
     loop {
         if let Some(write_message) = to_server_receiver.recv().await {
