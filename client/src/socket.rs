@@ -1,17 +1,16 @@
-use std::{time::Duration, sync::Arc};
+use std::{sync::Arc, time::Duration};
 
 use anyhow::{Error, Result};
 use bytes::Bytes;
+use log::warn;
 use reqwest::{Client as HttpClient, Response};
 use tinyjson::JsonValue;
 use tokio::{sync::mpsc, time::sleep};
-use log::warn;
 
 use crate::webrtc::{
-    peer_connection::{
-        sdp::session_description::RTCSessionDescription, RTCPeerConnection,
-    },
-    data_channel::internal::data_channel::DataChannel};
+    data_channel::internal::data_channel::DataChannel,
+    peer_connection::{sdp::session_description::RTCSessionDescription, RTCPeerConnection},
+};
 
 use super::addr_cell::AddrCell;
 
@@ -66,14 +65,15 @@ impl Socket {
                     let detached_data_channel_1 = Arc::clone(&detached_data_channel);
                     let detached_data_channel_2 = Arc::clone(&detached_data_channel);
                     tokio::spawn(async move {
-                        let _loop_result = read_loop(detached_data_channel_1, to_client_sender).await;
+                        let _loop_result =
+                            read_loop(detached_data_channel_1, to_client_sender).await;
                         // do nothing with result, just close thread
                     });
 
                     // Handle writing to the data channel
                     tokio::spawn(async move {
-                        let _loop_result = write_loop(detached_data_channel_2, to_server_receiver)
-                            .await;
+                        let _loop_result =
+                            write_loop(detached_data_channel_2, to_server_receiver).await;
                         // do nothing with result, just close thread
                     });
                 })
@@ -101,7 +101,6 @@ impl Socket {
 
         // wait to receive a response from server
         let response: Response = loop {
-
             let request = http_client
                 .post(server_url)
                 .header("Content-Length", sdp_len)
@@ -110,7 +109,7 @@ impl Socket {
             match request.send().await {
                 Ok(resp) => {
                     break resp;
-                },
+                }
                 Err(err) => {
                     warn!("Could not send request, original error: {:?}", err);
                     sleep(Duration::from_secs(1)).await;
