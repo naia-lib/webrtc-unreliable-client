@@ -407,6 +407,7 @@ impl AgentInternal {
         local: Arc<dyn Candidate + Send + Sync>,
         remote: Arc<dyn Candidate + Send + Sync>,
     ) {
+        log::debug!("adding a pair {local} {remote}");
         let p = Arc::new(CandidatePair::new(
             local,
             remote,
@@ -514,6 +515,7 @@ impl AgentInternal {
     /// Assumes you are holding the lock (must be execute using a.run).
     pub(crate) async fn add_remote_candidate(&self, c: &Arc<dyn Candidate + Send + Sync>) {
         let network_type = c.network_type();
+        log::debug!("adding a remote candidate {c} {network_type:?}");
 
         {
             let mut remote_candidates = self.remote_candidates.lock().await;
@@ -577,6 +579,7 @@ impl AgentInternal {
                 }
             }
 
+            log::debug!("adding local {} {:?}", c, network_type);
             if let Some(cands) = local_candidates.get_mut(&network_type) {
                 cands.push(c.clone());
             } else {
@@ -593,6 +596,7 @@ impl AgentInternal {
         }
 
         for cand in remote_cands {
+            log::debug!("adding remote {}", c);
             self.add_pair(c.clone(), cand).await;
         }
 
