@@ -65,9 +65,7 @@ pub(crate) async fn local_interfaces(
 
         for ipnet in iface.addrs() {
             let ipaddr = ipnet.addr();
-            if !ipaddr.is_loopback()
-                && ((ipv4requested && ipaddr.is_ipv4()) || (ipv6requested && ipaddr.is_ipv6()))
-            {
+            if ipv4requested && ipaddr.is_ipv4() || ipv6requested && ipaddr.is_ipv6() {
                 ips.insert(ipaddr);
             }
         }
