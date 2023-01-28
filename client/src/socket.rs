@@ -15,20 +15,45 @@ use crate::webrtc::{
 use super::addr_cell::AddrCell;
 
 const MESSAGE_SIZE: usize = 1500;
-const CLIENT_CHANNEL_SIZE: usize = 8;
 
-pub struct Socket;
+pub struct Socket {
+    addr_cell: AddrCell,
+    to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
+    to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
+}
+
+pub struct SocketIo {
+    pub addr_cell: AddrCell,
+    pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
+    pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
+}
 
 impl Socket {
-    pub async fn connect(
-        server_url: &str,
-    ) -> (AddrCell, mpsc::Sender<Box<[u8]>>, mpsc::Receiver<Box<[u8]>>) {
-        let (to_server_sender, to_server_receiver) =
-            mpsc::channel::<Box<[u8]>>(CLIENT_CHANNEL_SIZE);
-        let (to_client_sender, to_client_receiver) =
-            mpsc::channel::<Box<[u8]>>(CLIENT_CHANNEL_SIZE);
-
+    pub fn new() -> (Self, SocketIo) {
         let addr_cell = AddrCell::default();
+        let (to_server_sender, to_server_receiver) = mpsc::unbounded_channel();
+        let (to_client_sender, to_client_receiver) = mpsc::unbounded_channel();
+
+        (
+            Self {
+                addr_cell: addr_cell.clone(),
+                to_server_receiver,
+                to_client_sender,
+            },
+            SocketIo {
+                addr_cell,
+                to_server_sender,
+                to_client_receiver,
+            },
+        )
+    }
+
+    pub async fn connect(self, server_url: &str) {
+        let Self {
+            addr_cell,
+            to_server_receiver,
+            to_client_sender,
+        } = self;
 
         // create a new RTCPeerConnection
         let peer_connection = RTCPeerConnection::new().await;
@@ -141,15 +166,13 @@ impl Socket {
         {
             panic!("Error during add_ice_candidate: {:?}", error);
         }
-
-        (addr_cell, to_server_sender, to_client_receiver)
     }
 }
 
 // read_loop shows how to read from the datachannel directly
 async fn read_loop(
     data_channel: Arc<DataChannel>,
-    to_client_sender: mpsc::Sender<Box<[u8]>>,
+    to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
 ) -> Result<()> {
     let mut buffer = vec![0u8; MESSAGE_SIZE];
     loop {
@@ -161,7 +184,7 @@ async fn read_loop(
             }
         };
 
-        match to_client_sender.send(buffer[..message_length].into()).await {
+        match to_client_sender.send(buffer[..message_length].into()) {
             Ok(_) => {}
             Err(e) => {
                 return Err(Error::new(e));
@@ -173,7 +196,7 @@ async fn read_loop(
 // write_loop shows how to write to the datachannel directly
 async fn write_loop(
     data_channel: Arc<DataChannel>,
-    mut to_server_receiver: mpsc::Receiver<Box<[u8]>>,
+    mut to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
 ) -> Result<()> {
     loop {
         if let Some(write_message) = to_server_receiver.recv().await {
