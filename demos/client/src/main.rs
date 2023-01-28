@@ -1,5 +1,6 @@
 use anyhow::{Error, Result};
-use tokio::{sync::mpsc, time::Duration};
+use tokio::time::Duration;
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use webrtc_unreliable_client::{AddrCell, ServerAddr, Socket};
 
@@ -15,11 +16,13 @@ async fn main() -> Result<()> {
     let server_address = "127.0.0.1";
     let server_url = format!("http://{}:14191/rtc_session", server_address);
 
-    let (addr_cell, to_server_sender, to_client_receiver) =
-        Socket::connect(server_url.as_str()).await;
+    let (socket, socket_io) = Socket::new();
+    socket.connect(server_url.as_str()).await;
 
-    let addr_cell_1 = addr_cell.clone();
-    let addr_cell_2 = addr_cell.clone();
+    let addr_cell_1 = socket_io.addr_cell.clone();
+    let addr_cell_2 = socket_io.addr_cell.clone();
+    let to_client_receiver = socket_io.to_client_receiver;
+    let to_server_sender = socket_io.to_server_sender;
     tokio::spawn(async move {
         read_loop(addr_cell_1, to_client_receiver)
             .await
@@ -38,7 +41,7 @@ async fn main() -> Result<()> {
 
 async fn read_loop(
     addr_cell: AddrCell,
-    mut to_client_receiver: mpsc::Receiver<Box<[u8]>>,
+    mut to_client_receiver: UnboundedReceiver<Box<[u8]>>,
 ) -> Result<()> {
     loop {
         let message = match to_client_receiver.recv().await {
@@ -60,7 +63,7 @@ async fn read_loop(
     }
 }
 
-async fn write_loop(addr_cell: AddrCell, to_server_sender: mpsc::Sender<Box<[u8]>>) -> Result<()> {
+async fn write_loop(addr_cell: AddrCell, to_server_sender: UnboundedSender<Box<[u8]>>) -> Result<()> {
     let mut count = 0;
 
     loop {
@@ -78,7 +81,7 @@ async fn write_loop(addr_cell: AddrCell, to_server_sender: mpsc::Sender<Box<[u8]
                     };
                     let message = "PING".to_string();
                     log::info!("Client send -> {}: {}", addr, message);
-                    match to_server_sender.send(message.as_bytes().into()).await {
+                    match to_server_sender.send(message.as_bytes().into()) {
                         Ok(_) => {},
                         Err(e) => {
                             return Err(Error::new(e));
