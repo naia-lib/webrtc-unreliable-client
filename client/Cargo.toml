@@ -6,6 +6,7 @@ description = "Just enough hacks to connect a native client to a https://github.
 workspace = ".."
 license = "MIT OR Apache-2.0"
 edition = "2021"
+repository = "https://github.com/naia-lib/webrtc-unreliable-client"
 
 [badges]
 maintenance = { status = "actively-developed" }
