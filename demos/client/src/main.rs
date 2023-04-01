@@ -1,6 +1,8 @@
 use anyhow::{Error, Result};
-use tokio::time::Duration;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::{
+    sync::mpsc::{UnboundedReceiver, UnboundedSender},
+    time::Duration,
+};
 
 use webrtc_unreliable_client::{AddrCell, ServerAddr, Socket};
 
@@ -63,7 +65,10 @@ async fn read_loop(
     }
 }
 
-async fn write_loop(addr_cell: AddrCell, to_server_sender: UnboundedSender<Box<[u8]>>) -> Result<()> {
+async fn write_loop(
+    addr_cell: AddrCell,
+    to_server_sender: UnboundedSender<Box<[u8]>>,
+) -> Result<()> {
     let mut count = 0;
 
     loop {
