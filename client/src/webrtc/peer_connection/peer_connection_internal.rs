@@ -221,7 +221,6 @@ impl PeerConnectionInternal {
     }
 
     pub(crate) async fn close(&self) {
-
         if self.is_closed.load(Ordering::SeqCst) {
             return;
         }

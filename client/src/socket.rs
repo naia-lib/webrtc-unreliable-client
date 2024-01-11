@@ -190,7 +190,7 @@ async fn read_loop(
     loop {
         let message_length = match data_channel.read(&mut buffer).await {
             Ok(length) => length,
-            Err(err) => {
+            Err(_err) => {
                 //println!("Datachannel closed; Exit the read_loop: {}", err);
                 return Ok(());
             }
