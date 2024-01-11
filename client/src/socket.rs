@@ -76,9 +76,11 @@ impl Socket {
             .await;
 
         // datachannel on_open callback
+        let peer_connection_ref = Arc::clone(&peer_connection);
         let data_channel_ref = Arc::clone(&data_channel);
         data_channel
             .on_open(Box::new(move || {
+                let peer_connection_ref_2 = Arc::clone(&peer_connection_ref);
                 let data_channel_ref_2 = Arc::clone(&data_channel_ref);
                 Box::pin(async move {
                     let detached_data_channel = data_channel_ref_2
@@ -87,19 +89,29 @@ impl Socket {
                         .expect("data channel detach got error");
 
                     // Handle reading from the data channel
+                    let peer_connection_ref_3 = Arc::clone(&peer_connection_ref_2);
+                    let peer_connection_ref_4 = Arc::clone(&peer_connection_ref_2);
+
                     let detached_data_channel_1 = Arc::clone(&detached_data_channel);
                     let detached_data_channel_2 = Arc::clone(&detached_data_channel);
                     tokio::spawn(async move {
                         let _loop_result =
                             read_loop(detached_data_channel_1, to_client_sender).await;
+
                         // do nothing with result, just close thread
+                        peer_connection_ref_3.internal.close().await;
                     });
 
                     // Handle writing to the data channel
                     tokio::spawn(async move {
+                        let detached_data_channel_3 = Arc::clone(&detached_data_channel_2);
                         let _loop_result =
-                            write_loop(detached_data_channel_2, to_server_receiver).await;
+                            write_loop(detached_data_channel_3, to_server_receiver).await;
+
                         // do nothing with result, just close thread
+                        detached_data_channel_2.close().await;
+
+                        peer_connection_ref_4.internal.close().await;
                     });
                 })
             }))
@@ -179,7 +191,7 @@ async fn read_loop(
         let message_length = match data_channel.read(&mut buffer).await {
             Ok(length) => length,
             Err(err) => {
-                println!("Datachannel closed; Exit the read_loop: {}", err);
+                //println!("Datachannel closed; Exit the read_loop: {}", err);
                 return Ok(());
             }
         };

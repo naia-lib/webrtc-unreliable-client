@@ -29,8 +29,6 @@ pub(crate) struct Mux {
     id: Arc<AtomicUsize>,
     next_conn: Arc<dyn Conn + Send + Sync>,
     endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
-    // Removing this causes exceptions
-    #[allow(dead_code)]
     closed_ch_tx: Option<mpsc::Sender<()>>,
 }
 
@@ -125,5 +123,11 @@ impl Mux {
         }
 
         Ok(())
+    }
+
+    pub(crate) async fn close(&mut self) {
+        if let Some(closed_ch_tx) = self.closed_ch_tx.take() {
+            let _ = closed_ch_tx.send(()).await;
+        }
     }
 }

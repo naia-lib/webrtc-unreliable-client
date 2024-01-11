@@ -220,6 +220,27 @@ impl PeerConnectionInternal {
         }
     }
 
+    pub(crate) async fn close(&self) {
+
+        if self.is_closed.load(Ordering::SeqCst) {
+            return;
+        }
+
+        self.is_closed.store(true, Ordering::SeqCst);
+
+        // ICE
+        self.ice_transport.close().await;
+
+        // SCTP
+        self.sctp_transport.stop().await.unwrap();
+
+        // DTLS
+        let mut dtls_conn = self.dtls_transport.conn.lock().await;
+        if let Some(conn) = &mut *dtls_conn {
+            conn.close().await.unwrap();
+        }
+    }
+
     /// generate_unmatched_sdp generates an SDP that doesn't take remote state into account
     /// This is used for the initial call for CreateOffer
     pub(crate) async fn generate_unmatched_sdp(

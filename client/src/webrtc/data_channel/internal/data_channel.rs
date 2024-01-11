@@ -162,6 +162,10 @@ impl DataChannel {
         }
     }
 
+    pub(crate) async fn close(&self) {
+        self.stream.close().await.unwrap();
+    }
+
     /// SetBufferedAmountLowThreshold is used to update the threshold.
     /// See BufferedAmountLowThreshold().
     pub(crate) fn set_buffered_amount_low_threshold(&self, threshold: usize) {

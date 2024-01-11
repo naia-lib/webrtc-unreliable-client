@@ -212,7 +212,9 @@ impl AssociationInternal {
             self.close_all_timers().await;
 
             // awake read/write_loop to exit
-            self.close_loop_ch_tx.take();
+            if let Some(sender) = self.close_loop_ch_tx.take() {
+                sender.send(()).unwrap();
+            }
 
             for si in self.streams.keys().cloned().collect::<Vec<u16>>() {
                 self.unregister_stream(si);

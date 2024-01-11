@@ -181,6 +181,23 @@ impl RTCIceTransport {
         }
     }
 
+    pub(crate) async fn close(&self) {
+        // Maybe don't need this because of the cancel_tx?
+
+        // let mut gatherer = self.gatherer.agent.lock().await;
+        // if let Some(agent) = &mut *gatherer {
+        //     agent.close().await;
+        // }
+
+        if let Some(sender) = &mut self.internal.lock().await.cancel_tx {
+            let _ = sender.send(()).await;
+        }
+
+        if let Some(mux) = &mut self.internal.lock().await.mux {
+            mux.close().await;
+        }
+    }
+
     /// on_connection_state_change sets a handler that is fired when the ICE
     /// connection state changes.
     pub(crate) async fn on_connection_state_change(&self, f: OnConnectionStateChangeHdlrFn) {
