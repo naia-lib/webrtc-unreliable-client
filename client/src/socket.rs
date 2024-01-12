@@ -19,12 +19,14 @@ const MESSAGE_SIZE: usize = 1500;
 pub struct Socket {
     addr_cell: AddrCell,
     to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
+    to_server_disconnect_receiver: mpsc::Receiver<()>,
     to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
 }
 
 pub struct SocketIo {
     pub addr_cell: AddrCell,
     pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
+    pub to_server_disconnect_sender: mpsc::Sender<()>,
     pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
 }
 
@@ -32,17 +34,20 @@ impl Socket {
     pub fn new() -> (Self, SocketIo) {
         let addr_cell = AddrCell::default();
         let (to_server_sender, to_server_receiver) = mpsc::unbounded_channel();
+        let (to_server_disconnect_sender, to_server_disconnect_receiver) = mpsc::channel(1);
         let (to_client_sender, to_client_receiver) = mpsc::unbounded_channel();
 
         (
             Self {
                 addr_cell: addr_cell.clone(),
                 to_server_receiver,
+                to_server_disconnect_receiver,
                 to_client_sender,
             },
             SocketIo {
                 addr_cell,
                 to_server_sender,
+                to_server_disconnect_sender,
                 to_client_receiver,
             },
         )
@@ -52,6 +57,7 @@ impl Socket {
         let Self {
             addr_cell,
             to_server_receiver,
+            to_server_disconnect_receiver,
             to_client_sender,
         } = self;
 
@@ -106,7 +112,7 @@ impl Socket {
                     tokio::spawn(async move {
                         let detached_data_channel_3 = Arc::clone(&detached_data_channel_2);
                         let _loop_result =
-                            write_loop(detached_data_channel_3, to_server_receiver).await;
+                            write_loop(detached_data_channel_3, to_server_receiver, to_server_disconnect_receiver).await;
 
                         // do nothing with result, just close thread
                         detached_data_channel_2.close().await;
@@ -209,17 +215,25 @@ async fn read_loop(
 async fn write_loop(
     data_channel: Arc<DataChannel>,
     mut to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
+    mut to_server_disconnect_receiver: mpsc::Receiver<()>,
 ) -> Result<()> {
     loop {
-        if let Some(write_message) = to_server_receiver.recv().await {
-            match data_channel.write(&Bytes::from(write_message)).await {
-                Ok(_) => {}
-                Err(e) => {
-                    return Err(Error::new(e));
+
+        tokio::select! {
+            _ = to_server_disconnect_receiver.recv() => {
+                return Ok(());
+            }
+            result = to_server_receiver.recv() => {
+                if let Some(mut write_message) = result {
+                    let taken_message = std::mem::take(&mut write_message);
+                    let message_bytes = Bytes::from(taken_message);
+                    if let Err(e) = data_channel.write(&message_bytes).await {
+                        return Err(Error::new(e));
+                    }
+                } else {
+                    return Ok(());
                 }
             }
-        } else {
-            return Ok(());
         }
     }
 }
