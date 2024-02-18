@@ -1,16 +1,10 @@
 use super::cipher_suite::*;
-use super::conn::*;
 use super::curve::named_curve::*;
 use super::extension::extension_use_srtp::SrtpProtectionProfile;
 use super::handshake::handshake_random::*;
-use super::prf::*;
 
-use crate::webrtc::util::KeyingMaterialExporter;
-use crate::webrtc::util::KeyingMaterialExporterError;
-use async_trait::async_trait;
-use std::io::BufWriter;
 use std::marker::{Send, Sync};
-use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::atomic::AtomicU16;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -94,60 +88,6 @@ impl Default for State {
             local_key_signature: vec![],         // cached keySignature
             peer_certificates_verified: false,
             //replay_detector: vec![],
-        }
-    }
-}
-
-#[async_trait]
-impl KeyingMaterialExporter for State {
-    /// export_keying_material returns length bytes of exported key material in a new
-    /// slice as defined in RFC 5705.
-    /// This allows protocols to use DTLS for key establishment, but
-    /// then use some of the keying material for their own purposes
-    async fn export_keying_material(
-        &self,
-        label: &str,
-        context: &[u8],
-        length: usize,
-    ) -> std::result::Result<Vec<u8>, KeyingMaterialExporterError> {
-        use KeyingMaterialExporterError::*;
-
-        if self.local_epoch.load(Ordering::SeqCst) == 0 {
-            return Err(HandshakeInProgress);
-        } else if !context.is_empty() {
-            return Err(ContextUnsupported);
-        } else if INVALID_KEYING_LABELS.contains_key(label) {
-            return Err(ReservedExportKeyingMaterial);
-        }
-
-        let mut local_random = vec![];
-        {
-            let mut writer = BufWriter::<&mut Vec<u8>>::new(local_random.as_mut());
-            self.local_random.marshal(&mut writer)?;
-        }
-        let mut remote_random = vec![];
-        {
-            let mut writer = BufWriter::<&mut Vec<u8>>::new(remote_random.as_mut());
-            self.remote_random.marshal(&mut writer)?;
-        }
-
-        let mut seed = label.as_bytes().to_vec();
-        if self.is_client {
-            seed.extend_from_slice(&local_random);
-            seed.extend_from_slice(&remote_random);
-        } else {
-            seed.extend_from_slice(&remote_random);
-            seed.extend_from_slice(&local_random);
-        }
-
-        let cipher_suite = self.cipher_suite.lock().await;
-        if let Some(cipher_suite) = &*cipher_suite {
-            match prf_p_hash(&self.master_secret, &seed, length, cipher_suite.hash_func()) {
-                Ok(v) => Ok(v),
-                Err(err) => Err(Hash(err.to_string())),
-            }
-        } else {
-            Err(CipherSuiteUnset)
         }
     }
 }

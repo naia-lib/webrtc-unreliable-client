@@ -27,8 +27,6 @@ pub(crate) enum Error {
     ErrFingerprintBeforeIntegrity,
     #[error("bad UNKNOWN-ATTRIBUTES size")]
     ErrBadUnknownAttrsSize,
-    #[error("collector is closed")]
-    ErrCollectorClosed,
     #[error("{0}")]
     Other(String),
     #[error("url parse: {0}")]

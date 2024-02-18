@@ -2,7 +2,6 @@ pub(crate) mod addr;
 pub(crate) mod agent;
 pub(crate) mod attributes;
 pub(crate) mod checks;
-pub(crate) mod client;
 mod error;
 pub(crate) mod error_code;
 pub(crate) mod fingerprint;

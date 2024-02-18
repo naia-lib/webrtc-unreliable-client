@@ -1,23 +1,9 @@
-use async_trait::async_trait;
+
 use std::io;
 use thiserror::Error;
 
 pub(crate) mod fixed_big_int;
 pub(crate) mod replay_detector;
-
-/// KeyingMaterialExporter to extract keying material.
-///
-/// This trait sits here to avoid getting a direct dependency between
-/// the dtls and srtp crates.
-#[async_trait]
-pub(crate) trait KeyingMaterialExporter {
-    async fn export_keying_material(
-        &self,
-        label: &str,
-        context: &[u8],
-        length: usize,
-    ) -> std::result::Result<Vec<u8>, KeyingMaterialExporterError>;
-}
 
 /// Possible errors while exporting keying material.
 ///
@@ -27,18 +13,8 @@ pub(crate) trait KeyingMaterialExporter {
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
 pub(crate) enum KeyingMaterialExporterError {
-    #[error("tls handshake is in progress")]
-    HandshakeInProgress,
-    #[error("context is not supported for export_keying_material")]
-    ContextUnsupported,
-    #[error("export_keying_material can not be used with a reserved label")]
-    ReservedExportKeyingMaterial,
-    #[error("no cipher suite for export_keying_material")]
-    CipherSuiteUnset,
     #[error("export_keying_material io: {0}")]
     Io(#[source] error::IoError),
-    #[error("export_keying_material hash: {0}")]
-    Hash(String),
 }
 
 impl From<io::Error> for KeyingMaterialExporterError {

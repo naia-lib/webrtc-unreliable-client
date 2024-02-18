@@ -31,11 +31,6 @@ pub(crate) trait Getter {
     fn get_from(&mut self, m: &Message) -> Result<()>;
 }
 
-// Checker checks *Message attribute.
-pub(crate) trait Checker {
-    fn check(&self, m: &Message) -> Result<()>;
-}
-
 // is_message returns true if b looks like STUN message.
 // Useful for multiplexing. is_message does not guarantee
 // that decoding will be successful.
