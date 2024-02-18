@@ -1,9 +1,9 @@
-use crate::webrtc::stun::agent::*;
+
 use crate::webrtc::stun::error::*;
 
 use std::sync::Arc;
 use tokio::sync::mpsc;
-use tokio::time::{self, Duration, Instant};
+use tokio::time::{self, Duration};
 
 /// Collector calls function f with constant rate.
 ///
@@ -12,7 +12,7 @@ pub(crate) trait Collector {
     fn start(
         &mut self,
         rate: Duration,
-        client_agent_tx: Arc<mpsc::Sender<ClientAgent>>,
+        client_agent_tx: Arc<mpsc::Sender<()>>,
     ) -> Result<()>;
     fn close(&mut self) -> Result<()>;
 }
@@ -26,7 +26,7 @@ impl Collector for TickerCollector {
     fn start(
         &mut self,
         rate: Duration,
-        client_agent_tx: Arc<mpsc::Sender<ClientAgent>>,
+        client_agent_tx: Arc<mpsc::Sender<()>>,
     ) -> Result<()> {
         let (close_tx, mut close_rx) = mpsc::channel(1);
         self.close_tx = Some(close_tx);
@@ -38,7 +38,7 @@ impl Collector for TickerCollector {
                 tokio::select! {
                     _ = close_rx.recv() => break,
                     _ = interval.tick() => {
-                        if client_agent_tx.send(ClientAgent::Collect(Instant::now())).await.is_err() {
+                        if client_agent_tx.send(()).await.is_err() {
                             break;
                         }
                     }

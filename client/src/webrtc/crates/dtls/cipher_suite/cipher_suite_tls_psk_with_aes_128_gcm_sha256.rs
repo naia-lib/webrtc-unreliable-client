@@ -22,10 +22,6 @@ impl CipherSuite for CipherSuiteTlsPskWithAes128GcmSha256 {
         CipherSuiteId::Tls_Psk_With_Aes_128_Gcm_Sha256
     }
 
-    fn certificate_type(&self) -> ClientCertificateType {
-        ClientCertificateType::Unsupported
-    }
-
     fn hash_func(&self) -> CipherSuiteHash {
         CipherSuiteHash::Sha256
     }

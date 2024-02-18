@@ -35,14 +35,6 @@ impl CipherSuite for CipherSuiteAes128GcmSha256 {
         }
     }
 
-    fn certificate_type(&self) -> ClientCertificateType {
-        if self.rsa {
-            ClientCertificateType::RsaSign
-        } else {
-            ClientCertificateType::EcdsaSign
-        }
-    }
-
     fn hash_func(&self) -> CipherSuiteHash {
         CipherSuiteHash::Sha256
     }

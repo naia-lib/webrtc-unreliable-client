@@ -2,16 +2,15 @@ use crate::webrtc::stun::error::*;
 use crate::webrtc::stun::message::*;
 
 use rand::Rng;
-use tokio::time::Instant;
 
 #[derive(Debug, Clone)]
 pub(crate) enum EventType {
-    Callback(TransactionId),
+    Callback,
 }
 
 impl Default for EventType {
     fn default() -> Self {
-        EventType::Callback(TransactionId::default())
+        EventType::Callback
     }
 }
 
@@ -34,11 +33,4 @@ impl Setter for TransactionId {
         m.write_transaction_id();
         Ok(())
     }
-}
-
-/// ClientAgent is Agent implementation that is used by Client to
-/// process transactions.
-#[derive(Debug)]
-pub(crate) enum ClientAgent {
-    Collect(Instant),
 }

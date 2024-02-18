@@ -1,12 +1,10 @@
 use super::*;
-use crate::webrtc::dtls::client_certificate_type::ClientCertificateType;
 use crate::webrtc::dtls::crypto::crypto_ccm::{CryptoCcm, CryptoCcmTagLen};
 use crate::webrtc::dtls::prf::*;
 
 #[derive(Clone)]
 pub(crate) struct CipherSuiteAes128Ccm {
     ccm: Option<CryptoCcm>,
-    client_certificate_type: ClientCertificateType,
     id: CipherSuiteId,
     psk: bool,
     crypto_ccm_tag_len: CryptoCcmTagLen,
@@ -18,14 +16,12 @@ impl CipherSuiteAes128Ccm {
     const PRF_IV_LEN: usize = 4;
 
     pub(crate) fn new(
-        client_certificate_type: ClientCertificateType,
         id: CipherSuiteId,
         psk: bool,
         crypto_ccm_tag_len: CryptoCcmTagLen,
     ) -> Self {
         CipherSuiteAes128Ccm {
             ccm: None,
-            client_certificate_type,
             id,
             psk,
             crypto_ccm_tag_len,
@@ -40,10 +36,6 @@ impl CipherSuite for CipherSuiteAes128Ccm {
 
     fn id(&self) -> CipherSuiteId {
         self.id
-    }
-
-    fn certificate_type(&self) -> ClientCertificateType {
-        self.client_certificate_type
     }
 
     fn hash_func(&self) -> CipherSuiteHash {

@@ -10,7 +10,6 @@ pub(crate) mod cipher_suite_tls_psk_with_aes_128_gcm_sha256;
 use std::fmt;
 use std::marker::{Send, Sync};
 
-use super::client_certificate_type::*;
 use super::error::*;
 use super::record_layer::record_layer_header::*;
 
@@ -117,7 +116,6 @@ impl CipherSuiteHash {
 pub(crate) trait CipherSuite {
     fn to_string(&self) -> String;
     fn id(&self) -> CipherSuiteId;
-    fn certificate_type(&self) -> ClientCertificateType;
     fn hash_func(&self) -> CipherSuiteHash;
     fn is_psk(&self) -> bool;
     fn is_initialized(&self) -> bool;

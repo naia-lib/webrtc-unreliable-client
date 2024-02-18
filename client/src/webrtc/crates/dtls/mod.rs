@@ -15,7 +15,6 @@ pub(crate) mod flight;
 pub(crate) mod fragment_buffer;
 pub(crate) mod handshake;
 pub(crate) mod handshaker;
-pub(crate) mod listener;
 pub(crate) mod prf;
 pub(crate) mod record_layer;
 pub(crate) mod signature_hash_algorithm;
