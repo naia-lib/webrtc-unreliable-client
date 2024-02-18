@@ -103,62 +103,7 @@ impl ConnObserver for VNetInternal {
 #[derive(Default)]
 pub(crate) struct VNet {
     pub(crate) interfaces: Vec<Interface>, // read-only
-    pub(crate) static_ips: Vec<IpAddr>,    // read-only
     pub(crate) vi: Arc<Mutex<VNetInternal>>,
-}
-
-#[async_trait]
-impl Nic for VNet {
-    async fn get_interface(&self, ifc_name: &str) -> Option<Interface> {
-        for ifc in &self.interfaces {
-            if ifc.name == ifc_name {
-                return Some(ifc.clone());
-            }
-        }
-        None
-    }
-
-    async fn add_addrs_to_interface(&mut self, ifc_name: &str, addrs: &[IpNet]) -> Result<()> {
-        {
-            let mut vi = self.vi.lock().await;
-            for ifc in &mut vi.interfaces {
-                if ifc.name == ifc_name {
-                    for addr in addrs {
-                        ifc.add_addr(*addr);
-                    }
-                    break;
-                }
-            }
-        }
-
-        for ifc in &mut self.interfaces {
-            if ifc.name == ifc_name {
-                for addr in addrs {
-                    ifc.add_addr(*addr);
-                }
-                return Ok(());
-            }
-        }
-
-        Err(Error::ErrNotFound)
-    }
-
-    async fn on_inbound_chunk(&self, c: Box<dyn Chunk + Send + Sync>) {
-        if c.network() == UDP_STR {
-            let vi = self.vi.lock().await;
-            if let Some(conn) = vi.udp_conns.find(&c.destination_addr()).await {
-                let read_ch_tx = conn.get_inbound_ch();
-                let ch_tx = read_ch_tx.lock().await;
-                if let Some(tx) = &*ch_tx {
-                    let _ = tx.send(c).await;
-                }
-            }
-        }
-    }
-
-    async fn get_static_ips(&self) -> Vec<IpAddr> {
-        self.static_ips.clone()
-    }
 }
 
 impl VNet {
@@ -340,7 +285,6 @@ impl Net {
 
             let vnet = VNet {
                 interfaces: vec![lo0.clone(), eth0.clone()],
-                static_ips,
                 vi: Arc::new(Mutex::new(VNetInternal {
                     interfaces: vec![lo0, eth0],
                     router: None,
