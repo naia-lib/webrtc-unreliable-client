@@ -111,8 +111,12 @@ impl Socket {
                     // Handle writing to the data channel
                     tokio::spawn(async move {
                         let detached_data_channel_3 = Arc::clone(&detached_data_channel_2);
-                        let _loop_result =
-                            write_loop(detached_data_channel_3, to_server_receiver, to_server_disconnect_receiver).await;
+                        let _loop_result = write_loop(
+                            detached_data_channel_3,
+                            to_server_receiver,
+                            to_server_disconnect_receiver,
+                        )
+                        .await;
 
                         // do nothing with result, just close thread
                         detached_data_channel_2.close().await;
@@ -218,7 +222,6 @@ async fn write_loop(
     mut to_server_disconnect_receiver: mpsc::Receiver<()>,
 ) -> Result<()> {
     loop {
-
         tokio::select! {
             _ = to_server_disconnect_receiver.recv() => {
                 return Ok(());

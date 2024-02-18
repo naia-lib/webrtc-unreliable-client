@@ -85,8 +85,11 @@ fn elliptic_curve_pre_master_secret(
 ) -> Result<Vec<u8>> {
     match curve {
         NamedCurve::P256 => {
-            let pub_key =
-                p256::EncodedPoint::from_bytes(public_key).map_err(elliptic_curve::Error::from)?;
+            let pub_key_result =
+                p256::EncodedPoint::from_bytes(public_key);
+            let Ok(pub_key) = pub_key_result else {
+                return Err(crate::webrtc::dtls::error::Error::ErrInvalidNamedCurve);
+            };
             let public = p256::PublicKey::from_sec1_bytes(pub_key.as_ref())?;
             if let NamedCurvePrivateKey::EphemeralSecretP256(secret) = private_key {
                 return Ok(secret.diffie_hellman(&public).raw_secret_bytes().to_vec());
