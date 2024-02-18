@@ -18,10 +18,6 @@ type Result<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
 #[async_trait]
 impl Conn for Endpoint {
-    async fn connect(&self, _addr: SocketAddr) -> Result<()> {
-        Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
-    }
-
     /// reads a packet of len(p) bytes from the underlying conn
     /// that are matched by the associated MuxFunc
     async fn recv(&self, buf: &mut [u8]) -> Result<usize> {

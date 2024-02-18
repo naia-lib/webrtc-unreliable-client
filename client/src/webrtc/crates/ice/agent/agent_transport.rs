@@ -153,13 +153,6 @@ impl AgentConn {
 
 #[async_trait]
 impl Conn for AgentConn {
-    async fn connect(
-        &self,
-        _addr: SocketAddr,
-    ) -> std::result::Result<(), crate::webrtc::util::Error> {
-        Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
-    }
-
     async fn recv(&self, buf: &mut [u8]) -> std::result::Result<usize, crate::webrtc::util::Error> {
         if self.done.load(Ordering::SeqCst) {
             return Err(io::Error::new(io::ErrorKind::Other, "Conn is closed").into());

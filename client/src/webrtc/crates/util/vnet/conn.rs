@@ -57,12 +57,6 @@ impl UdpConn {
 
 #[async_trait]
 impl Conn for UdpConn {
-    async fn connect(&self, addr: SocketAddr) -> Result<()> {
-        let mut rem_addr = self.rem_addr.lock().await;
-        *rem_addr = Some(addr);
-
-        Ok(())
-    }
     async fn recv(&self, buf: &mut [u8]) -> Result<usize> {
         let (n, _) = self.recv_from(buf).await?;
         Ok(n)

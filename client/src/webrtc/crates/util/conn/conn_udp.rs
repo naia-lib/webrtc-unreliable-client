@@ -4,10 +4,6 @@ use tokio::net::UdpSocket;
 
 #[async_trait]
 impl Conn for UdpSocket {
-    async fn connect(&self, addr: SocketAddr) -> Result<()> {
-        Ok(self.connect(addr).await?)
-    }
-
     async fn recv(&self, buf: &mut [u8]) -> Result<usize> {
         Ok(self.recv(buf).await?)
     }

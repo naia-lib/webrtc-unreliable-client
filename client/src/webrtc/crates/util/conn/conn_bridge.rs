@@ -21,10 +21,6 @@ struct BridgeConn {
 
 #[async_trait]
 impl Conn for BridgeConn {
-    async fn connect(&self, _addr: SocketAddr) -> Result<()> {
-        Err(Error::new(ErrorKind::Other, "Not applicable").into())
-    }
-
     async fn recv(&self, b: &mut [u8]) -> Result<usize> {
         let mut rd_rx = self.rd_rx.lock().await;
         let v = match rd_rx.recv().await {

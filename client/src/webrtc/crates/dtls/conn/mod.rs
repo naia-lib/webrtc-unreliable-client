@@ -107,11 +107,6 @@ type UtilResult<T> = std::result::Result<T, crate::webrtc::util::Error>;
 
 #[async_trait]
 impl Conn for DTLSConn {
-    async fn connect(&self, _addr: SocketAddr) -> UtilResult<()> {
-        Err(crate::webrtc::util::Error::Other(
-            "Not applicable".to_owned(),
-        ))
-    }
     async fn recv(&self, buf: &mut [u8]) -> UtilResult<usize> {
         self.read(buf, None)
             .await

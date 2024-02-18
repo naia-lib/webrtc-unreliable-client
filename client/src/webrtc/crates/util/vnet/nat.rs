@@ -1,6 +1,5 @@
 use crate::webrtc::util::error::*;
 use crate::webrtc::util::vnet::chunk::Chunk;
-use crate::webrtc::util::vnet::net::UDP_STR;
 
 use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
@@ -31,11 +30,6 @@ impl Default for EndpointDependencyType {
 pub(crate) enum NatMode {
     // NATModeNormal means the NAT behaves as a standard NAPT (RFC 2663).
     Normal,
-    // NATModeNAT1To1 exhibits 1:1 DNAT where the external IP address is statically mapped to
-    // a specific local IP address with port number is preserved always between them.
-    // When this mode is selected, mapping_behavior, filtering_behavior, port_preservation and
-    // mapping_life_time of NATType are ignored.
-    Nat1To1,
 }
 
 impl Default for NatMode {
@@ -96,73 +90,74 @@ impl NetworkAddressTranslator {
 
     pub(crate) async fn translate_inbound(
         &self,
-        from: &(dyn Chunk + Send + Sync),
+        _from: &(dyn Chunk + Send + Sync),
     ) -> Result<Option<Box<dyn Chunk + Send + Sync>>> {
-        let mut to = from.clone_to();
-
-        if from.network() == UDP_STR {
-            if self.nat_type.mode == NatMode::Nat1To1 {
-                // 1:1 NAT behavior
-                let dst_addr = from.destination_addr();
-                if let Some(dst_ip) = self.get_paired_local_ip(&dst_addr.ip()) {
-                    let dst_port = from.destination_addr().port();
-                    to.set_destination_addr(&format!("{}:{}", dst_ip, dst_port))?;
-                } else {
-                    return Err(Error::Other(format!(
-                        "drop {} as {:?}",
-                        from,
-                        Error::ErrNoAssociatedLocalAddress
-                    )));
-                }
-            } else {
-                // Normal (NAPT) behavior
-                let filter_key = match self.nat_type.filtering_behavior {
-                    EndpointDependencyType::EndpointIndependent => "".to_owned(),
-                };
-
-                let i_key = format!("udp:{}", from.destination_addr());
-                if let Some(m) = self.find_inbound_mapping(&i_key).await {
-                    {
-                        let filters = m.filters.lock().await;
-                        if !filters.contains(&filter_key) {
-                            return Err(Error::Other(format!(
-                                "drop {} as the remote {} {:?}",
-                                from,
-                                filter_key,
-                                Error::ErrHasNoPermission
-                            )));
-                        }
-                    }
-
-                    // See RFC 4847 Section 4.3.  Mapping Refresh
-                    // a) Inbound refresh may be useful for applications with no outgoing
-                    //   UDP traffic.  However, allowing inbound refresh may allow an
-                    //   external attacker or misbehaving application to keep a Mapping
-                    //   alive indefinitely.  This may be a security risk.  Also, if the
-                    //   process is repeated with different ports, over time, it could
-                    //   use up all the ports on the NAT.
-
-                    to.set_destination_addr(&m.local)?;
-                } else {
-                    return Err(Error::Other(format!(
-                        "drop {} as {:?}",
-                        from,
-                        Error::ErrNoNatBindingFound
-                    )));
-                }
-            }
-
-            log::debug!(
-                "[{}] translate inbound chunk from {} to {}",
-                self.name,
-                from,
-                to
-            );
-
-            return Ok(Some(to));
-        }
-
-        Err(Error::ErrNonUdpTranslationNotSupported)
+        todo!()
+        // let mut to = from.clone_to();
+        //
+        // if from.network() == UDP_STR {
+        //     if self.nat_type.mode == NatMode::Nat1To1 {
+        //         // 1:1 NAT behavior
+        //         let dst_addr = from.destination_addr();
+        //         if let Some(dst_ip) = self.get_paired_local_ip(&dst_addr.ip()) {
+        //             let dst_port = from.destination_addr().port();
+        //             to.set_destination_addr(&format!("{}:{}", dst_ip, dst_port))?;
+        //         } else {
+        //             return Err(Error::Other(format!(
+        //                 "drop {} as {:?}",
+        //                 from,
+        //                 Error::ErrNoAssociatedLocalAddress
+        //             )));
+        //         }
+        //     } else {
+        //         // Normal (NAPT) behavior
+        //         let filter_key = match self.nat_type.filtering_behavior {
+        //             EndpointDependencyType::EndpointIndependent => "".to_owned(),
+        //         };
+        //
+        //         let i_key = format!("udp:{}", from.destination_addr());
+        //         if let Some(m) = self.find_inbound_mapping(&i_key).await {
+        //             {
+        //                 let filters = m.filters.lock().await;
+        //                 if !filters.contains(&filter_key) {
+        //                     return Err(Error::Other(format!(
+        //                         "drop {} as the remote {} {:?}",
+        //                         from,
+        //                         filter_key,
+        //                         Error::ErrHasNoPermission
+        //                     )));
+        //                 }
+        //             }
+        //
+        //             // See RFC 4847 Section 4.3.  Mapping Refresh
+        //             // a) Inbound refresh may be useful for applications with no outgoing
+        //             //   UDP traffic.  However, allowing inbound refresh may allow an
+        //             //   external attacker or misbehaving application to keep a Mapping
+        //             //   alive indefinitely.  This may be a security risk.  Also, if the
+        //             //   process is repeated with different ports, over time, it could
+        //             //   use up all the ports on the NAT.
+        //
+        //             to.set_destination_addr(&m.local)?;
+        //         } else {
+        //             return Err(Error::Other(format!(
+        //                 "drop {} as {:?}",
+        //                 from,
+        //                 Error::ErrNoNatBindingFound
+        //             )));
+        //         }
+        //     }
+        //
+        //     log::debug!(
+        //         "[{}] translate inbound chunk from {} to {}",
+        //         self.name,
+        //         from,
+        //         to
+        //     );
+        //
+        //     return Ok(Some(to));
+        // }
+        //
+        // Err(Error::ErrNonUdpTranslationNotSupported)
     }
 
     // caller must hold the mutex

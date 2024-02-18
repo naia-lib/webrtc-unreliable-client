@@ -13,10 +13,6 @@ pub(crate) struct DisconnectedPacketConn {
 
 #[async_trait]
 impl Conn for DisconnectedPacketConn {
-    async fn connect(&self, addr: SocketAddr) -> Result<()> {
-        self.pconn.connect(addr).await
-    }
-
     async fn recv(&self, buf: &mut [u8]) -> Result<usize> {
         let (n, addr) = self.pconn.recv_from(buf).await?;
         {

@@ -1,10 +1,8 @@
 use super::net::*;
-use crate::webrtc::util::error::Result;
 
 use std::fmt;
 use std::net::{IpAddr, SocketAddr};
 use std::ops::{BitAnd, BitOr};
-use std::str::FromStr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::SystemTime;
 
@@ -89,18 +87,13 @@ impl fmt::Display for TcpFlag {
 // Chunk represents a packet passed around in the vnet
 pub(crate) trait Chunk: fmt::Display + fmt::Debug {
     fn set_timestamp(&mut self) -> SystemTime; // used by router
-    fn get_timestamp(&self) -> SystemTime; // used by router
-    fn get_source_ip(&self) -> IpAddr; // used by routee
     fn get_destination_ip(&self) -> IpAddr; // used by router
-    fn set_source_addr(&mut self, address: &str) -> Result<()>; // used by nat
-    fn set_destination_addr(&mut self, address: &str) -> Result<()>; // used by nat
 
     fn source_addr(&self) -> SocketAddr;
     fn destination_addr(&self) -> SocketAddr;
     fn user_data(&self) -> Vec<u8>;
     fn tag(&self) -> String;
     fn network(&self) -> String; // returns "udp" or "tcp"
-    fn clone_to(&self) -> Box<dyn Chunk + Send + Sync>;
 }
 
 #[derive(PartialEq, Debug)]
@@ -117,16 +110,8 @@ impl ChunkIp {
         self.timestamp
     }
 
-    fn get_timestamp(&self) -> SystemTime {
-        self.timestamp
-    }
-
     fn get_destination_ip(&self) -> IpAddr {
         self.destination_ip
-    }
-
-    fn get_source_ip(&self) -> IpAddr {
-        self.source_ip
     }
 
     fn tag(&self) -> String {
@@ -160,16 +145,8 @@ impl Chunk for ChunkUdp {
         self.chunk_ip.set_timestamp()
     }
 
-    fn get_timestamp(&self) -> SystemTime {
-        self.chunk_ip.get_timestamp()
-    }
-
     fn get_destination_ip(&self) -> IpAddr {
         self.chunk_ip.get_destination_ip()
-    }
-
-    fn get_source_ip(&self) -> IpAddr {
-        self.chunk_ip.get_source_ip()
     }
 
     fn tag(&self) -> String {
@@ -188,36 +165,8 @@ impl Chunk for ChunkUdp {
         self.user_data.clone()
     }
 
-    fn clone_to(&self) -> Box<dyn Chunk + Send + Sync> {
-        Box::new(ChunkUdp {
-            chunk_ip: ChunkIp {
-                timestamp: self.chunk_ip.timestamp,
-                source_ip: self.chunk_ip.source_ip,
-                destination_ip: self.chunk_ip.destination_ip,
-                tag: self.chunk_ip.tag.clone(),
-            },
-            source_port: self.source_port,
-            destination_port: self.destination_port,
-            user_data: self.user_data.clone(),
-        })
-    }
-
     fn network(&self) -> String {
         UDP_STR.to_owned()
-    }
-
-    fn set_source_addr(&mut self, address: &str) -> Result<()> {
-        let addr = SocketAddr::from_str(address)?;
-        self.chunk_ip.source_ip = addr.ip();
-        self.source_port = addr.port();
-        Ok(())
-    }
-
-    fn set_destination_addr(&mut self, address: &str) -> Result<()> {
-        let addr = SocketAddr::from_str(address)?;
-        self.chunk_ip.destination_ip = addr.ip();
-        self.destination_port = addr.port();
-        Ok(())
     }
 }
 
@@ -267,16 +216,8 @@ impl Chunk for ChunkTcp {
         self.chunk_ip.set_timestamp()
     }
 
-    fn get_timestamp(&self) -> SystemTime {
-        self.chunk_ip.get_timestamp()
-    }
-
     fn get_destination_ip(&self) -> IpAddr {
         self.chunk_ip.get_destination_ip()
-    }
-
-    fn get_source_ip(&self) -> IpAddr {
-        self.chunk_ip.get_source_ip()
     }
 
     fn tag(&self) -> String {
@@ -295,36 +236,7 @@ impl Chunk for ChunkTcp {
         self.user_data.clone()
     }
 
-    fn clone_to(&self) -> Box<dyn Chunk + Send + Sync> {
-        Box::new(ChunkTcp {
-            chunk_ip: ChunkIp {
-                timestamp: self.chunk_ip.timestamp,
-                source_ip: self.chunk_ip.source_ip,
-                destination_ip: self.chunk_ip.destination_ip,
-                tag: self.chunk_ip.tag.clone(),
-            },
-            source_port: self.source_port,
-            destination_port: self.destination_port,
-            flags: self.flags,
-            user_data: self.user_data.clone(),
-        })
-    }
-
     fn network(&self) -> String {
         "tcp".to_owned()
-    }
-
-    fn set_source_addr(&mut self, address: &str) -> Result<()> {
-        let addr = SocketAddr::from_str(address)?;
-        self.chunk_ip.source_ip = addr.ip();
-        self.source_port = addr.port();
-        Ok(())
-    }
-
-    fn set_destination_addr(&mut self, address: &str) -> Result<()> {
-        let addr = SocketAddr::from_str(address)?;
-        self.chunk_ip.destination_ip = addr.ip();
-        self.destination_port = addr.port();
-        Ok(())
     }
 }
