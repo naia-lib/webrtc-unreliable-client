@@ -53,7 +53,10 @@ impl Socket {
         )
     }
 
-    pub async fn connect(self, server_url: &str) {
+    pub async fn connect(
+        self,
+        server_url: &str,
+    ) {
         let Self {
             addr_cell,
             to_server_receiver,

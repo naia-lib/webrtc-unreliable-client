@@ -1,4 +1,3 @@
-
 // EndpointDependencyType defines a type of behavioral dependency on the
 // remote endpoint's IP address or port number. This is used for the two
 // kinds of behaviors:

@@ -15,11 +15,7 @@ impl CipherSuiteAes128Ccm {
     const PRF_KEY_LEN: usize = 16;
     const PRF_IV_LEN: usize = 4;
 
-    pub(crate) fn new(
-        id: CipherSuiteId,
-        psk: bool,
-        crypto_ccm_tag_len: CryptoCcmTagLen,
-    ) -> Self {
+    pub(crate) fn new(id: CipherSuiteId, psk: bool, crypto_ccm_tag_len: CryptoCcmTagLen) -> Self {
         CipherSuiteAes128Ccm {
             ccm: None,
             id,

@@ -1,4 +1,3 @@
-
 use crate::webrtc::util::vnet::chunk::*;
 use crate::webrtc::util::vnet::chunk_queue::*;
 
@@ -11,8 +10,7 @@ lazy_static! {
 }
 
 #[derive(Default)]
-pub(crate) struct RouterInternal {
-}
+pub(crate) struct RouterInternal {}
 
 // Router ...
 #[derive(Default)]
