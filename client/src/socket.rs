@@ -2,10 +2,10 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::{Error, Result};
 use bytes::Bytes;
-use log::warn;
-use reqwest::{Client as HttpClient, Response};
+use log::{info, warn};
+use reqwest::{header::AUTHORIZATION, Client as HttpClient, Response};
 use tinyjson::JsonValue;
-use tokio::{sync::mpsc, time::sleep};
+use tokio::{sync::{mpsc, oneshot}, time::sleep};
 
 use crate::webrtc::{
     data_channel::internal::data_channel::DataChannel,
@@ -21,6 +21,7 @@ pub struct Socket {
     to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
     to_server_disconnect_receiver: mpsc::Receiver<()>,
     to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
+    to_client_id_sender: oneshot::Sender<String>,
 }
 
 pub struct SocketIo {
@@ -28,6 +29,7 @@ pub struct SocketIo {
     pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
     pub to_server_disconnect_sender: mpsc::Sender<()>,
     pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
+    pub to_client_id_receiver: oneshot::Receiver<String>,
 }
 
 impl Socket {
@@ -36,6 +38,7 @@ impl Socket {
         let (to_server_sender, to_server_receiver) = mpsc::unbounded_channel();
         let (to_server_disconnect_sender, to_server_disconnect_receiver) = mpsc::channel(1);
         let (to_client_sender, to_client_receiver) = mpsc::unbounded_channel();
+        let (to_client_id_sender, to_client_id_receiver) = oneshot::channel();
 
         (
             Self {
@@ -43,12 +46,14 @@ impl Socket {
                 to_server_receiver,
                 to_server_disconnect_receiver,
                 to_client_sender,
+                to_client_id_sender,
             },
             SocketIo {
                 addr_cell,
                 to_server_sender,
                 to_server_disconnect_sender,
                 to_client_receiver,
+                to_client_id_receiver,
             },
         )
     }
@@ -56,12 +61,14 @@ impl Socket {
     pub async fn connect(
         self,
         server_url: &str,
+        mut auth_bytes_opt: Option<Vec<u8>>,
     ) {
         let Self {
             addr_cell,
             to_server_receiver,
             to_server_disconnect_receiver,
             to_client_sender,
+            to_client_id_sender,
         } = self;
 
         // create a new RTCPeerConnection
@@ -151,10 +158,14 @@ impl Socket {
 
         // wait to receive a response from server
         let response: Response = loop {
-            let request = http_client
+            let mut request = http_client
                 .post(server_url)
                 .header("Content-Length", sdp_len)
                 .body(sdp.clone());
+            if let Some(auth_bytes) = auth_bytes_opt.take() {
+                let base64_encoded = base64::encode(auth_bytes);
+                request = request.header("Authorization", &base64_encoded);
+            }
 
             match request.send().await {
                 Ok(resp) => {
@@ -166,6 +177,14 @@ impl Socket {
                 }
             };
         };
+
+        // get the Authorization header from the response
+        let auth_header = response.headers().get(AUTHORIZATION).unwrap().to_str().unwrap().to_string();
+        // send the id token to the client
+        // info!("Sending id token to client: {:?}", auth_header);
+        to_client_id_sender.send(auth_header).unwrap();
+
+        // get the body of the response as a string
         let response_string = response.text().await.unwrap();
 
         // parse session from server response
