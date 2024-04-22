@@ -178,17 +178,15 @@ impl Socket {
             };
         };
 
-        // get the Authorization header from the response
-        let auth_header = response.headers().get(AUTHORIZATION).unwrap().to_str().unwrap().to_string();
-        // send the id token to the client
-        // info!("Sending id token to client: {:?}", auth_header);
-        to_client_id_sender.send(auth_header).unwrap();
-
         // get the body of the response as a string
         let response_string = response.text().await.unwrap();
 
         // parse session from server response
         let session_response: JsSessionResponse = get_session_response(response_string.as_str());
+
+        // send the id token to the client
+        // info!("Sending id token to client: {:?}", auth_header);
+        to_client_id_sender.send(session_response.id_token).unwrap();
 
         // apply the server's response as the remote description
         let session_description =
@@ -273,20 +271,26 @@ pub(crate) struct SessionCandidate {
 }
 
 pub(crate) struct JsSessionResponse {
+    pub(crate) id_token: String,
     pub(crate) answer: SessionAnswer,
     pub(crate) candidate: SessionCandidate,
 }
 
 fn get_session_response(input: &str) -> JsSessionResponse {
+    // info!("{}", input);
     let json_obj: JsonValue = input.parse().unwrap();
 
-    let sdp_opt: Option<&String> = json_obj["answer"]["sdp"].get();
+    let sdp_opt: Option<&String> = json_obj["sdp"]["answer"]["sdp"].get();
     let sdp: String = sdp_opt.unwrap().clone();
 
-    let candidate_opt: Option<&String> = json_obj["candidate"]["candidate"].get();
+    let candidate_opt: Option<&String> = json_obj["sdp"]["candidate"]["candidate"].get();
     let candidate: String = candidate_opt.unwrap().clone();
 
+    let id_token_opt: Option<&String> = json_obj["id"].get();
+    let id_token: String = id_token_opt.unwrap().clone();
+
     JsSessionResponse {
+        id_token,
         answer: SessionAnswer { sdp },
         candidate: SessionCandidate { candidate },
     }
