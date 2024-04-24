@@ -2,10 +2,13 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::{Error, Result};
 use bytes::Bytes;
-use log::{info, warn};
-use reqwest::{header::AUTHORIZATION, Client as HttpClient, Response};
+use log::warn;
+use reqwest::{Client as HttpClient, Response};
 use tinyjson::JsonValue;
-use tokio::{sync::{mpsc, oneshot}, time::sleep};
+use tokio::{
+    sync::{mpsc, oneshot},
+    time::sleep,
+};
 
 use crate::webrtc::{
     data_channel::internal::data_channel::DataChannel,
@@ -58,11 +61,7 @@ impl Socket {
         )
     }
 
-    pub async fn connect(
-        self,
-        server_url: &str,
-        mut auth_bytes_opt: Option<Vec<u8>>,
-    ) {
+    pub async fn connect(self, server_url: &str, mut auth_bytes_opt: Option<Vec<u8>>) {
         let Self {
             addr_cell,
             to_server_receiver,
