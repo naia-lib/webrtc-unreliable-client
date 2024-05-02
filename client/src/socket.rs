@@ -61,7 +61,12 @@ impl Socket {
         )
     }
 
-    pub async fn connect(self, server_url: &str, mut auth_bytes_opt: Option<Vec<u8>>) {
+    pub async fn connect(
+        self,
+        server_url: &str,
+        auth_bytes_opt: Option<Vec<u8>>,
+        auth_headers_opt: Option<Vec<(String, String)>>,
+    ) {
         let Self {
             addr_cell,
             to_server_receiver,
@@ -161,9 +166,14 @@ impl Socket {
                 .post(server_url)
                 .header("Content-Length", sdp_len)
                 .body(sdp.clone());
-            if let Some(auth_bytes) = auth_bytes_opt.take() {
+            if let Some(auth_bytes) = auth_bytes_opt.clone() {
                 let base64_encoded = base64::encode(auth_bytes);
                 request = request.header("Authorization", &base64_encoded);
+            }
+            if let Some(auth_headers) = auth_headers_opt.clone() {
+                for (key, value) in auth_headers {
+                    request = request.header(key, value);
+                }
             }
 
             match request.send().await {
