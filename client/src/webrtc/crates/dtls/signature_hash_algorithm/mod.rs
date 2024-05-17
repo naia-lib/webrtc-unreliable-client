@@ -135,7 +135,7 @@ pub(crate) fn select_signature_scheme(
     Err(Error::ErrNoAvailableSignatureSchemes)
 }
 
-// SignatureScheme identifies a signature algorithm supported by TLS. See
-// RFC 8446, Section 4.2.3.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) enum SignatureScheme {}
+// // SignatureScheme identifies a signature algorithm supported by TLS. See
+// // RFC 8446, Section 4.2.3.
+// #[derive(Copy, Clone, Debug, PartialEq)]
+// pub(crate) enum SignatureScheme {}

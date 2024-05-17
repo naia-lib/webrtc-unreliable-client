@@ -66,7 +66,7 @@ impl Socket {
         server_url: &str,
         auth_bytes_opt: Option<Vec<u8>>,
         auth_headers_opt: Option<Vec<(String, String)>>,
-    ) {
+    ) -> Result<(), String> {
         let Self {
             addr_cell,
             to_server_receiver,
@@ -191,7 +191,7 @@ impl Socket {
         let response_string = response.text().await.unwrap();
 
         // parse session from server response
-        let session_response: JsSessionResponse = get_session_response(response_string.as_str());
+        let session_response = get_session_response(response_string.as_str())?;
 
         // send the id token to the client
         // info!("Sending id token to client: {:?}", auth_header);
@@ -217,6 +217,8 @@ impl Socket {
         {
             panic!("Error during add_ice_candidate: {:?}", error);
         }
+
+        Ok(())
     }
 }
 
@@ -285,9 +287,11 @@ pub(crate) struct JsSessionResponse {
     pub(crate) candidate: SessionCandidate,
 }
 
-fn get_session_response(input: &str) -> JsSessionResponse {
+fn get_session_response(input: &str) -> Result<JsSessionResponse, String> {
     // info!("{}", input);
-    let json_obj: JsonValue = input.parse().unwrap();
+    let Ok(json_obj): Result<JsonValue, _> = input.parse() else {
+        return Err("Could not parse response JSON".to_string());
+    };
 
     let sdp_opt: Option<&String> = json_obj["sdp"]["answer"]["sdp"].get();
     let sdp: String = sdp_opt.unwrap().clone();
@@ -298,9 +302,9 @@ fn get_session_response(input: &str) -> JsSessionResponse {
     let id_token_opt: Option<&String> = json_obj["id"].get();
     let id_token: String = id_token_opt.unwrap().clone();
 
-    JsSessionResponse {
+    Ok(JsSessionResponse {
         id_token,
         answer: SessionAnswer { sdp },
         candidate: SessionCandidate { candidate },
-    }
+    })
 }
