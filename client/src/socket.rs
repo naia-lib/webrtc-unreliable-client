@@ -24,7 +24,7 @@ pub struct Socket {
     to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
     to_server_disconnect_receiver: mpsc::Receiver<()>,
     to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
-    to_client_id_sender: oneshot::Sender<String>,
+    to_client_id_sender: oneshot::Sender<Result<String, u16>>,
 }
 
 pub struct SocketIo {
@@ -32,7 +32,7 @@ pub struct SocketIo {
     pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
     pub to_server_disconnect_sender: mpsc::Sender<()>,
     pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
-    pub to_client_id_receiver: oneshot::Receiver<String>,
+    pub to_client_id_receiver: oneshot::Receiver<Result<String, u16>>,
 }
 
 impl Socket {
@@ -66,7 +66,7 @@ impl Socket {
         server_url: &str,
         auth_bytes_opt: Option<Vec<u8>>,
         auth_headers_opt: Option<Vec<(String, String)>>,
-    ) -> Result<(), String> {
+    ) {
         let Self {
             addr_cell,
             to_server_receiver,
@@ -187,15 +187,36 @@ impl Socket {
             };
         };
 
+        if !response.status().is_success() {
+            let status_code = response.status().as_u16();
+            to_client_id_sender.send(Err(status_code)).unwrap();
+            return;
+        }
+
         // get the body of the response as a string
-        let response_string = response.text().await.unwrap();
+        let response_string = match response.text().await {
+            Ok(response_string) => response_string,
+            Err(_err) => {
+                // error reading response?
+                to_client_id_sender.send(Err(500)).unwrap();
+                return;
+            }
+        };
 
         // parse session from server response
-        let session_response = get_session_response(response_string.as_str())?;
+        let session_response_result = get_session_response(response_string.as_str());
+        let session_response = match session_response_result {
+            Ok(session_response) => session_response,
+            Err(_err) => {
+                // parsing error?
+                to_client_id_sender.send(Err(500)).unwrap();
+                return;
+            }
+        };
 
         // send the id token to the client
         // info!("Sending id token to client: {:?}", auth_header);
-        to_client_id_sender.send(session_response.id_token).unwrap();
+        to_client_id_sender.send(Ok(session_response.id_token)).unwrap();
 
         // apply the server's response as the remote description
         let session_description =
@@ -217,8 +238,6 @@ impl Socket {
         {
             panic!("Error during add_ice_candidate: {:?}", error);
         }
-
-        Ok(())
     }
 }
 
