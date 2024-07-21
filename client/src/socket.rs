@@ -216,7 +216,9 @@ impl Socket {
 
         // send the id token to the client
         // info!("Sending id token to client: {:?}", auth_header);
-        to_client_id_sender.send(Ok(session_response.id_token)).unwrap();
+        to_client_id_sender
+            .send(Ok(session_response.id_token))
+            .unwrap();
 
         // apply the server's response as the remote description
         let session_description =
