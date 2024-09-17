@@ -18,11 +18,6 @@ use crate::webrtc::sdp::util::ConnectionRole;
 use std::convert::From;
 use std::sync::Arc;
 
-/// TrackDetails represents any media source that can be represented in a SDP
-/// This isn't keyed by SSRC because it also needs to support rid based sources
-#[derive(Default, Debug, Clone)]
-pub(crate) struct TrackDetails;
-
 pub(crate) async fn add_candidates_to_media_descriptions(
     candidates: &[RTCIceCandidate],
     mut m: MediaDescription,

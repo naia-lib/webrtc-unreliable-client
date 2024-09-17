@@ -77,40 +77,6 @@ impl Getter for AttrControlling {
     }
 }
 
-/// Helper that wraps ICE-{CONTROLLED,CONTROLLING}.
-#[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub(crate) struct AttrControl {
-    role: Role,
-    tie_breaker: TieBreaker,
-}
-
-impl Setter for AttrControl {
-    // add_to adds ICE-CONTROLLED or ICE-CONTROLLING attribute depending on Role.
-    fn add_to(&self, m: &mut Message) -> Result<(), crate::webrtc::stun::Error> {
-        if self.role == Role::Controlling {
-            self.tie_breaker.add_to_as(m, ATTR_ICE_CONTROLLING)
-        } else {
-            self.tie_breaker.add_to_as(m, ATTR_ICE_CONTROLLED)
-        }
-    }
-}
-
-impl Getter for AttrControl {
-    // get_from decodes Role and Tiebreaker value from message.
-    fn get_from(&mut self, m: &Message) -> Result<(), crate::webrtc::stun::Error> {
-        if m.contains(ATTR_ICE_CONTROLLING) {
-            self.role = Role::Controlling;
-            return self.tie_breaker.get_from_as(m, ATTR_ICE_CONTROLLING);
-        }
-        if m.contains(ATTR_ICE_CONTROLLED) {
-            self.role = Role::Controlled;
-            return self.tie_breaker.get_from_as(m, ATTR_ICE_CONTROLLED);
-        }
-
-        Err(crate::webrtc::stun::Error::ErrAttributeNotFound)
-    }
-}
-
 /// Represents ICE agent role, which can be controlling or controlled.
 /// Possible ICE agent roles.
 #[derive(PartialEq, Copy, Clone, Debug)]

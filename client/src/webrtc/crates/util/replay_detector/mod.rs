@@ -72,13 +72,3 @@ impl ReplayDetector for SlidingWindowDetector {
         self.mask.set_bit(diff as usize);
     }
 }
-
-#[derive(Default)]
-pub(crate) struct NoOpReplayDetector;
-
-impl ReplayDetector for NoOpReplayDetector {
-    fn check(&mut self, _: u64) -> bool {
-        true
-    }
-    fn accept(&mut self) {}
-}

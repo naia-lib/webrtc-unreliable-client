@@ -1,5 +1,4 @@
 pub(crate) mod description;
-pub(crate) mod extmap;
 pub(crate) mod util;
 
 mod error;

@@ -74,29 +74,3 @@ pub(crate) fn new_session_id() -> u64 {
     let c = u64::MAX ^ (1u64 << 63);
     rand::random::<u64>() & c
 }
-
-// Codec represents a codec
-#[derive(Debug, Clone, Default, PartialEq)]
-pub(crate) struct Codec {
-    pub(crate) payload_type: u8,
-    pub(crate) name: String,
-    pub(crate) clock_rate: u32,
-    pub(crate) encoding_parameters: String,
-    pub(crate) fmtp: String,
-    pub(crate) rtcp_feedback: Vec<String>,
-}
-
-impl fmt::Display for Codec {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} {}/{}/{} ({}) [{}]",
-            self.payload_type,
-            self.name,
-            self.clock_rate,
-            self.encoding_parameters,
-            self.fmtp,
-            self.rtcp_feedback.join(", "),
-        )
-    }
-}
