@@ -124,9 +124,7 @@ impl PeerConnectionInternal {
         // Start sctp
         if let Err(err) = self
             .sctp_transport
-            .start(SCTPTransportCapabilities {
-                max_message_size: 0,
-            })
+            .start()
             .await
         {
             log::warn!("Failed to start SCTP: {}", err);

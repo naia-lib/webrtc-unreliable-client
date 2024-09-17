@@ -1,4 +1,4 @@
-pub(crate) mod sctp_transport_capabilities;
+
 pub(crate) mod sctp_transport_state;
 
 use sctp_transport_state::RTCSctpTransportState;
@@ -6,15 +6,14 @@ use sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::data_channel::RTCDataChannel;
 use crate::webrtc::dtls_transport::*;
 use crate::webrtc::error::*;
-use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
-
 use crate::webrtc::sctp::association::Association;
-
 use crate::webrtc::util::Conn;
+
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
 use std::sync::Arc;
+
 use tokio::sync::{Mutex, Notify};
 
 pub(crate) type OnDataChannelHdlrFn = Box<
@@ -79,7 +78,7 @@ impl RTCSctpTransport {
     /// Start the SCTPTransport. Since both local and remote parties must mutually
     /// create an SCTPTransport, SCTP SO (Simultaneous Open) is used to establish
     /// a connection over SCTP.
-    pub(crate) async fn start(&self, _remote_caps: SCTPTransportCapabilities) -> Result<()> {
+    pub(crate) async fn start(&self) -> Result<()> {
         if self.is_started.load(Ordering::SeqCst) {
             return Ok(());
         }

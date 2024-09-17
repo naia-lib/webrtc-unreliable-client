@@ -32,7 +32,6 @@ use crate::webrtc::peer_connection::sdp::*;
 use crate::webrtc::peer_connection::signaling_state::{
     check_next_signaling_state, RTCSignalingState, StateChangeOp,
 };
-use crate::webrtc::sctp_transport::sctp_transport_capabilities::SCTPTransportCapabilities;
 use crate::webrtc::sctp_transport::sctp_transport_state::RTCSctpTransportState;
 use crate::webrtc::sctp_transport::RTCSctpTransport;
 
