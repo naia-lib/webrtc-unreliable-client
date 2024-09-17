@@ -1794,9 +1794,8 @@ impl AssociationInternal {
     async fn move_pending_data_chunk_to_inflight_queue(
         &mut self,
         beginning_fragment: bool,
-        unordered: bool,
     ) -> Option<ChunkPayloadData> {
-        if let Some(mut c) = self.pending_queue.pop(beginning_fragment, unordered).await {
+        if let Some(mut c) = self.pending_queue.pop(beginning_fragment).await {
             // Mark all fragements are in-flight now
             if c.ending_fragment {
                 c.set_all_inflight();
@@ -1847,9 +1846,8 @@ impl AssociationInternal {
             //      the receiver if allowed by cwnd (see rule B, below).
 
             while let Some(c) = self.pending_queue.peek().await {
-                let (beginning_fragment, unordered, data_len, stream_identifier) = (
+                let (beginning_fragment, data_len, stream_identifier) = (
                     c.beginning_fragment,
-                    c.unordered,
                     c.user_data.len(),
                     c.stream_identifier,
                 );
@@ -1858,7 +1856,7 @@ impl AssociationInternal {
                     sis_to_reset.push(stream_identifier);
                     if self
                         .pending_queue
-                        .pop(beginning_fragment, unordered)
+                        .pop(beginning_fragment)
                         .await
                         .is_none()
                     {
@@ -1878,7 +1876,7 @@ impl AssociationInternal {
                 self.rwnd -= data_len as u32;
 
                 if let Some(chunk) = self
-                    .move_pending_data_chunk_to_inflight_queue(beginning_fragment, unordered)
+                    .move_pending_data_chunk_to_inflight_queue(beginning_fragment)
                     .await
                 {
                     chunks.push(chunk);
@@ -1889,10 +1887,10 @@ impl AssociationInternal {
             if chunks.is_empty() && self.inflight_queue.is_empty() {
                 // Send zero window probe
                 if let Some(c) = self.pending_queue.peek().await {
-                    let (beginning_fragment, unordered) = (c.beginning_fragment, c.unordered);
+                    let beginning_fragment = c.beginning_fragment;
 
                     if let Some(chunk) = self
-                        .move_pending_data_chunk_to_inflight_queue(beginning_fragment, unordered)
+                        .move_pending_data_chunk_to_inflight_queue(beginning_fragment)
                         .await
                     {
                         chunks.push(chunk);

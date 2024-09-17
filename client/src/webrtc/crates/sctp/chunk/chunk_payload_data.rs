@@ -8,7 +8,7 @@ use std::time::SystemTime;
 
 pub(crate) const PAYLOAD_DATA_ENDING_FRAGMENT_BITMASK: u8 = 1;
 pub(crate) const PAYLOAD_DATA_BEGINING_FRAGMENT_BITMASK: u8 = 2;
-pub(crate) const PAYLOAD_DATA_UNORDERED_BITMASK: u8 = 4;
+// pub(crate) const PAYLOAD_DATA_UNORDERED_BITMASK: u8 = 4;
 pub(crate) const PAYLOAD_DATA_IMMEDIATE_SACK: u8 = 8;
 pub(crate) const PAYLOAD_DATA_HEADER_SIZE: usize = 12;
 
@@ -95,7 +95,6 @@ impl From<u32> for PayloadProtocolIdentifier {
 ///============================================================
 #[derive(Debug, Clone)]
 pub(crate) struct ChunkPayloadData {
-    pub(crate) unordered: bool,
     pub(crate) beginning_fragment: bool,
     pub(crate) ending_fragment: bool,
     pub(crate) immediate_sack: bool,
@@ -128,7 +127,6 @@ pub(crate) struct ChunkPayloadData {
 impl Default for ChunkPayloadData {
     fn default() -> Self {
         ChunkPayloadData {
-            unordered: false,
             beginning_fragment: false,
             ending_fragment: false,
             immediate_sack: false,
@@ -164,9 +162,9 @@ impl Chunk for ChunkPayloadData {
         if self.beginning_fragment {
             flags |= 1 << 1;
         }
-        if self.unordered {
-            flags |= 1 << 2;
-        }
+        // is unordered
+        flags |= 1 << 2;
+
         if self.immediate_sack {
             flags |= 1 << 3;
         }
@@ -186,7 +184,7 @@ impl Chunk for ChunkPayloadData {
         }
 
         let immediate_sack = (header.flags & PAYLOAD_DATA_IMMEDIATE_SACK) != 0;
-        let unordered = (header.flags & PAYLOAD_DATA_UNORDERED_BITMASK) != 0;
+        // let unordered = (header.flags & PAYLOAD_DATA_UNORDERED_BITMASK) != 0;
         let beginning_fragment = (header.flags & PAYLOAD_DATA_BEGINING_FRAGMENT_BITMASK) != 0;
         let ending_fragment = (header.flags & PAYLOAD_DATA_ENDING_FRAGMENT_BITMASK) != 0;
 
@@ -205,7 +203,6 @@ impl Chunk for ChunkPayloadData {
         );
 
         Ok(ChunkPayloadData {
-            unordered,
             beginning_fragment,
             ending_fragment,
             immediate_sack,
