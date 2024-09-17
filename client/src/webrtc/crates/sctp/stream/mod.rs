@@ -211,6 +211,7 @@ impl Stream {
             let chunk = ChunkPayloadData {
                 stream_identifier: self.stream_identifier,
                 user_data,
+                unordered,
                 beginning_fragment: i == 0,
                 ending_fragment: remaining - fragment_size == 0,
                 immediate_sack: false,
@@ -232,7 +233,7 @@ impl Stream {
         // not increment its Stream Sequence Number when transmitting a DATA
         // chunk with U flag set to 1.
         if !unordered {
-            panic!("ordered data not implemented");
+            self.sequence_number.fetch_add(1, Ordering::SeqCst);
         }
 
         let old_value = self.buffered_amount.fetch_add(raw.len(), Ordering::SeqCst);
