@@ -1,10 +1,7 @@
-use super::net::*;
 
-use std::fmt;
-use std::net::{IpAddr, SocketAddr};
-use std::ops::{BitAnd, BitOr};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::SystemTime;
+use std::{time::SystemTime, fmt, net::{IpAddr, SocketAddr}, ops::{BitAnd, BitOr}, sync::atomic::{AtomicU64, Ordering}};
+
+use super::net::UDP_STR;
 
 lazy_static! {
     static ref TAG_CTR: AtomicU64 = AtomicU64::new(0);
@@ -183,60 +180,5 @@ impl ChunkUdp {
             destination_port: dst_addr.port(),
             user_data: vec![],
         }
-    }
-}
-
-#[derive(PartialEq, Debug)]
-pub(crate) struct ChunkTcp {
-    chunk_ip: ChunkIp,
-    source_port: u16,
-    destination_port: u16,
-    flags: TcpFlag, // control bits
-    user_data: Vec<u8>, // only with PSH flag
-                    // seq             :u32,  // always starts with 0
-                    // ack             :u32,  // always starts with 0
-}
-
-impl fmt::Display for ChunkTcp {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} {} chunk {} {} => {}",
-            self.network(),
-            self.flags,
-            self.chunk_ip.tag,
-            self.source_addr(),
-            self.destination_addr(),
-        )
-    }
-}
-
-impl Chunk for ChunkTcp {
-    fn set_timestamp(&mut self) -> SystemTime {
-        self.chunk_ip.set_timestamp()
-    }
-
-    fn get_destination_ip(&self) -> IpAddr {
-        self.chunk_ip.get_destination_ip()
-    }
-
-    fn tag(&self) -> String {
-        self.chunk_ip.tag()
-    }
-
-    fn source_addr(&self) -> SocketAddr {
-        SocketAddr::new(self.chunk_ip.source_ip, self.source_port)
-    }
-
-    fn destination_addr(&self) -> SocketAddr {
-        SocketAddr::new(self.chunk_ip.destination_ip, self.destination_port)
-    }
-
-    fn user_data(&self) -> Vec<u8> {
-        self.user_data.clone()
-    }
-
-    fn network(&self) -> String {
-        "tcp".to_owned()
     }
 }
