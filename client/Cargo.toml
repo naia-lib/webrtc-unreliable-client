@@ -21,7 +21,6 @@ reqwest = { version = "0.11", features = ["rustls-tls"] }
 tinyjson = { version = "2.3" }
 regex = { version = "1.5" }
 log = { version = "0.4" }
-socket2 = { version = "0.4.2", features = ["all"] }
 tokio = { version = "1.15.0", features = ["full"] }
 async-trait = "0.1.52"
 serde = { version = "1.0.132", features = ["derive"] }
@@ -38,7 +37,6 @@ lazy_static = "1.4.0"
 crc = "2.1.0"
 derive_builder = "0.10.2"
 ipnet = "2.3.1"
-parking_lot = "0.11.2"
 serde_derive = "1.0.130"
 block-modes = "0.7.0"
 byteorder = "1.4.3"
