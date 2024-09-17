@@ -10,6 +10,6 @@ publish = false
 [features]
 
 [dependencies]
-naia-server-socket = { path = "../../../naia/socket/server" } #{ version = "0.12" }
+naia-server-socket = { version = "0.23" }
 log = "0.4"
 simple_logger = { version = "=2.0.0" }
