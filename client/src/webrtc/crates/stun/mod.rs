@@ -8,7 +8,6 @@ pub(crate) mod fingerprint;
 pub(crate) mod integrity;
 pub(crate) mod message;
 pub(crate) mod textattrs;
-pub(crate) mod uattrs;
 pub(crate) mod uri;
 pub(crate) mod xoraddr;
 

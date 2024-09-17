@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     let server_url = format!("http://{}:14191/rtc_session", server_address);
 
     let (socket, socket_io) = Socket::new();
-    socket.connect(server_url.as_str()).await;
+    socket.connect(server_url.as_str(), Some("12345".as_bytes().to_vec()), None).await;
 
     let addr_cell_1 = socket_io.addr_cell.clone();
     let addr_cell_2 = socket_io.addr_cell.clone();

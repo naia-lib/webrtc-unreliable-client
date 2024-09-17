@@ -25,8 +25,6 @@ pub(crate) enum Error {
     ErrIntegrityMismatch,
     #[error("FINGERPRINT before MESSAGE-INTEGRITY attribute")]
     ErrFingerprintBeforeIntegrity,
-    #[error("bad UNKNOWN-ATTRIBUTES size")]
-    ErrBadUnknownAttrsSize,
     #[error("{0}")]
     Other(String),
     #[error("url parse: {0}")]
