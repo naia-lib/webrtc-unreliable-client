@@ -216,9 +216,11 @@ impl Socket {
 
         // send the id token to the client
         // info!("Sending id token to client: {:?}", auth_header);
-        to_client_id_sender
-            .send(Ok(session_response.id_token))
-            .unwrap();
+        if let Err(err) = to_client_id_sender
+            .send(Ok(session_response.id_token)) {
+            warn!("Could not send id token to client: {:?}. Did the IdentityReceiver returned from Socket::connect() de-allocate?", err);
+            return;
+        }
 
         // apply the server's response as the remote description
         let session_description =
