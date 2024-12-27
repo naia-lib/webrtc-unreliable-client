@@ -1,6 +1,9 @@
-use std::thread::sleep;
-use std::time::Duration;
-use naia_server_socket::{shared::SocketConfig, AuthReceiver, AuthSender, PacketReceiver, PacketSender, ServerAddrs, Socket};
+use std::{time::Duration, thread::sleep};
+
+use naia_server_socket::{
+    shared::SocketConfig, AuthReceiver, AuthSender, PacketReceiver, PacketSender, ServerAddrs,
+    Socket,
+};
 
 pub(crate) struct App {
     auth_sender: Box<dyn AuthSender>,
@@ -27,10 +30,8 @@ impl App {
             format!("http://{}:14192", listen_address).as_str(),
         );
 
-        let (auth_sender, auth_receiver, packet_sender, packet_receiver) = Socket::listen_with_auth(
-            &server_address,
-            &SocketConfig::new(None, None)
-        );
+        let (auth_sender, auth_receiver, packet_sender, packet_receiver) =
+            Socket::listen_with_auth(&server_address, &SocketConfig::new(None, None));
 
         Self {
             auth_sender,

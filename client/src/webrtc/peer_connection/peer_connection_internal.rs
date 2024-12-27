@@ -122,11 +122,7 @@ impl PeerConnectionInternal {
     /// Start SCTP subsystem
     async fn start_sctp(&self) {
         // Start sctp
-        if let Err(err) = self
-            .sctp_transport
-            .start()
-            .await
-        {
+        if let Err(err) = self.sctp_transport.start().await {
             log::warn!("Failed to start SCTP: {}", err);
             if let Err(err) = self.sctp_transport.stop().await {
                 log::warn!("Failed to stop SCTPTransport: {}", err);

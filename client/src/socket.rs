@@ -216,8 +216,7 @@ impl Socket {
 
         // send the id token to the client
         // info!("Sending id token to client: {:?}", auth_header);
-        if let Err(err) = to_client_id_sender
-            .send(Ok(session_response.id_token)) {
+        if let Err(err) = to_client_id_sender.send(Ok(session_response.id_token)) {
             warn!("Could not send id token to client: {:?}. Did the IdentityReceiver returned from Socket::connect() de-allocate?", err);
             return;
         }

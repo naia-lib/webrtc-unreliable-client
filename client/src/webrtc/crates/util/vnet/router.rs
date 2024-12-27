@@ -1,9 +1,8 @@
-
-use std::sync::{Arc, atomic::AtomicU64};
+use std::sync::{atomic::AtomicU64, Arc};
 
 use tokio::sync::mpsc;
 
-use crate::webrtc::util::vnet::{chunk_queue::ChunkQueue, chunk::Chunk};
+use crate::webrtc::util::vnet::{chunk::Chunk, chunk_queue::ChunkQueue};
 
 lazy_static! {
     pub(crate) static ref ROUTER_ID_CTR: AtomicU64 = AtomicU64::new(0);

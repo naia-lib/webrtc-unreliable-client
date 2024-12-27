@@ -1,4 +1,3 @@
-
 pub(crate) mod sctp_transport_state;
 
 use sctp_transport_state::RTCSctpTransportState;

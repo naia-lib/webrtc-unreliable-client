@@ -1,5 +1,10 @@
-
-use std::{time::SystemTime, fmt, net::{IpAddr, SocketAddr}, ops::{BitAnd, BitOr}, sync::atomic::{AtomicU64, Ordering}};
+use std::{
+    fmt,
+    net::{IpAddr, SocketAddr},
+    ops::{BitAnd, BitOr},
+    sync::atomic::{AtomicU64, Ordering},
+    time::SystemTime,
+};
 
 use super::net::UDP_STR;
 
