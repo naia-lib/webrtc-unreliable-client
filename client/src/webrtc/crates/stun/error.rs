@@ -25,8 +25,6 @@ pub(crate) enum Error {
     ErrFingerprintBeforeIntegrity,
     #[error("{0}")]
     Other(String),
-    #[error("url parse: {0}")]
-    Url(#[from] url::ParseError),
     #[error("utf8: {0}")]
     Utf8(#[from] FromUtf8Error),
     #[error("{0}")]

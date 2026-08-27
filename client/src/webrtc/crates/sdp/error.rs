@@ -21,8 +21,6 @@ pub(crate) enum Error {
     SdpEmptyTimeDescription,
     #[error("parse int: {0}")]
     ParseInt(#[from] ParseIntError),
-    #[error("parse url: {0}")]
-    ParseUrl(#[from] url::ParseError),
 }
 
 #[derive(Debug, Error)]

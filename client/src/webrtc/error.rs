@@ -116,8 +116,6 @@ pub(crate) enum Error {
     MpscSend(String),
     #[error("parse int: {0}")]
     ParseInt(#[from] ParseIntError),
-    #[error("parse url: {0}")]
-    ParseUrl(#[from] url::ParseError),
 
     #[allow(non_camel_case_types)]
     #[error("{0}")]

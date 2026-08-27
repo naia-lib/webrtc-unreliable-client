@@ -1,6 +1,5 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{fmt, io};
-use url::Url;
 
 use crate::webrtc::sdp::error::{Error, Result};
 use crate::webrtc::sdp::lexer::*;
@@ -164,7 +163,7 @@ pub(crate) struct SessionDescription {
     /// `u=<uri>`
     ///
     /// <https://tools.ietf.org/html/rfc4566#section-5.5>
-    pub(crate) uri: Option<Url>,
+    pub(crate) uri: Option<String>,
 
     /// `e=<email-address>`
     ///
@@ -896,7 +895,7 @@ fn unmarshal_uri<'a, R: io::BufRead + io::Seek>(
     lexer: &mut Lexer<'a, R>,
 ) -> Result<Option<StateFn<'a, R>>> {
     let (value, _) = read_value(lexer.reader)?;
-    lexer.desc.uri = Some(Url::parse(&value)?);
+    lexer.desc.uri = Some(value);
     Ok(Some(StateFn { f: s10 }))
 }
 
