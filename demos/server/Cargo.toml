@@ -10,6 +10,6 @@ publish = false
 [features]
 
 [dependencies]
-naia-server-socket = { version = "0.23" }
+naia-server-socket = { git = "https://github.com/naia-lib/naia.git", branch = "dev" }
 log = "0.4"
-simple_logger = { version = "=2.0.0" }
+simple_logger = { version = "5" }
