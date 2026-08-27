@@ -1,22 +1,18 @@
-pub(crate) mod param_chunk_list;
 pub(crate) mod param_forward_tsn_supported;
 pub(crate) mod param_header;
 pub(crate) mod param_heartbeat_info;
 pub(crate) mod param_outgoing_reset_request;
 pub(crate) mod param_random;
 pub(crate) mod param_reconfig_response;
-pub(crate) mod param_requested_hmac_algorithm;
 pub(crate) mod param_state_cookie;
 pub(crate) mod param_supported_extensions;
 pub(crate) mod param_type;
 
 use crate::webrtc::sctp::error::{Error, Result};
-use crate::webrtc::sctp::param::{
-    param_chunk_list::ParamChunkList, param_forward_tsn_supported::ParamForwardTsnSupported,
+use crate::webrtc::sctp::param::{ param_forward_tsn_supported::ParamForwardTsnSupported,
     param_heartbeat_info::ParamHeartbeatInfo,
     param_outgoing_reset_request::ParamOutgoingResetRequest, param_random::ParamRandom,
     param_reconfig_response::ParamReconfigResponse,
-    param_requested_hmac_algorithm::ParamRequestedHmacAlgorithm,
     param_state_cookie::ParamStateCookie, param_supported_extensions::ParamSupportedExtensions,
 };
 use param_header::*;
@@ -59,8 +55,6 @@ pub(crate) fn build_param(raw_param: &Bytes) -> Result<Box<dyn Param + Send + Sy
         ParamType::ForwardTsnSupp => Ok(Box::new(ParamForwardTsnSupported::unmarshal(raw_param)?)),
         ParamType::SupportedExt => Ok(Box::new(ParamSupportedExtensions::unmarshal(raw_param)?)),
         ParamType::Random => Ok(Box::new(ParamRandom::unmarshal(raw_param)?)),
-        ParamType::ReqHmacAlgo => Ok(Box::new(ParamRequestedHmacAlgorithm::unmarshal(raw_param)?)),
-        ParamType::ChunkList => Ok(Box::new(ParamChunkList::unmarshal(raw_param)?)),
         ParamType::StateCookie => Ok(Box::new(ParamStateCookie::unmarshal(raw_param)?)),
         ParamType::HeartbeatInfo => Ok(Box::new(ParamHeartbeatInfo::unmarshal(raw_param)?)),
         ParamType::OutSsnResetReq => Ok(Box::new(ParamOutgoingResetRequest::unmarshal(raw_param)?)),

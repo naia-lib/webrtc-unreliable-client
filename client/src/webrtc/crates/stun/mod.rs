@@ -3,7 +3,6 @@ pub(crate) mod agent;
 pub(crate) mod attributes;
 pub(crate) mod checks;
 mod error;
-pub(crate) mod error_code;
 pub(crate) mod fingerprint;
 pub(crate) mod integrity;
 pub(crate) mod message;

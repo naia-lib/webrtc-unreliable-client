@@ -133,10 +133,6 @@ impl Agent {
             return Err(Error::ErrLiteUsingNonHostCandidates);
         }
 
-        if !config.urls.is_empty() {
-            return Err(Error::ErrUselessUrlsProvided);
-        }
-
         let ext_ip_mapper = match config.init_ext_ip_mapping(mdns_mode, &candidate_types) {
             Ok(ext_ip_mapper) => ext_ip_mapper,
             Err(err) => {

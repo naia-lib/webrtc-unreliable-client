@@ -2,7 +2,6 @@ use super::*;
 use crate::webrtc::ice::error::*;
 use crate::webrtc::ice::mdns::*;
 use crate::webrtc::ice::network_type::*;
-use crate::webrtc::ice::url::*;
 
 
 use std::time::Duration;
@@ -50,7 +49,6 @@ pub(crate) type InterfaceFilterFn = Box<dyn (Fn(&str) -> bool) + Send + Sync>;
 /// future-proofness of the interface.
 #[derive(Default)]
 pub(crate) struct AgentConfig {
-    pub(crate) urls: Vec<Url>,
 
     /// It is used to perform connectivity checks. The values MUST be unguessable, with at least
     /// 128 bits of random number generator output used to generate the password, and at least 24

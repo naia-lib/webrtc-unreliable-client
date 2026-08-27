@@ -56,10 +56,6 @@ pub(crate) enum Error {
     #[error("lite agents must only use host candidates")]
     ErrLiteUsingNonHostCandidates,
 
-    /// Indicates that one or more URL was provided to the agent but no host candidate required them.
-    #[error("agent does not need URL with selected candidate types")]
-    ErrUselessUrlsProvided,
-
     /// Indicates that the specified NAT1To1IPCandidateType is unsupported.
     #[error("unsupported 1:1 NAT IP candidate type")]
     ErrUnsupportedNat1to1IpCandidateType,
