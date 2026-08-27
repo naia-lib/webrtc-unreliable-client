@@ -3,5 +3,6 @@ members = [
     "client",
     "demos/client",
     "demos/server",
+    "interop-tests",
     ]
 resolver = "2"

@@ -1,0 +1,15 @@
+[package]
+name = "interop-tests"
+version = "0.1.0"
+workspace = ".."
+license = "MIT OR Apache-2.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+
+[dev-dependencies]
+webrtc-unreliable-client = { path = "../client" }
+naia-server-socket = { version = "0.23" }
+tokio = { version = "1.15", features = ["rt-multi-thread", "macros", "sync", "time"] }
+log = "0.4"
