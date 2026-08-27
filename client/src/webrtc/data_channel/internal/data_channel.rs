@@ -7,15 +7,12 @@ use crate::webrtc::sctp::{
 use crate::webrtc::util::marshal::*;
 
 use bytes::{Buf, Bytes};
-use derive_builder::Builder;
 use std::sync::Arc;
 
 /// Config is used to configure the data channel.
-#[derive(Eq, PartialEq, Default, Clone, Debug, Builder)]
+#[derive(Eq, PartialEq, Default, Clone, Debug)]
 pub(crate) struct Config {
-    #[builder(default)]
     pub(crate) label: String,
-    #[builder(default)]
     pub(crate) protocol: String,
 }
 
