@@ -227,6 +227,6 @@ impl HandshakeCache {
         hasher.update(&merged);
         let result = hasher.finalize();
 
-        Ok(result.as_slice().to_vec())
+        Ok(result.to_vec())
     }
 }

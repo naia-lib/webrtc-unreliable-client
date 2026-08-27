@@ -15,8 +15,8 @@ use crate::webrtc::dtls::content::*;
 use crate::webrtc::dtls::error::*;
 use crate::webrtc::dtls::record_layer::record_layer_header::*;
 
-use aes_gcm::aead::{generic_array::GenericArray, AeadInPlace, NewAead};
-use aes_gcm::Aes128Gcm; // what about Aes256Gcm?
+use aes_gcm::aead::AeadInPlace;
+use aes_gcm::{Aes128Gcm, KeyInit, Nonce};
 
 const CRYPTO_GCM_TAG_LENGTH: usize = 16;
 const CRYPTO_GCM_NONCE_LENGTH: usize = 12;
@@ -37,11 +37,8 @@ impl CryptoGcm {
         remote_key: &[u8],
         remote_write_iv: &[u8],
     ) -> Self {
-        let key = GenericArray::from_slice(local_key);
-        let local_gcm = Aes128Gcm::new(key);
-
-        let key = GenericArray::from_slice(remote_key);
-        let remote_gcm = Aes128Gcm::new(key);
+        let local_gcm = Aes128Gcm::new_from_slice(local_key).unwrap();
+        let remote_gcm = Aes128Gcm::new_from_slice(remote_key).unwrap();
 
         CryptoGcm {
             local_gcm,
@@ -55,10 +52,10 @@ impl CryptoGcm {
         let payload = &raw[RECORD_LAYER_HEADER_SIZE..];
         let raw = &raw[..RECORD_LAYER_HEADER_SIZE];
 
-        let mut nonce = vec![0u8; CRYPTO_GCM_NONCE_LENGTH];
+        let mut nonce = [0u8; CRYPTO_GCM_NONCE_LENGTH];
         nonce[..4].copy_from_slice(&self.local_write_iv[..4]);
         rand::thread_rng().fill(&mut nonce[4..]);
-        let nonce = GenericArray::from_slice(&nonce);
+        let nonce = Nonce::from(nonce);
 
         let additional_data = generate_aead_additional_data(pkt_rlh, payload.len());
 
@@ -66,7 +63,7 @@ impl CryptoGcm {
         buffer.extend_from_slice(payload);
 
         self.local_gcm
-            .encrypt_in_place(nonce, &additional_data, &mut buffer)
+            .encrypt_in_place(&nonce, &additional_data, &mut buffer)
             .map_err(|e| Error::Other(e.to_string()))?;
 
         let mut r = Vec::with_capacity(raw.len() + nonce.len() + buffer.len());
@@ -94,10 +91,10 @@ impl CryptoGcm {
             return Err(Error::ErrNotEnoughRoomForNonce);
         }
 
-        let mut nonce = vec![];
-        nonce.extend_from_slice(&self.remote_write_iv[..4]);
-        nonce.extend_from_slice(&r[RECORD_LAYER_HEADER_SIZE..RECORD_LAYER_HEADER_SIZE + 8]);
-        let nonce = GenericArray::from_slice(&nonce);
+        let mut nonce = [0u8; CRYPTO_GCM_NONCE_LENGTH];
+        nonce[..4].copy_from_slice(&self.remote_write_iv[..4]);
+        nonce[4..].copy_from_slice(&r[RECORD_LAYER_HEADER_SIZE..RECORD_LAYER_HEADER_SIZE + 8]);
+        let nonce = Nonce::from(nonce);
 
         let out = &r[RECORD_LAYER_HEADER_SIZE + 8..];
 
@@ -107,7 +104,7 @@ impl CryptoGcm {
         buffer.extend_from_slice(out);
 
         self.remote_gcm
-            .decrypt_in_place(nonce, &additional_data, &mut buffer)
+            .decrypt_in_place(&nonce, &additional_data, &mut buffer)
             .map_err(|e| Error::Other(e.to_string()))?;
 
         let mut d = Vec::with_capacity(RECORD_LAYER_HEADER_SIZE + buffer.len());

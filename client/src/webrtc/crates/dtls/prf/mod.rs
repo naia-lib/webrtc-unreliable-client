@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::fmt;
 
-use hmac::{Hmac, Mac, NewMac};
+use hmac::{Hmac, Mac};
 use sha2::Digest;
 use sha2::Sha256;
 
@@ -118,7 +118,7 @@ fn elliptic_curve_pre_master_secret(
 fn hmac_sha(h: CipherSuiteHash, key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
     let mut mac = match h {
         CipherSuiteHash::Sha256 => {
-            HmacSha256::new_varkey(key).map_err(|e| Error::Other(e.to_string()))?
+            HmacSha256::new_from_slice(key).map_err(|e| Error::Other(e.to_string()))?
         }
     };
     mac.update(data);
