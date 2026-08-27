@@ -3,9 +3,10 @@ use std::{sync::Arc, time::Duration};
 use anyhow::{Error, Result};
 use bytes::Bytes;
 use log::warn;
-use reqwest::{Client as HttpClient, Response};
 use tinyjson::JsonValue;
 use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
     sync::{mpsc, oneshot},
     time::sleep,
 };
@@ -166,29 +167,19 @@ impl Socket {
             .expect("cannot set local description");
 
         // send a request to server to initiate connection (signaling, essentially)
-        let http_client = HttpClient::new();
-
         let sdp = peer_connection.local_description().await.unwrap().sdp;
 
-        let sdp_len = sdp.len();
+        let mut extra_headers: Vec<(String, String)> = Vec::new();
+        if let Some(auth_bytes) = auth_bytes_opt {
+            extra_headers.push(("Authorization".to_string(), base64::encode(auth_bytes)));
+        }
+        if let Some(auth_headers) = auth_headers_opt {
+            extra_headers.extend(auth_headers);
+        }
 
         // wait to receive a response from server
-        let response: Response = loop {
-            let mut request = http_client
-                .post(server_url)
-                .header("Content-Length", sdp_len)
-                .body(sdp.clone());
-            if let Some(auth_bytes) = auth_bytes_opt.clone() {
-                let base64_encoded = base64::encode(auth_bytes);
-                request = request.header("Authorization", &base64_encoded);
-            }
-            if let Some(auth_headers) = auth_headers_opt.clone() {
-                for (key, value) in auth_headers {
-                    request = request.header(key, value);
-                }
-            }
-
-            match request.send().await {
+        let (status_code, response_string) = loop {
+            match http_post(server_url, &sdp, &extra_headers).await {
                 Ok(resp) => {
                     break resp;
                 }
@@ -199,21 +190,10 @@ impl Socket {
             };
         };
 
-        if !response.status().is_success() {
-            let status_code = response.status().as_u16();
+        if !(200..300).contains(&status_code) {
             to_client_id_sender.send(Err(status_code)).unwrap();
             return;
         }
-
-        // get the body of the response as a string
-        let response_string = match response.text().await {
-            Ok(response_string) => response_string,
-            Err(_err) => {
-                // error reading response?
-                to_client_id_sender.send(Err(500)).unwrap();
-                return;
-            }
-        };
 
         // parse session from server response
         let session_response_result = get_session_response(response_string.as_str());
@@ -253,6 +233,86 @@ impl Socket {
         {
             panic!("Error during add_ice_candidate: {:?}", error);
         }
+    }
+}
+
+/// Minimal HTTP/1.1 POST used for the one-shot `webrtc-unreliable` signaling
+/// exchange, replacing the reqwest dependency. Plain `http://` only — the
+/// session endpoint this client speaks to is served over plain HTTP, and the
+/// exchanged SDP is authenticated separately by certificate fingerprint.
+/// Returns (status_code, body).
+async fn http_post(
+    server_url: &str,
+    body: &str,
+    extra_headers: &[(String, String)],
+) -> Result<(u16, String)> {
+    let rest = server_url
+        .strip_prefix("http://")
+        .ok_or_else(|| Error::msg("only plain http:// URLs are supported for signaling"))?;
+    let (host_port, path) = match rest.find('/') {
+        Some(i) => (&rest[..i], &rest[i..]),
+        None => (rest, "/"),
+    };
+    let addr = if host_port.contains(':') {
+        host_port.to_string()
+    } else {
+        format!("{}:80", host_port)
+    };
+
+    let mut stream = TcpStream::connect(&addr).await?;
+
+    let mut request = format!(
+        "POST {} HTTP/1.1\r\nHost: {}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\nConnection: close\r\n",
+        path,
+        host_port,
+        body.len()
+    );
+    for (key, value) in extra_headers {
+        request.push_str(&format!("{}: {}\r\n", key, value));
+    }
+    request.push_str("\r\n");
+    request.push_str(body);
+    stream.write_all(request.as_bytes()).await?;
+
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).await?;
+    let raw = String::from_utf8_lossy(&raw).into_owned();
+
+    let (head, response_body) = raw
+        .split_once("\r\n\r\n")
+        .ok_or_else(|| Error::msg("malformed HTTP response"))?;
+    let status_code: u16 = head
+        .split_whitespace()
+        .nth(1)
+        .ok_or_else(|| Error::msg("malformed HTTP status line"))?
+        .parse()?;
+
+    let response_body = if head.to_ascii_lowercase().contains("transfer-encoding: chunked") {
+        dechunk(response_body)?
+    } else {
+        response_body.to_string()
+    };
+
+    Ok((status_code, response_body))
+}
+
+/// Decodes an HTTP/1.1 chunked transfer-encoded body.
+fn dechunk(mut input: &str) -> Result<String> {
+    let mut out = String::new();
+    loop {
+        let (size_line, rest) = input
+            .split_once("\r\n")
+            .ok_or_else(|| Error::msg("malformed chunked body"))?;
+        let size = usize::from_str_radix(size_line.trim().split(';').next().unwrap_or(""), 16)
+            .map_err(|_| Error::msg("malformed chunk size"))?;
+        if size == 0 {
+            return Ok(out);
+        }
+        if rest.len() < size + 2 {
+            return Err(Error::msg("truncated chunked body"));
+        }
+        out.push_str(&rest[..size]);
+        input = &rest[size + 2..];
     }
 }
 

@@ -17,7 +17,6 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 anyhow = { version = "1.0"}
 bytes = { version = "1.1"}
-reqwest = { version = "0.11", features = ["rustls-tls"] }
 tinyjson = { version = "2.3" }
 regex = { version = "1.5" }
 log = { version = "0.4" }
