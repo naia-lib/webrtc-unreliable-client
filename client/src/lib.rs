@@ -10,6 +10,6 @@ mod addr_cell;
 mod socket;
 
 pub use addr_cell::{AddrCell, ServerAddr};
-pub use socket::Socket;
+pub use socket::{Socket, SocketIo};
 
 mod webrtc;
