@@ -5,10 +5,7 @@ use crate::webrtc::dtls::config::*;
 use crate::webrtc::dtls::content::*;
 use crate::webrtc::dtls::curve::named_curve::NamedCurve;
 use crate::webrtc::dtls::error::*;
-use crate::webrtc::dtls::flight::flight0::*;
 use crate::webrtc::dtls::flight::flight1::*;
-use crate::webrtc::dtls::flight::flight5::*;
-use crate::webrtc::dtls::flight::flight6::*;
 use crate::webrtc::dtls::flight::*;
 use crate::webrtc::dtls::fragment_buffer::*;
 use crate::webrtc::dtls::handshake::handshake_cache::*;
@@ -34,7 +31,6 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 
 pub(crate) const INITIAL_TICKER_INTERVAL: Duration = Duration::from_secs(1);
-pub(crate) const COOKIE_LENGTH: usize = 20;
 pub(crate) const DEFAULT_NAMED_CURVE: NamedCurve = NamedCurve::X25519;
 pub(crate) const INBOUND_BUFFER_SIZE: usize = 8192;
 // Default replay protection window is specified by RFC 6347 Section 4.1.2.6
@@ -151,20 +147,15 @@ impl Conn for DTLSConn {
 impl DTLSConn {
     pub(crate) async fn new(
         conn: Arc<dyn Conn + Send + Sync>,
-        mut config: Config,
+        config: Config,
         is_client: bool,
-        initial_state: Option<State>,
     ) -> Result<Self> {
         validate_config(is_client, &config)?;
 
-        let local_cipher_suites: Vec<CipherSuiteId> = parse_cipher_suites(
-            &config.cipher_suites,
-            config.psk.is_none(),
-            config.psk.is_some(),
-        )?
-        .iter()
-        .map(|cs| cs.id())
-        .collect();
+        let local_cipher_suites: Vec<CipherSuiteId> = parse_cipher_suites(&config.cipher_suites)?
+            .iter()
+            .map(|cs| cs.id())
+            .collect();
 
         let local_signature_schemes = default_signature_schemes();
 
@@ -207,55 +198,27 @@ impl DTLSConn {
         }
 
         let cfg = HandshakeConfig {
-            local_psk_callback: config.psk.take(),
-            local_psk_identity_hint: config.psk_identity_hint.take(),
             local_cipher_suites,
             local_signature_schemes,
             extended_master_secret: config.extended_master_secret,
-            local_srtp_protection_profiles: config.srtp_protection_profiles.clone(),
             server_name,
-            client_auth: config.client_auth,
-            local_certificates: config.certificates.clone(),
-            insecure_skip_verify: config.insecure_skip_verify,
-            verify_peer_certificate: config.verify_peer_certificate.take(),
-            roots_cas: config.roots_cas,
-            client_cert_verifier: if config.client_auth as u8
-                >= ClientAuthType::VerifyClientCertIfGiven as u8
-            {
-                Some(rustls::AllowAnyAuthenticatedClient::new(config.client_cas))
-            } else {
-                None
-            },
             retransmit_interval,
-            //log: logger,
             initial_epoch: 0,
             ..Default::default()
         };
 
-        let (state, flight, initial_fsm_state) = if let Some(state) = initial_state {
-            let flight = if is_client {
-                Box::new(Flight5 {}) as Box<dyn Flight + Send + Sync>
-            } else {
-                Box::new(Flight6 {}) as Box<dyn Flight + Send + Sync>
-            };
-
-            (state, flight, HandshakeState::Finished)
-        } else {
-            let flight = if is_client {
-                Box::new(Flight1 {}) as Box<dyn Flight + Send + Sync>
-            } else {
-                Box::new(Flight0 {}) as Box<dyn Flight + Send + Sync>
-            };
-
-            (
-                State {
-                    is_client,
-                    ..Default::default()
-                },
-                flight,
-                HandshakeState::Preparing,
-            )
-        };
+        // This connection only ever runs the client role (the sole caller
+        // passes is_client = true and no resumed state), so the handshake
+        // always starts at Flight 1; the server-role flights (0/2/4/6) have
+        // been removed.
+        let (state, flight, initial_fsm_state) = (
+            State {
+                is_client,
+                ..Default::default()
+            },
+            Box::new(Flight1 {}) as Box<dyn Flight + Send + Sync>,
+            HandshakeState::Preparing,
+        );
 
         let (decrypted_tx, decrypted_rx) = mpsc::channel(1);
         let (handshake_tx, handshake_rx) = mpsc::channel(1);

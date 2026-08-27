@@ -5,7 +5,6 @@ use std::io::{self, Read, Write};
 use std::time::{Duration, SystemTime};
 
 pub(crate) const RANDOM_BYTES_LENGTH: usize = 28;
-pub(crate) const HANDSHAKE_RANDOM_LENGTH: usize = RANDOM_BYTES_LENGTH + 4;
 
 // https://tools.ietf.org/html/rfc4346#section-7.4.1.2
 #[derive(Clone, Debug, PartialEq)]

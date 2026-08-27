@@ -49,19 +49,6 @@ impl fmt::Display for EncryptionKeys {
 // uint16 with the value N, and the PSK itself.
 //
 // https://tools.ietf.org/html/rfc4279#section-2
-pub(crate) fn prf_psk_pre_master_secret(psk: &[u8]) -> Vec<u8> {
-    let psk_len = psk.len();
-
-    let mut out = vec![0u8; 2 + psk_len + 2];
-
-    out.extend_from_slice(psk);
-    let be = (psk_len as u16).to_be_bytes();
-    out[..2].copy_from_slice(&be);
-    out[2 + psk_len..2 + psk_len + 2].copy_from_slice(&be);
-
-    out
-}
-
 pub(crate) fn prf_pre_master_secret(
     public_key: &[u8],
     private_key: &NamedCurvePrivateKey,

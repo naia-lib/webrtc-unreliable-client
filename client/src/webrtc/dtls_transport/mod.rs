@@ -3,7 +3,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 
-use crate::webrtc::dtls::config::ClientAuthType;
 use crate::webrtc::dtls::conn::DTLSConn;
 use crate::webrtc::util::Conn;
 use tokio::sync::Mutex;
@@ -102,9 +101,6 @@ impl RTCDtlsTransport {
             DTLSRole::Client,
             crate::webrtc::dtls::config::Config {
                 certificates: vec![certificate],
-                srtp_protection_profiles: vec![],
-                client_auth: ClientAuthType::RequireAnyClientCert,
-                insecure_skip_verify: true,
                 ..Default::default()
             },
         ))
@@ -123,7 +119,6 @@ impl RTCDtlsTransport {
                 dtls_endpoint as Arc<dyn Conn + Send + Sync>,
                 dtls_config,
                 true,
-                None,
             )
             .await
         } else {

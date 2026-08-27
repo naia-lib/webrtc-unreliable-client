@@ -39,10 +39,6 @@ impl CipherSuite for CipherSuiteAes128GcmSha256 {
         CipherSuiteHash::Sha256
     }
 
-    fn is_psk(&self) -> bool {
-        false
-    }
-
     fn is_initialized(&self) -> bool {
         self.gcm.is_some()
     }

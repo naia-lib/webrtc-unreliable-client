@@ -10,7 +10,6 @@ use crate::webrtc::dtls::extension::extension_supported_elliptic_curves::*;
 use crate::webrtc::dtls::extension::extension_supported_point_formats::*;
 use crate::webrtc::dtls::extension::extension_supported_signature_algorithms::*;
 use crate::webrtc::dtls::extension::extension_use_extended_master_secret::*;
-use crate::webrtc::dtls::extension::extension_use_srtp::*;
 use crate::webrtc::dtls::extension::*;
 use crate::webrtc::dtls::handshake::handshake_message_client_hello::*;
 use crate::webrtc::dtls::handshake::handshake_message_server_key_exchange::*;
@@ -19,8 +18,8 @@ use crate::webrtc::dtls::record_layer::record_layer_header::*;
 use crate::webrtc::dtls::record_layer::*;
 
 use crate::webrtc::dtls::cipher_suite::cipher_suite_for_id;
-use crate::webrtc::dtls::prf::{prf_pre_master_secret, prf_psk_pre_master_secret};
-use crate::webrtc::dtls::{find_matching_cipher_suite, find_matching_srtp_profile};
+use crate::webrtc::dtls::find_matching_cipher_suite;
+use crate::webrtc::dtls::prf::prf_pre_master_secret;
 
 use crate::webrtc::dtls::extension::renegotiation_info::ExtensionRenegotiationInfo;
 use async_trait::async_trait;
@@ -94,71 +93,37 @@ impl Flight for Flight3 {
             }
         }
 
-        let result = if cfg.local_psk_callback.is_some() {
-            cache
-                .full_pull_map(
-                    state.handshake_recv_sequence,
-                    &[
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::ServerHello,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: false,
-                        },
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::ServerKeyExchange,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: true,
-                        },
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::ServerHelloDone,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: false,
-                        },
-                    ],
-                )
-                .await
-        } else {
-            cache
-                .full_pull_map(
-                    state.handshake_recv_sequence,
-                    &[
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::ServerHello,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: false,
-                        },
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::Certificate,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: true,
-                        },
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::ServerKeyExchange,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: false,
-                        },
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::CertificateRequest,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: true,
-                        },
-                        HandshakeCachePullRule {
-                            typ: HandshakeType::ServerHelloDone,
-                            epoch: cfg.initial_epoch,
-                            is_client: false,
-                            optional: false,
-                        },
-                    ],
-                )
-                .await
-        };
+        let result = cache
+            .full_pull_map(
+                state.handshake_recv_sequence,
+                &[
+                    HandshakeCachePullRule {
+                        typ: HandshakeType::ServerHello,
+                        epoch: cfg.initial_epoch,
+                        is_client: false,
+                        optional: false,
+                    },
+                    HandshakeCachePullRule {
+                        typ: HandshakeType::Certificate,
+                        epoch: cfg.initial_epoch,
+                        is_client: false,
+                        optional: true,
+                    },
+                    HandshakeCachePullRule {
+                        typ: HandshakeType::ServerKeyExchange,
+                        epoch: cfg.initial_epoch,
+                        is_client: false,
+                        optional: false,
+                    },
+                    HandshakeCachePullRule {
+                        typ: HandshakeType::ServerHelloDone,
+                        epoch: cfg.initial_epoch,
+                        is_client: false,
+                        optional: false,
+                    },
+                ],
+            )
+            .await;
 
         let (seq, msgs) = match result {
             Ok((seq, msgs)) => (seq, msgs),
@@ -193,24 +158,6 @@ impl Flight for Flight3 {
 
             for extension in &h.extensions {
                 match extension {
-                    Extension::UseSrtp(e) => {
-                        let profile = match find_matching_srtp_profile(
-                            &e.protection_profiles,
-                            &cfg.local_srtp_protection_profiles,
-                        ) {
-                            Ok(profile) => profile,
-                            Err(_) => {
-                                return Err((
-                                    Some(Alert {
-                                        alert_level: AlertLevel::Fatal,
-                                        alert_description: AlertDescription::IllegalParameter,
-                                    }),
-                                    Some(Error::ErrClientNoMatchingSrtpProfile),
-                                ))
-                            }
-                        };
-                        state.srtp_protection_profile = profile;
-                    }
                     Extension::UseExtendedMasterSecret(_) => {
                         if cfg.extended_master_secret != ExtendedMasterSecretType::Disable {
                             state.extended_master_secret = true;
@@ -229,17 +176,6 @@ impl Flight for Flight3 {
                         alert_description: AlertDescription::InsufficientSecurity,
                     }),
                     Some(Error::ErrClientRequiredButNoServerEms),
-                ));
-            }
-            if !cfg.local_srtp_protection_profiles.is_empty()
-                && state.srtp_protection_profile == SrtpProtectionProfile::Unsupported
-            {
-                return Err((
-                    Some(Alert {
-                        alert_level: AlertLevel::Fatal,
-                        alert_description: AlertDescription::InsufficientSecurity,
-                    }),
-                    Some(Error::ErrRequestedButNoSrtpExtension),
                 ));
             }
             if find_matching_cipher_suite(&[h.cipher_suite], &cfg.local_cipher_suites).is_err() {
@@ -324,22 +260,6 @@ impl Flight for Flight3 {
             }
         }
 
-        if let Some(message) = msgs.get(&HandshakeType::CertificateRequest) {
-            match message {
-                HandshakeMessage::CertificateRequest(_) => {}
-                _ => {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::InternalError,
-                        }),
-                        None,
-                    ))
-                }
-            };
-            state.remote_requested_certificate = true;
-        }
-
         Ok(Box::new(Flight5 {}) as Box<dyn Flight + Send + Sync>)
     }
 
@@ -358,22 +278,14 @@ impl Flight for Flight3 {
             }),
         ];
 
-        if cfg.local_psk_callback.is_none() {
-            extensions.extend_from_slice(&[
-                Extension::SupportedEllipticCurves(ExtensionSupportedEllipticCurves {
-                    elliptic_curves: vec![NamedCurve::P256, NamedCurve::X25519, NamedCurve::P384],
-                }),
-                Extension::SupportedPointFormats(ExtensionSupportedPointFormats {
-                    point_formats: vec![ELLIPTIC_CURVE_POINT_FORMAT_UNCOMPRESSED],
-                }),
-            ]);
-        }
-
-        if !cfg.local_srtp_protection_profiles.is_empty() {
-            extensions.push(Extension::UseSrtp(ExtensionUseSrtp {
-                protection_profiles: cfg.local_srtp_protection_profiles.clone(),
-            }));
-        }
+        extensions.extend_from_slice(&[
+            Extension::SupportedEllipticCurves(ExtensionSupportedEllipticCurves {
+                elliptic_curves: vec![NamedCurve::P256, NamedCurve::X25519, NamedCurve::P384],
+            }),
+            Extension::SupportedPointFormats(ExtensionSupportedPointFormats {
+                point_formats: vec![ELLIPTIC_CURVE_POINT_FORMAT_UNCOMPRESSED],
+            }),
+        ]);
 
         if cfg.extended_master_secret == ExtendedMasterSecretType::Request
             || cfg.extended_master_secret == ExtendedMasterSecretType::Require
@@ -412,26 +324,10 @@ impl Flight for Flight3 {
 
 pub(crate) fn handle_server_key_exchange(
     state: &mut State,
-    cfg: &HandshakeConfig,
+    _cfg: &HandshakeConfig,
     h: &HandshakeMessageServerKeyExchange,
 ) -> Result<(), (Option<Alert>, Option<Error>)> {
-    if let Some(local_psk_callback) = &cfg.local_psk_callback {
-        let psk = match local_psk_callback(&h.identity_hint) {
-            Ok(psk) => psk,
-            Err(err) => {
-                return Err((
-                    Some(Alert {
-                        alert_level: AlertLevel::Fatal,
-                        alert_description: AlertDescription::InternalError,
-                    }),
-                    Some(err),
-                ))
-            }
-        };
-
-        state.identity_hint = h.identity_hint.clone();
-        state.pre_master_secret = prf_psk_pre_master_secret(&psk);
-    } else {
+    {
         let local_keypair = match h.named_curve.generate_keypair() {
             Ok(local_keypair) => local_keypair,
             Err(err) => {

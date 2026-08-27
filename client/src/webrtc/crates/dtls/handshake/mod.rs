@@ -1,7 +1,6 @@
 pub(crate) mod handshake_cache;
 pub(crate) mod handshake_header;
 pub(crate) mod handshake_message_certificate;
-pub(crate) mod handshake_message_certificate_request;
 pub(crate) mod handshake_message_certificate_verify;
 pub(crate) mod handshake_message_client_hello;
 pub(crate) mod handshake_message_client_key_exchange;
@@ -20,7 +19,6 @@ use super::error::*;
 
 use handshake_header::*;
 use handshake_message_certificate::*;
-use handshake_message_certificate_request::*;
 use handshake_message_certificate_verify::*;
 use handshake_message_client_hello::*;
 use handshake_message_client_key_exchange::*;
@@ -99,7 +97,6 @@ pub(crate) enum HandshakeMessage {
     HelloVerifyRequest(HandshakeMessageHelloVerifyRequest),
     Certificate(HandshakeMessageCertificate),
     ServerKeyExchange(HandshakeMessageServerKeyExchange),
-    CertificateRequest(HandshakeMessageCertificateRequest),
     ServerHelloDone(HandshakeMessageServerHelloDone),
     CertificateVerify(HandshakeMessageCertificateVerify),
     ClientKeyExchange(HandshakeMessageClientKeyExchange),
@@ -114,7 +111,6 @@ impl HandshakeMessage {
             HandshakeMessage::HelloVerifyRequest(msg) => msg.handshake_type(),
             HandshakeMessage::Certificate(msg) => msg.handshake_type(),
             HandshakeMessage::ServerKeyExchange(msg) => msg.handshake_type(),
-            HandshakeMessage::CertificateRequest(msg) => msg.handshake_type(),
             HandshakeMessage::ServerHelloDone(msg) => msg.handshake_type(),
             HandshakeMessage::CertificateVerify(msg) => msg.handshake_type(),
             HandshakeMessage::ClientKeyExchange(msg) => msg.handshake_type(),
@@ -129,7 +125,6 @@ impl HandshakeMessage {
             HandshakeMessage::HelloVerifyRequest(msg) => msg.size(),
             HandshakeMessage::Certificate(msg) => msg.size(),
             HandshakeMessage::ServerKeyExchange(msg) => msg.size(),
-            HandshakeMessage::CertificateRequest(msg) => msg.size(),
             HandshakeMessage::ServerHelloDone(msg) => msg.size(),
             HandshakeMessage::CertificateVerify(msg) => msg.size(),
             HandshakeMessage::ClientKeyExchange(msg) => msg.size(),
@@ -144,7 +139,6 @@ impl HandshakeMessage {
             HandshakeMessage::HelloVerifyRequest(msg) => msg.marshal(writer)?,
             HandshakeMessage::Certificate(msg) => msg.marshal(writer)?,
             HandshakeMessage::ServerKeyExchange(msg) => msg.marshal(writer)?,
-            HandshakeMessage::CertificateRequest(msg) => msg.marshal(writer)?,
             HandshakeMessage::ServerHelloDone(msg) => msg.marshal(writer)?,
             HandshakeMessage::CertificateVerify(msg) => msg.marshal(writer)?,
             HandshakeMessage::ClientKeyExchange(msg) => msg.marshal(writer)?,
@@ -213,9 +207,6 @@ impl Handshake {
             }
             HandshakeType::ServerKeyExchange => HandshakeMessage::ServerKeyExchange(
                 HandshakeMessageServerKeyExchange::unmarshal(reader)?,
-            ),
-            HandshakeType::CertificateRequest => HandshakeMessage::CertificateRequest(
-                HandshakeMessageCertificateRequest::unmarshal(reader)?,
             ),
             HandshakeType::ServerHelloDone => HandshakeMessage::ServerHelloDone(
                 HandshakeMessageServerHelloDone::unmarshal(reader)?,

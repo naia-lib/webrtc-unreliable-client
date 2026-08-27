@@ -11,7 +11,6 @@ use crate::webrtc::dtls::extension::extension_supported_elliptic_curves::*;
 use crate::webrtc::dtls::extension::extension_supported_point_formats::*;
 use crate::webrtc::dtls::extension::extension_supported_signature_algorithms::*;
 use crate::webrtc::dtls::extension::extension_use_extended_master_secret::*;
-use crate::webrtc::dtls::extension::extension_use_srtp::*;
 use crate::webrtc::dtls::extension::*;
 use crate::webrtc::dtls::handshake::handshake_message_client_hello::*;
 use crate::webrtc::dtls::handshake::*;
@@ -138,22 +137,14 @@ impl Flight for Flight1 {
             }),
         ];
 
-        if cfg.local_psk_callback.is_none() {
-            extensions.extend_from_slice(&[
-                Extension::SupportedEllipticCurves(ExtensionSupportedEllipticCurves {
-                    elliptic_curves: vec![NamedCurve::P256, NamedCurve::X25519, NamedCurve::P384],
-                }),
-                Extension::SupportedPointFormats(ExtensionSupportedPointFormats {
-                    point_formats: vec![ELLIPTIC_CURVE_POINT_FORMAT_UNCOMPRESSED],
-                }),
-            ]);
-        }
-
-        if !cfg.local_srtp_protection_profiles.is_empty() {
-            extensions.push(Extension::UseSrtp(ExtensionUseSrtp {
-                protection_profiles: cfg.local_srtp_protection_profiles.clone(),
-            }));
-        }
+        extensions.extend_from_slice(&[
+            Extension::SupportedEllipticCurves(ExtensionSupportedEllipticCurves {
+                elliptic_curves: vec![NamedCurve::P256, NamedCurve::X25519, NamedCurve::P384],
+            }),
+            Extension::SupportedPointFormats(ExtensionSupportedPointFormats {
+                point_formats: vec![ELLIPTIC_CURVE_POINT_FORMAT_UNCOMPRESSED],
+            }),
+        ]);
 
         if cfg.extended_master_secret == ExtendedMasterSecretType::Request
             || cfg.extended_master_secret == ExtendedMasterSecretType::Require

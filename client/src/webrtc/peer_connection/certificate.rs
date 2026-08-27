@@ -72,7 +72,7 @@ impl RTCCertificate {
 
         Ok(RTCCertificate {
             certificate: crate::webrtc::dtls::crypto::Certificate {
-                certificate: vec![rustls::Certificate(certificate)],
+                certificate: vec![certificate],
                 private_key,
             },
         })
@@ -85,7 +85,7 @@ impl RTCCertificate {
 
         for certificate in &self.certificate.certificate {
             let mut h = Sha256::new();
-            h.update(&certificate.0);
+            h.update(certificate);
             let hashed = h.finalize();
             let values: Vec<String> = hashed.iter().map(|x| format! {"{:02x}", x}).collect();
 

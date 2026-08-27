@@ -7,13 +7,12 @@ use crate::webrtc::dtls::signature_hash_algorithm::{
     HashAlgorithm, SignatureAlgorithm, SignatureHashAlgorithm,
 };
 
-use ring::rand::SystemRandom;
 use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};
-use std::sync::Arc;
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct Certificate {
-    pub(crate) certificate: Vec<rustls::Certificate>,
+    /// DER-encoded certificate chain.
+    pub(crate) certificate: Vec<Vec<u8>>,
     pub(crate) private_key: CryptoPrivateKey,
 }
 
@@ -37,9 +36,15 @@ pub(crate) fn value_key_message(
     plaintext
 }
 
+// The keypair values are no longer used for signing (the client sends no
+// CertificateVerify and no signed key exchange); they are kept so the key
+// kind can be validated and the pair reconstructed from serialized_der.
 pub(crate) enum CryptoPrivateKeyKind {
+    #[allow(dead_code)]
     Ed25519(Ed25519KeyPair),
+    #[allow(dead_code)]
     Ecdsa256(EcdsaKeyPair),
+    #[allow(dead_code)]
     Rsa256(RsaKeyPair),
 }
 
@@ -97,46 +102,6 @@ impl Clone for CryptoPrivateKey {
             },
         }
     }
-}
-
-// If the client provided a "signature_algorithms" extension, then all
-// certificates provided by the server MUST be signed by a
-// hash/signature algorithm pair that appears in that extension
-//
-// https://tools.ietf.org/html/rfc5246#section-7.4.2
-pub(crate) fn generate_key_signature(
-    client_random: &[u8],
-    server_random: &[u8],
-    public_key: &[u8],
-    named_curve: NamedCurve,
-    private_key: &CryptoPrivateKey, /*, hash_algorithm: HashAlgorithm*/
-) -> Result<Vec<u8>> {
-    let msg = value_key_message(client_random, server_random, public_key, named_curve);
-    let signature = match &private_key.kind {
-        CryptoPrivateKeyKind::Ed25519(kp) => kp.sign(&msg).as_ref().to_vec(),
-        CryptoPrivateKeyKind::Ecdsa256(kp) => {
-            let system_random = SystemRandom::new();
-            kp.sign(&system_random, &msg)
-                .map_err(|e| Error::Other(e.to_string()))?
-                .as_ref()
-                .to_vec()
-        }
-        CryptoPrivateKeyKind::Rsa256(kp) => {
-            let system_random = SystemRandom::new();
-            let mut signature = vec![0; kp.public_modulus_len()];
-            kp.sign(
-                &ring::signature::RSA_PKCS1_SHA256,
-                &system_random,
-                &msg,
-                &mut signature,
-            )
-            .map_err(|e| Error::Other(e.to_string()))?;
-
-            signature
-        }
-    };
-
-    Ok(signature)
 }
 
 fn verify_signature(
@@ -205,107 +170,6 @@ pub(crate) fn verify_key_signature(
         remote_key_signature,
         raw_certificates,
     )
-}
-
-// If the server has sent a CertificateRequest message, the client MUST send the Certificate
-// message.  The ClientKeyExchange message is now sent, and the content
-// of that message will depend on the public key algorithm selected
-// between the ClientHello and the ServerHello.  If the client has sent
-// a certificate with signing ability, a digitally-signed
-// CertificateVerify message is sent to explicitly verify possession of
-// the private key in the certificate.
-// https://tools.ietf.org/html/rfc5246#section-7.3
-pub(crate) fn generate_certificate_verify(
-    handshake_bodies: &[u8],
-    private_key: &CryptoPrivateKey, /*, hashAlgorithm hashAlgorithm*/
-) -> Result<Vec<u8>> {
-    let signature = match &private_key.kind {
-        CryptoPrivateKeyKind::Ed25519(kp) => kp.sign(handshake_bodies).as_ref().to_vec(),
-        CryptoPrivateKeyKind::Ecdsa256(kp) => {
-            let system_random = SystemRandom::new();
-            kp.sign(&system_random, handshake_bodies)
-                .map_err(|e| Error::Other(e.to_string()))?
-                .as_ref()
-                .to_vec()
-        }
-        CryptoPrivateKeyKind::Rsa256(kp) => {
-            let system_random = SystemRandom::new();
-            let mut signature = vec![0; kp.public_modulus_len()];
-            kp.sign(
-                &ring::signature::RSA_PKCS1_SHA256,
-                &system_random,
-                handshake_bodies,
-                &mut signature,
-            )
-            .map_err(|e| Error::Other(e.to_string()))?;
-
-            signature
-        }
-    };
-
-    Ok(signature)
-}
-
-pub(crate) fn verify_certificate_verify(
-    handshake_bodies: &[u8],
-    hash_algorithm: &SignatureHashAlgorithm,
-    remote_key_signature: &[u8],
-    raw_certificates: &[Vec<u8>],
-) -> Result<()> {
-    verify_signature(
-        handshake_bodies,
-        hash_algorithm,
-        remote_key_signature,
-        raw_certificates,
-    )
-}
-
-pub(crate) fn load_certs(raw_certificates: &[Vec<u8>]) -> Result<Vec<rustls::Certificate>> {
-    if raw_certificates.is_empty() {
-        return Err(Error::ErrLengthMismatch);
-    }
-
-    let mut certs = vec![];
-    for raw_cert in raw_certificates {
-        let cert = rustls::Certificate(raw_cert.to_vec());
-        certs.push(cert);
-    }
-
-    Ok(certs)
-}
-
-pub(crate) fn verify_client_cert(
-    raw_certificates: &[Vec<u8>],
-    cert_verifier: &Arc<dyn rustls::ClientCertVerifier>,
-) -> Result<Vec<rustls::Certificate>> {
-    let chains = load_certs(raw_certificates)?;
-
-    match cert_verifier.verify_client_cert(&chains, None) {
-        Ok(_) => {}
-        Err(err) => return Err(Error::Other(err.to_string())),
-    };
-
-    Ok(chains)
-}
-
-pub(crate) fn verify_server_cert(
-    raw_certificates: &[Vec<u8>],
-    cert_verifier: &Arc<dyn rustls::ServerCertVerifier>,
-    roots: &rustls::RootCertStore,
-    server_name: &str,
-) -> Result<Vec<rustls::Certificate>> {
-    let chains = load_certs(raw_certificates)?;
-    let dns_name = match webpki::DNSNameRef::try_from_ascii_str(server_name) {
-        Ok(dns_name) => dns_name,
-        Err(err) => return Err(Error::Other(err.to_string())),
-    };
-
-    match cert_verifier.verify_server_cert(roots, &chains, dns_name, &[]) {
-        Ok(_) => {}
-        Err(err) => return Err(Error::Other(err.to_string())),
-    };
-
-    Ok(chains)
 }
 
 pub(crate) fn generate_aead_additional_data(h: &RecordLayerHeader, payload_len: usize) -> Vec<u8> {

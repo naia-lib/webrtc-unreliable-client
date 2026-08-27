@@ -2,7 +2,6 @@ pub(crate) mod alert;
 pub(crate) mod application_data;
 pub(crate) mod change_cipher_spec;
 pub(crate) mod cipher_suite;
-pub(crate) mod client_certificate_type;
 pub(crate) mod compression_methods;
 pub(crate) mod config;
 pub(crate) mod conn;
@@ -23,21 +22,6 @@ pub(crate) mod state;
 pub(crate) use error::Error;
 
 use cipher_suite::*;
-use extension::extension_use_srtp::SrtpProtectionProfile;
-
-pub(crate) fn find_matching_srtp_profile(
-    a: &[SrtpProtectionProfile],
-    b: &[SrtpProtectionProfile],
-) -> Result<SrtpProtectionProfile, ()> {
-    for a_profile in a {
-        for b_profile in b {
-            if a_profile == b_profile {
-                return Ok(*a_profile);
-            }
-        }
-    }
-    Err(())
-}
 
 pub(crate) fn find_matching_cipher_suite(
     a: &[CipherSuiteId],

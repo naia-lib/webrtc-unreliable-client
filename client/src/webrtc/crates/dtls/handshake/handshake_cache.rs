@@ -195,12 +195,6 @@ impl HandshakeCache {
                     optional: false,
                 },
                 HandshakeCachePullRule {
-                    typ: HandshakeType::CertificateRequest,
-                    epoch,
-                    is_client: false,
-                    optional: false,
-                },
-                HandshakeCachePullRule {
                     typ: HandshakeType::ServerHelloDone,
                     epoch,
                     is_client: false,

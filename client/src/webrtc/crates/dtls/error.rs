@@ -23,26 +23,12 @@ pub(crate) enum Error {
     ErrInvalidContentType,
     #[error("packet length and declared length do not match")]
     ErrInvalidPacketLength,
-    #[error("client sent certificate verify but we have no certificate to verify")]
-    ErrCertificateVerifyNoCertificate,
     #[error("client+server do not support any shared cipher suites")]
     ErrCipherSuiteNoIntersection,
-    #[error("client sent certificate but did not verify it")]
-    ErrClientCertificateNotVerified,
-    #[error("server required client verification, but got none")]
-    ErrClientCertificateRequired,
-    #[error("server responded with SRTP Profile we do not support")]
-    ErrClientNoMatchingSrtpProfile,
     #[error("client required Extended Master Secret extension, but server does not support it")]
     ErrClientRequiredButNoServerEms,
-    #[error("client+server cookie does not match")]
-    ErrCookieMismatch,
     #[error("cookie must not be longer then 255 bytes")]
     ErrCookieTooLong,
-    #[error("PSK Identity Hint provided but PSK is nil")]
-    ErrIdentityNoPsk,
-    #[error("no certificate provided")]
-    ErrInvalidCertificate,
     #[error("cipher spec invalid")]
     ErrInvalidCipherSpec,
     #[error("invalid or unknown cipher suite")]
@@ -63,26 +49,8 @@ pub(crate) enum Error {
     ErrNoAvailableCipherSuites,
     #[error("connection can not be created, no SignatureScheme satisfy this Config")]
     ErrNoAvailableSignatureSchemes,
-    #[error("no certificates configured")]
-    ErrNoCertificates,
-    #[error("client requested zero or more elliptic curves that are not supported by the server")]
-    ErrNoSupportedEllipticCurves,
     #[error("unsupported protocol version")]
     ErrUnsupportedProtocolVersion,
-    #[error("Certificate and PSK provided")]
-    ErrPskAndCertificate,
-    #[error("PSK and PSK Identity Hint must both be set for client")]
-    ErrPskAndIdentityMustBeSetForClient,
-    #[error("SRTP support was requested but server did not respond with use_srtp extension")]
-    ErrRequestedButNoSrtpExtension,
-    #[error("Certificate is mandatory for server")]
-    ErrServerMustHaveCertificate,
-    #[error("client requested SRTP but we have no matching profiles")]
-    ErrServerNoMatchingSrtpProfile,
-    #[error(
-        "server requires the Extended Master Secret extension, but the client does not support it"
-    )]
-    ErrServerRequiredButNoClientEms,
     #[error("expected and actual verify data does not match")]
     ErrVerifyDataMismatch,
     #[error("unable to verify key signature, unimplemented")]

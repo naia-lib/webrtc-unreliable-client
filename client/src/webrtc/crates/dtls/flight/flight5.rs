@@ -6,8 +6,6 @@ use crate::webrtc::dtls::crypto::*;
 use crate::webrtc::dtls::curve::named_curve::*;
 use crate::webrtc::dtls::curve::*;
 use crate::webrtc::dtls::error::Error;
-use crate::webrtc::dtls::handshake::handshake_message_certificate::*;
-use crate::webrtc::dtls::handshake::handshake_message_certificate_verify::*;
 use crate::webrtc::dtls::handshake::handshake_message_client_key_exchange::*;
 use crate::webrtc::dtls::handshake::handshake_message_finished::*;
 use crate::webrtc::dtls::handshake::handshake_message_server_key_exchange::*;
@@ -99,12 +97,6 @@ impl Flight for Flight5 {
                     optional: false,
                 },
                 HandshakeCachePullRule {
-                    typ: HandshakeType::CertificateRequest,
-                    epoch: cfg.initial_epoch,
-                    is_client: false,
-                    optional: false,
-                },
-                HandshakeCachePullRule {
                     typ: HandshakeType::ServerHelloDone,
                     epoch: cfg.initial_epoch,
                     is_client: false,
@@ -178,55 +170,14 @@ impl Flight for Flight5 {
         cache: &HandshakeCache,
         cfg: &HandshakeConfig,
     ) -> Result<Vec<Packet>, (Option<Alert>, Option<Error>)> {
-        let certificate = if !cfg.local_certificates.is_empty() {
-            let cert = match cfg.get_certificate(&cfg.server_name) {
-                Ok(cert) => cert,
-                Err(err) => {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::HandshakeFailure,
-                        }),
-                        Some(err),
-                    ))
-                }
-            };
-            Some(cert)
-        } else {
-            None
-        };
-
         let mut pkts = vec![];
-
-        if state.remote_requested_certificate {
-            pkts.push(Packet {
-                record: RecordLayer::new(
-                    PROTOCOL_VERSION1_2,
-                    0,
-                    Content::Handshake(Handshake::new(HandshakeMessage::Certificate(
-                        HandshakeMessageCertificate {
-                            certificate: if let Some(cert) = &certificate {
-                                cert.certificate.iter().map(|x| x.0.clone()).collect()
-                            } else {
-                                vec![]
-                            },
-                        },
-                    ))),
-                ),
-                should_encrypt: false,
-            });
-        }
 
         let mut client_key_exchange = HandshakeMessageClientKeyExchange {
             identity_hint: vec![],
             public_key: vec![],
         };
-        if cfg.local_psk_callback.is_none() {
-            if let Some(local_keypair) = &state.local_keypair {
-                client_key_exchange.public_key = local_keypair.public_key.clone();
-            }
-        } else if let Some(local_psk_identity_hint) = &cfg.local_psk_identity_hint {
-            client_key_exchange.identity_hint = local_psk_identity_hint.clone();
+        if let Some(local_keypair) = &state.local_keypair {
+            client_key_exchange.public_key = local_keypair.public_key.clone();
         }
 
         pkts.push(Packet {
@@ -338,147 +289,6 @@ impl Flight for Flight5 {
             return Err((alert, err));
         }
 
-        // If the client has sent a certificate with signing ability, a digitally-signed
-        // CertificateVerify message is sent to explicitly verify possession of the
-        // private key in the certificate.
-        if state.remote_requested_certificate && !cfg.local_certificates.is_empty() {
-            let mut plain_text = cache
-                .pull_and_merge(&[
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::ClientHello,
-                        epoch: cfg.initial_epoch,
-                        is_client: true,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::ServerHello,
-                        epoch: cfg.initial_epoch,
-                        is_client: false,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::Certificate,
-                        epoch: cfg.initial_epoch,
-                        is_client: false,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::ServerKeyExchange,
-                        epoch: cfg.initial_epoch,
-                        is_client: false,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::CertificateRequest,
-                        epoch: cfg.initial_epoch,
-                        is_client: false,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::ServerHelloDone,
-                        epoch: cfg.initial_epoch,
-                        is_client: false,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::Certificate,
-                        epoch: cfg.initial_epoch,
-                        is_client: true,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::ClientKeyExchange,
-                        epoch: cfg.initial_epoch,
-                        is_client: true,
-                        optional: false,
-                    },
-                ])
-                .await;
-
-            plain_text.extend_from_slice(&merged);
-
-            // Find compatible signature scheme
-            let signature_hash_algo = match select_signature_scheme(
-                &cfg.local_signature_schemes,
-                &certificate.as_ref().unwrap().private_key,
-            ) {
-                Ok(s) => s,
-                Err(err) => {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::InsufficientSecurity,
-                        }),
-                        Some(err),
-                    ))
-                }
-            };
-
-            let cert_verify = match generate_certificate_verify(
-                &plain_text,
-                &certificate.as_ref().unwrap().private_key, /*, signature_hash_algo.hash*/
-            ) {
-                Ok(cert) => cert,
-                Err(err) => {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::InternalError,
-                        }),
-                        Some(err),
-                    ))
-                }
-            };
-            state.local_certificates_verify = cert_verify;
-
-            let mut p = Packet {
-                record: RecordLayer::new(
-                    PROTOCOL_VERSION1_2,
-                    0,
-                    Content::Handshake(Handshake::new(HandshakeMessage::CertificateVerify(
-                        HandshakeMessageCertificateVerify {
-                            algorithm: signature_hash_algo,
-                            signature: state.local_certificates_verify.clone(),
-                        },
-                    ))),
-                ),
-                should_encrypt: false,
-            };
-
-            let h = match &mut p.record.content {
-                Content::Handshake(h) => h,
-                _ => {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::InternalError,
-                        }),
-                        Some(Error::ErrInvalidContentType),
-                    ))
-                }
-            };
-            h.handshake_header.message_sequence = seq_pred;
-
-            // seqPred++ // this is the last use of seqPred
-
-            let mut raw = vec![];
-            {
-                let mut writer = BufWriter::<&mut Vec<u8>>::new(raw.as_mut());
-                if let Err(err) = h.marshal(&mut writer) {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::InternalError,
-                        }),
-                        Some(err),
-                    ));
-                }
-            }
-            merged.extend_from_slice(&raw);
-
-            pkts.push(p);
-        }
-
         pkts.push(Packet {
             record: RecordLayer::new(
                 PROTOCOL_VERSION1_2,
@@ -511,12 +321,6 @@ impl Flight for Flight5 {
                     },
                     HandshakeCachePullRule {
                         typ: HandshakeType::ServerKeyExchange,
-                        epoch: cfg.initial_epoch,
-                        is_client: false,
-                        optional: false,
-                    },
-                    HandshakeCachePullRule {
-                        typ: HandshakeType::CertificateRequest,
                         epoch: cfg.initial_epoch,
                         is_client: false,
                         optional: false,
@@ -678,73 +482,42 @@ async fn initalize_cipher_suite(
         }
     }
 
-    if cfg.local_psk_callback.is_none() {
-        // Verify that the pair of hash algorithm and signiture is listed.
-        let mut valid_signature_scheme = false;
-        for ss in &cfg.local_signature_schemes {
-            if ss.hash == h.algorithm.hash && ss.signature == h.algorithm.signature {
-                valid_signature_scheme = true;
-                break;
-            }
+    // Verify that the pair of hash algorithm and signature is listed.
+    let mut valid_signature_scheme = false;
+    for ss in &cfg.local_signature_schemes {
+        if ss.hash == h.algorithm.hash && ss.signature == h.algorithm.signature {
+            valid_signature_scheme = true;
+            break;
         }
-        if !valid_signature_scheme {
-            return Err((
-                Some(Alert {
-                    alert_level: AlertLevel::Fatal,
-                    alert_description: AlertDescription::InsufficientSecurity,
-                }),
-                Some(Error::ErrNoAvailableSignatureSchemes),
-            ));
-        }
+    }
+    if !valid_signature_scheme {
+        return Err((
+            Some(Alert {
+                alert_level: AlertLevel::Fatal,
+                alert_description: AlertDescription::InsufficientSecurity,
+            }),
+            Some(Error::ErrNoAvailableSignatureSchemes),
+        ));
+    }
 
-        let expected_msg =
-            value_key_message(&client_random, &server_random, &h.public_key, h.named_curve);
-        if let Err(err) = verify_key_signature(
-            &expected_msg,
-            &h.algorithm,
-            &h.signature,
-            &state.peer_certificates,
-        ) {
-            return Err((
-                Some(Alert {
-                    alert_level: AlertLevel::Fatal,
-                    alert_description: AlertDescription::BadCertificate,
-                }),
-                Some(err),
-            ));
-        }
-
-        let mut chains = vec![];
-        if !cfg.insecure_skip_verify {
-            chains = match verify_server_cert(
-                &state.peer_certificates,
-                &cfg.server_cert_verifier,
-                &cfg.roots_cas,
-                &cfg.server_name,
-            ) {
-                Ok(chains) => chains,
-                Err(err) => {
-                    return Err((
-                        Some(Alert {
-                            alert_level: AlertLevel::Fatal,
-                            alert_description: AlertDescription::BadCertificate,
-                        }),
-                        Some(err),
-                    ))
-                }
-            }
-        }
-        if let Some(verify_peer_certificate) = &cfg.verify_peer_certificate {
-            if let Err(err) = verify_peer_certificate(&state.peer_certificates, &chains) {
-                return Err((
-                    Some(Alert {
-                        alert_level: AlertLevel::Fatal,
-                        alert_description: AlertDescription::BadCertificate,
-                    }),
-                    Some(err),
-                ));
-            }
-        }
+    // The server key exchange signature is still checked against the
+    // certificate the server presented; WebRTC then authenticates that
+    // certificate by its SDP fingerprint, not a webpki chain.
+    let expected_msg =
+        value_key_message(&client_random, &server_random, &h.public_key, h.named_curve);
+    if let Err(err) = verify_key_signature(
+        &expected_msg,
+        &h.algorithm,
+        &h.signature,
+        &state.peer_certificates,
+    ) {
+        return Err((
+            Some(Alert {
+                alert_level: AlertLevel::Fatal,
+                alert_description: AlertDescription::BadCertificate,
+            }),
+            Some(err),
+        ));
     }
 
     if let Some(cipher_suite) = &mut *cipher_suite {

@@ -1,7 +1,5 @@
 use std::fmt;
 
-use crate::webrtc::dtls::crypto::*;
-use crate::webrtc::dtls::error::*;
 
 // HashAlgorithm is used to indicate the hash algorithm used
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-18
@@ -78,14 +76,6 @@ pub(crate) struct SignatureHashAlgorithm {
 }
 
 impl SignatureHashAlgorithm {
-    // is_compatible checks that given private key is compatible with the signature scheme.
-    pub(crate) fn is_compatible(&self, private_key: &CryptoPrivateKey) -> bool {
-        match &private_key.kind {
-            CryptoPrivateKeyKind::Ed25519(_) => self.signature == SignatureAlgorithm::Ed25519,
-            CryptoPrivateKeyKind::Ecdsa256(_) => self.signature == SignatureAlgorithm::Ecdsa,
-            CryptoPrivateKeyKind::Rsa256(_) => self.signature == SignatureAlgorithm::Rsa,
-        }
-    }
 }
 
 pub(crate) fn default_signature_schemes() -> Vec<SignatureHashAlgorithm> {
@@ -122,18 +112,6 @@ pub(crate) fn default_signature_schemes() -> Vec<SignatureHashAlgorithm> {
 }
 
 // select Signature Scheme returns most preferred and compatible scheme.
-pub(crate) fn select_signature_scheme(
-    sigs: &[SignatureHashAlgorithm],
-    private_key: &CryptoPrivateKey,
-) -> Result<SignatureHashAlgorithm> {
-    for ss in sigs {
-        if ss.is_compatible(private_key) {
-            return Ok(*ss);
-        }
-    }
-
-    Err(Error::ErrNoAvailableSignatureSchemes)
-}
 
 // // SignatureScheme identifies a signature algorithm supported by TLS. See
 // // RFC 8446, Section 4.2.3.

@@ -3,7 +3,6 @@ pub(crate) mod extension_supported_elliptic_curves;
 pub(crate) mod extension_supported_point_formats;
 pub(crate) mod extension_supported_signature_algorithms;
 pub(crate) mod extension_use_extended_master_secret;
-pub(crate) mod extension_use_srtp;
 pub(crate) mod renegotiation_info;
 
 use extension_server_name::*;
@@ -11,7 +10,6 @@ use extension_supported_elliptic_curves::*;
 use extension_supported_point_formats::*;
 use extension_supported_signature_algorithms::*;
 use extension_use_extended_master_secret::*;
-use extension_use_srtp::*;
 
 use crate::webrtc::dtls::error::*;
 
@@ -26,7 +24,6 @@ pub(crate) enum ExtensionValue {
     SupportedEllipticCurves = 10,
     SupportedPointFormats = 11,
     SupportedSignatureAlgorithms = 13,
-    UseSrtp = 14,
     UseExtendedMasterSecret = 23,
     RenegotiationInfo = 65281,
     Unsupported,
@@ -39,7 +36,6 @@ impl From<u16> for ExtensionValue {
             10 => ExtensionValue::SupportedEllipticCurves,
             11 => ExtensionValue::SupportedPointFormats,
             13 => ExtensionValue::SupportedSignatureAlgorithms,
-            14 => ExtensionValue::UseSrtp,
             23 => ExtensionValue::UseExtendedMasterSecret,
             65281 => ExtensionValue::RenegotiationInfo,
             _ => ExtensionValue::Unsupported,
@@ -53,7 +49,6 @@ pub(crate) enum Extension {
     SupportedEllipticCurves(ExtensionSupportedEllipticCurves),
     SupportedPointFormats(ExtensionSupportedPointFormats),
     SupportedSignatureAlgorithms(ExtensionSupportedSignatureAlgorithms),
-    UseSrtp(ExtensionUseSrtp),
     UseExtendedMasterSecret(ExtensionUseExtendedMasterSecret),
     RenegotiationInfo(ExtensionRenegotiationInfo),
 }
@@ -65,7 +60,6 @@ impl Extension {
             Extension::SupportedEllipticCurves(ext) => ext.extension_value(),
             Extension::SupportedPointFormats(ext) => ext.extension_value(),
             Extension::SupportedSignatureAlgorithms(ext) => ext.extension_value(),
-            Extension::UseSrtp(ext) => ext.extension_value(),
             Extension::UseExtendedMasterSecret(ext) => ext.extension_value(),
             Extension::RenegotiationInfo(ext) => ext.extension_value(),
         }
@@ -79,7 +73,6 @@ impl Extension {
             Extension::SupportedEllipticCurves(ext) => ext.size(),
             Extension::SupportedPointFormats(ext) => ext.size(),
             Extension::SupportedSignatureAlgorithms(ext) => ext.size(),
-            Extension::UseSrtp(ext) => ext.size(),
             Extension::UseExtendedMasterSecret(ext) => ext.size(),
             Extension::RenegotiationInfo(ext) => ext.size(),
         };
@@ -94,7 +87,6 @@ impl Extension {
             Extension::SupportedEllipticCurves(ext) => ext.marshal(writer),
             Extension::SupportedPointFormats(ext) => ext.marshal(writer),
             Extension::SupportedSignatureAlgorithms(ext) => ext.marshal(writer),
-            Extension::UseSrtp(ext) => ext.marshal(writer),
             Extension::UseExtendedMasterSecret(ext) => ext.marshal(writer),
             Extension::RenegotiationInfo(ext) => ext.marshal(writer),
         }
@@ -117,7 +109,6 @@ impl Extension {
                     ExtensionSupportedSignatureAlgorithms::unmarshal(reader)?,
                 ))
             }
-            ExtensionValue::UseSrtp => Ok(Extension::UseSrtp(ExtensionUseSrtp::unmarshal(reader)?)),
             ExtensionValue::UseExtendedMasterSecret => Ok(Extension::UseExtendedMasterSecret(
                 ExtensionUseExtendedMasterSecret::unmarshal(reader)?,
             )),
