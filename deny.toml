@@ -35,5 +35,5 @@ wildcards = "allow"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# Test harness / demos consume naia-server-socket from naia dev.
+# tests/loopback.rs consumes naia-server-socket from naia dev.
 allow-git = ["https://github.com/naia-lib/naia"]

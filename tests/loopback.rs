@@ -1,10 +1,10 @@
 //! Hermetic loopback interop tests: webrtc-unreliable-client <-> webrtc-unreliable
 //! (via naia-server-socket), exercising the full signaling + DTLS + SCTP path
-//! in-process on 127.0.0.1. Mirrors the demos/{server,client} pair, but bounded,
+//! in-process on 127.0.0.1. Bounded,
 //! self-cleaning, and assertion-driven.
 //!
-//! Each test uses its own port pair (distinct from the demos) so tests can run
-//! concurrently and coexist with the demo binaries.
+//! Each test uses its own port pair so tests can run
+//! concurrently.
 //! Any WARN/ERROR logs emitted during the run are captured and reported at the
 //! end as unresolved evidence — never filtered, but only connection-path
 //! failures fail the test.
