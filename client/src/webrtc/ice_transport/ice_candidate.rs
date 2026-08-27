@@ -4,14 +4,13 @@ use std::sync::Arc;
 use crate::webrtc::ice::candidate::candidate_base::CandidateBaseConfig;
 use crate::webrtc::ice::candidate::candidate_host::CandidateHostConfig;
 use crate::webrtc::ice::candidate::Candidate;
-use serde::{Deserialize, Serialize};
 
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType;
 use crate::webrtc::ice_transport::ice_protocol::RTCIceProtocol;
 
 /// ICECandidate represents a ice candidate
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub(crate) struct RTCIceCandidate {
     pub(crate) stats_id: String,
     pub(crate) foundation: String,

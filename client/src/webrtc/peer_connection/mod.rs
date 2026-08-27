@@ -8,8 +8,6 @@ pub(crate) mod signaling_state;
 use crate::webrtc::api::API;
 use crate::webrtc::data_channel::data_channel_state::RTCDataChannelState;
 use crate::webrtc::data_channel::RTCDataChannel;
-use crate::webrtc::dtls_transport::dtls_fingerprint::RTCDtlsFingerprint;
-use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_role::{DTLSRole, DEFAULT_DTLS_ROLE_OFFER};
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::dtls_transport::RTCDtlsTransport;
@@ -592,7 +590,9 @@ impl RTCPeerConnection {
                     .await?;
             }
 
-            let (fingerprint, fingerprint_hash) = extract_fingerprint(parsed)?;
+            // The answer must still carry a fingerprint line; extract it to keep
+            // rejecting malformed SDP, even though DTLS no longer consumes it.
+            let (_fingerprint, _fingerprint_hash) = extract_fingerprint(parsed)?;
 
             // If one of the agents is lite and the other one is not, the lite agent must be the controlling agent.
             // If both or neither agents are lite the offering agent is controlling.
@@ -609,15 +609,13 @@ impl RTCPeerConnection {
                     let rd = Arc::clone(&remote_desc);
                     let ru = remote_ufrag.clone();
                     let rp = remote_pwd.clone();
-                    let fp = fingerprint.clone();
-                    let fp_hash = fingerprint_hash.clone();
                     Box::pin(async move {
                         log::trace!(
                             "start_transports: ice_role={}, dtls_role={}",
                             ice_role,
                             dtls_role,
                         );
-                        pc.start_transports(ice_role, dtls_role, ru, rp, fp, fp_hash)
+                        pc.start_transports(ice_role, dtls_role, ru, rp)
                             .await;
 
                         if we_offer {

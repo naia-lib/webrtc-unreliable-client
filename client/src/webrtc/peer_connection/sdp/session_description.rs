@@ -3,19 +3,16 @@ use crate::webrtc::error::Result;
 use super::sdp_type::RTCSdpType;
 
 use crate::webrtc::sdp::description::session::SessionDescription;
-use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 
 /// SessionDescription is used to expose local and remote session descriptions.
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone)]
 pub(crate) struct RTCSessionDescription {
-    #[serde(rename = "type")]
     pub(crate) sdp_type: RTCSdpType,
 
     pub(crate) sdp: String,
 
     /// This will never be initialized by callers, internal use only
-    #[serde(skip)]
     pub(crate) parsed: Option<SessionDescription>,
 }
 

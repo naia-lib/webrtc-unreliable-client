@@ -171,8 +171,6 @@ impl PeerConnectionInternal {
         dtls_role: DTLSRole,
         remote_ufrag: String,
         remote_pwd: String,
-        fingerprint: String,
-        fingerprint_hash: String,
     ) {
         // Start the ice transport
         if let Err(err) = self
@@ -191,16 +189,8 @@ impl PeerConnectionInternal {
         }
 
         // Start the dtls_transport transport
-        let result = self
-            .dtls_transport
-            .start(DTLSParameters {
-                role: dtls_role,
-                fingerprints: vec![RTCDtlsFingerprint {
-                    algorithm: fingerprint_hash,
-                    value: fingerprint,
-                }],
-            })
-            .await;
+        let _ = dtls_role;
+        let result = self.dtls_transport.start().await;
         RTCPeerConnection::update_connection_state(
             &self.on_peer_connection_state_change_handler,
             &self.is_closed,

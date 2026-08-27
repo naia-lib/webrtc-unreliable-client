@@ -1,9 +1,8 @@
 use crate::webrtc::ice::candidate::CandidateType;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// ICECandidateType represents the type of the ICE candidate used.
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum RTCIceCandidateType {
     Unspecified,
 
@@ -12,7 +11,6 @@ pub(crate) enum RTCIceCandidateType {
     /// candidate obtained by binding to a specific port from an IP address on
     /// the host. This includes IP addresses on physical interfaces and logical
     /// ones, such as ones obtained through VPNs.
-    #[serde(rename = "host")]
     Host,
 }
 

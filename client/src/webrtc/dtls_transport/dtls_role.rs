@@ -1,26 +1,22 @@
 use crate::webrtc::sdp::description::session::SessionDescription;
 use crate::webrtc::sdp::util::ConnectionRole;
 
-use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// DtlsRole indicates the role of the DTLS transport.
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum DTLSRole {
     Unspecified = 0,
 
     /// DTLSRoleAuto defines the DTLS role is determined based on
     /// the resolved ICE role: the ICE controlled role acts as the DTLS
     /// client and the ICE controlling role acts as the DTLS server.
-    #[serde(rename = "auto")]
     Auto = 1,
 
     /// DTLSRoleClient defines the DTLS client role.
-    #[serde(rename = "client")]
     Client = 2,
 
     /// DTLSRoleServer defines the DTLS server role.
-    #[serde(rename = "server")]
     Server = 3,
 }
 

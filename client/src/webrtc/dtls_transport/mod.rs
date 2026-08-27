@@ -9,7 +9,6 @@ use tokio::sync::Mutex;
 
 use dtls_role::*;
 
-use crate::webrtc::dtls_transport::dtls_parameters::DTLSParameters;
 use crate::webrtc::dtls_transport::dtls_transport_state::RTCDtlsTransportState;
 use crate::webrtc::error::{Error, Result};
 use crate::webrtc::ice_transport::ice_transport_state::RTCIceTransportState;
@@ -18,7 +17,6 @@ use crate::webrtc::mux::mux_func::match_dtls;
 use crate::webrtc::peer_connection::certificate::RTCCertificate;
 
 pub(crate) mod dtls_fingerprint;
-pub(crate) mod dtls_parameters;
 pub(crate) mod dtls_role;
 pub(crate) mod dtls_transport_state;
 
@@ -37,7 +35,6 @@ pub(crate) struct RTCDtlsTransport {
     pub(crate) ice_transport: Arc<RTCIceTransport>,
     pub(crate) certificates: Vec<RTCCertificate>,
 
-    pub(crate) remote_parameters: Mutex<DTLSParameters>,
     pub(crate) state: AtomicU8, //DTLSTransportState,
     pub(crate) on_state_change_handler: Arc<Mutex<Option<OnDTLSTransportStateChangeHdlrFn>>>,
     pub(crate) conn: Mutex<Option<Arc<DTLSConn>>>,
@@ -77,17 +74,11 @@ impl RTCDtlsTransport {
 
     async fn prepare_transport(
         &self,
-        remote_parameters: DTLSParameters,
     ) -> Result<(DTLSRole, crate::webrtc::dtls::config::Config)> {
         self.ensure_ice_conn()?;
 
         if self.state() != RTCDtlsTransportState::New {
             return Err(Error::ErrInvalidDTLSStart);
-        }
-
-        {
-            let mut rp = self.remote_parameters.lock().await;
-            *rp = remote_parameters;
         }
 
         let certificate = if let Some(cert) = self.certificates.first() {
@@ -107,11 +98,11 @@ impl RTCDtlsTransport {
     }
 
     /// start DTLS transport negotiation with the parameters of the remote DTLS transport
-    pub(crate) async fn start(&self, remote_parameters: DTLSParameters) -> Result<()> {
+    pub(crate) async fn start(&self) -> Result<()> {
         let dtls_conn_result = if let Some(dtls_endpoint) =
             self.ice_transport.new_endpoint(Box::new(match_dtls)).await
         {
-            let (_, dtls_config) = self.prepare_transport(remote_parameters).await?;
+            let (_, dtls_config) = self.prepare_transport().await?;
 
             // Connect as DTLS Client/Server, function is blocking and we
             // must not hold the DTLSTransport lock

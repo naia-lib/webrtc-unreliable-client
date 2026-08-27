@@ -21,7 +21,6 @@ tinyjson = { version = "2.3" }
 log = { version = "0.4" }
 tokio = { version = "1.15.0", features = ["full"] }
 async-trait = "0.1.52"
-serde = { version = "1.0.132", features = ["derive"] }
 rand = { version = "0.8.4"}
 thiserror = { version = "1.0.30"}
 waitgroup = { version = "0.1.2"}
@@ -39,7 +38,6 @@ rand_core = { version = "0.6.3"}
 p256 = { version = "0.13", features=["default", "ecdh", "ecdsa"] }
 x25519-dalek = { version = "2.0.1", features = ["static_secrets"]}
 hmac = { version = "0.12"}
-elliptic-curve = { version = "0.13.8", features = ["default", "ecdh", "sec1"] }
 base64 = { version = "0.13" }
 
 [target.'cfg(not(windows))'.dependencies]

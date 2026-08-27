@@ -1,18 +1,15 @@
-use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// ICEProtocol indicates the transport protocol type that is used in the
 /// ice.URL structure.
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum RTCIceProtocol {
     Unspecified,
 
     /// UDP indicates the URL uses a UDP transport.
-    #[serde(rename = "udp")]
     Udp,
 
     /// TCP indicates the URL uses a TCP transport.
-    #[serde(rename = "tcp")]
     Tcp,
 }
 
