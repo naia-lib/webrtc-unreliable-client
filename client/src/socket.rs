@@ -19,6 +19,18 @@ use super::addr_cell::AddrCell;
 
 const MESSAGE_SIZE: usize = 1500;
 
+/// Maximum size in bytes of a single outgoing message.
+///
+/// This is the client's SCTP single-DATA-chunk payload limit:
+/// `INITIAL_MTU (1228) - COMMON_HEADER_SIZE (12) - DATA_CHUNK_HEADER_SIZE (16)`
+/// (see `webrtc/crates/sctp/association`). Messages larger than this would be
+/// fragmented across multiple SCTP packets, and the `webrtc-unreliable` server
+/// this client speaks to drops fragmented SCTP packets by design (its
+/// `client.rs`: "received fragmented SCTP packet, dropping") — so an oversize
+/// send can never arrive. We therefore reject oversize messages at the send
+/// boundary with a logged error rather than letting them vanish silently.
+pub const MAX_MESSAGE_SIZE: usize = 1200;
+
 pub struct Socket {
     addr_cell: AddrCell,
     to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
@@ -281,6 +293,15 @@ async fn write_loop(
             }
             result = to_server_receiver.recv() => {
                 if let Some(mut write_message) = result {
+                    if write_message.len() > MAX_MESSAGE_SIZE {
+                        log::error!(
+                            "dropping outgoing message of {} bytes: exceeds MAX_MESSAGE_SIZE ({} bytes); \
+                             larger messages would be fragmented at the SCTP layer and dropped by the server",
+                            write_message.len(),
+                            MAX_MESSAGE_SIZE
+                        );
+                        continue;
+                    }
                     let taken_message = std::mem::take(&mut write_message);
                     let message_bytes = Bytes::from(taken_message);
                     if let Err(e) = data_channel.write(&message_bytes).await {

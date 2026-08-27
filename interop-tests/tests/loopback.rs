@@ -389,10 +389,11 @@ fn loopback_ping_pong_round_trips() {
 
 /// Large payloads, up to the system's supported envelope: webrtc-unreliable
 /// (the only peer) drops fragmented SCTP packets by design (client.rs:614 in
-/// that repo), so a message must fit in a single SCTP packet under the
-/// client's MTU (~1200). Probed empirically: 1150 round-trips, 4000 does not.
-/// Multi-fragment sizes are deliberately NOT tested: they are outside the
-/// protocol envelope, which is itself slimming evidence.
+/// that repo), so a message must fit in a single SCTP DATA chunk — at most
+/// `MAX_MESSAGE_SIZE` (1200) bytes. Sizes up to the cap must round-trip;
+/// sizes over the cap must be REJECTED at the client send boundary (logged
+/// error, message dropped locally, connection unharmed) rather than silently
+/// fragmented and lost on the wire.
 #[test]
 fn loopback_large_payloads_round_trip() {
     let logger = install_logger();
@@ -405,12 +406,36 @@ fn loopback_large_payloads_round_trip() {
             let mut io = connect_client("127.0.0.1:24201", AUTH_TOKEN)
                 .await
                 .expect("auth unexpectedly rejected");
-            let payloads: Vec<Vec<u8>> = [512usize, 1000, 1150]
-                .iter()
-                .map(|&n| (0..n).map(|i| (i % 251) as u8).collect())
-                .collect();
-            let count = payloads.len() as u32;
+            let payloads: Vec<Vec<u8>> =
+                [512usize, 1000, 1150, webrtc_unreliable_client::MAX_MESSAGE_SIZE]
+                    .iter()
+                    .map(|&n| (0..n).map(|i| (i % 251) as u8).collect())
+                    .collect();
+            let mut count = payloads.len() as u32;
             echo_rounds(&mut io, &payloads).await;
+
+            // Oversize sends: must be rejected client-side with a logged
+            // error and never reach the server.
+            let rejections_before = count_oversize_rejections(logger);
+            for n in [
+                webrtc_unreliable_client::MAX_MESSAGE_SIZE + 1,
+                4000usize,
+            ] {
+                let oversize: Vec<u8> = vec![0xAB; n];
+                io.to_server_sender
+                    .send(oversize.into_boxed_slice())
+                    .expect("client send channel closed");
+            }
+            // The connection must survive: a small follow-up still echoes,
+            // and it is the NEXT thing echoed (the oversize ones never went).
+            echo_rounds(&mut io, &[b"after-oversize".to_vec()]).await;
+            count += 1;
+            assert_eq!(
+                count_oversize_rejections(logger) - rejections_before,
+                2,
+                "expected both oversize sends to log a client-side rejection"
+            );
+
             let _ = io.to_server_disconnect_sender.send(()).await;
             tokio::time::sleep(Duration::from_millis(250)).await;
             count
@@ -423,6 +448,16 @@ fn loopback_large_payloads_round_trip() {
     let count = result.expect("whole-test timeout exceeded");
     assert_eq!(echoes, count, "server-side echo count mismatch");
     report_warnings(logger, "large-payloads", started.elapsed());
+}
+
+fn count_oversize_rejections(logger: &CapturingLogger) -> usize {
+    logger
+        .warnings
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|w| w.contains("exceeds MAX_MESSAGE_SIZE"))
+        .count()
 }
 
 /// Wrong token: the server must reject, and the client must observe it.
