@@ -2,7 +2,6 @@ pub(crate) mod certificate;
 pub(crate) mod operation;
 mod peer_connection_internal;
 pub(crate) mod peer_connection_state;
-pub(crate) mod policy;
 pub(crate) mod sdp;
 pub(crate) mod signaling_state;
 

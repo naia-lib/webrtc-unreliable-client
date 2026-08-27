@@ -8,12 +8,9 @@ use crate::webrtc::sctp::queue::pending_queue::PendingQueue;
 use bytes::Bytes;
 use std::fmt;
 use std::future::Future;
-use std::io;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::task::{Context, Poll};
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::{mpsc, Mutex, Notify};
 
 pub(crate) type OnBufferedAmountLowFn =
@@ -88,14 +85,6 @@ impl Stream {
         }
     }
 
-    /// read reads a packet of len(p) bytes, dropping the Payload Protocol Identifier.
-    /// Returns EOF when the stream is reset or an error if the stream is closed
-    /// otherwise.
-    pub(crate) async fn read(&self, p: &mut [u8]) -> Result<usize> {
-        let (n, _) = self.read_sctp(p).await?;
-        Ok(n)
-    }
-
     /// read_sctp reads a packet of len(p) bytes and returns the associated Payload
     /// Protocol Identifier.
     /// Returns EOF when the stream is reset or an error if the stream is closed
@@ -156,11 +145,6 @@ impl Stream {
         if readable {
             self.read_notifier.notify_one();
         }
-    }
-
-    /// write writes len(p) bytes from p with the default Payload Protocol Identifier
-    pub(crate) async fn write(&self, p: &Bytes) -> Result<usize> {
-        self.write_sctp(p, PayloadProtocolIdentifier::Binary).await
     }
 
     /// write_sctp writes len(p) bytes from p to the DTLS connection
@@ -366,255 +350,5 @@ impl Stream {
 
         self.awake_write_loop();
         Ok(())
-    }
-}
-
-/// Default capacity of the temporary read buffer used by [`PollStream`].
-const DEFAULT_READ_BUF_SIZE: usize = 4096;
-
-/// State of the read `Future` in [`PollStream`].
-enum ReadFut<'a> {
-    /// Nothing in progress.
-    Idle,
-    /// Reading data from the underlying stream.
-    Reading(Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + 'a>>),
-    /// Finished reading, but there's unread data in the temporary buffer.
-    RemainingData(Vec<u8>),
-}
-
-impl<'a> ReadFut<'a> {
-    /// Gets a mutable reference to the future stored inside `Reading(future)`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ReadFut` variant is not `Reading`.
-    fn get_reading_mut(
-        &mut self,
-    ) -> &mut Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + 'a>> {
-        match self {
-            ReadFut::Reading(ref mut fut) => fut,
-            _ => panic!("expected ReadFut to be Reading"),
-        }
-    }
-}
-
-/// A wrapper around around [`Stream`], which implements [`AsyncRead`] and
-/// [`AsyncWrite`].
-///
-/// Both `poll_read` and `poll_write` calls allocate temporary buffers, which results in an
-/// additional overhead.
-pub(crate) struct PollStream<'a> {
-    stream: Arc<Stream>,
-
-    read_fut: ReadFut<'a>,
-    write_fut: Option<Pin<Box<dyn Future<Output = Result<usize>> + Send + 'a>>>,
-    shutdown_fut: Option<Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>>,
-
-    read_buf_cap: usize,
-}
-
-impl PollStream<'_> {
-    /// Constructs a new `PollStream`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use webrtc_sctp::stream::{Stream, PollStream};
-    /// use std::sync::Arc;
-    ///
-    /// let stream = Arc::new(Stream::default());
-    /// let poll_stream = PollStream::new(stream);
-    /// ```
-    pub(crate) fn new(stream: Arc<Stream>) -> Self {
-        Self {
-            stream,
-            read_fut: ReadFut::Idle,
-            write_fut: None,
-            shutdown_fut: None,
-            read_buf_cap: DEFAULT_READ_BUF_SIZE,
-        }
-    }
-
-    /// Obtain a clone of the inner stream.
-    pub(crate) fn clone_inner(&self) -> Arc<Stream> {
-        self.stream.clone()
-    }
-}
-
-impl AsyncRead for PollStream<'_> {
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<io::Result<()>> {
-        if buf.remaining() == 0 {
-            return Poll::Ready(Ok(()));
-        }
-
-        let fut = match self.read_fut {
-            ReadFut::Idle => {
-                // read into a temporary buffer because `buf` has an unonymous lifetime, which can
-                // be shorter than the lifetime of `read_fut`.
-                let stream = self.stream.clone();
-                let mut temp_buf = vec![0; self.read_buf_cap];
-                self.read_fut = ReadFut::Reading(Box::pin(async move {
-                    let res = stream.read(temp_buf.as_mut_slice()).await;
-                    match res {
-                        Ok(n) => {
-                            temp_buf.truncate(n);
-                            Ok(temp_buf)
-                        }
-                        Err(e) => Err(e),
-                    }
-                }));
-                self.read_fut.get_reading_mut()
-            }
-            ReadFut::Reading(ref mut fut) => fut,
-            ReadFut::RemainingData(ref mut data) => {
-                let remaining = buf.remaining();
-                let len = std::cmp::min(data.len(), remaining);
-                buf.put_slice(&data[..len]);
-                if data.len() > remaining {
-                    // ReadFut remains to be RemainingData
-                    data.drain(0..len);
-                } else {
-                    self.read_fut = ReadFut::Idle;
-                }
-                return Poll::Ready(Ok(()));
-            }
-        };
-
-        loop {
-            match fut.as_mut().poll(cx) {
-                Poll::Pending => return Poll::Pending,
-                // retry immediately upon empty data or incomplete chunks
-                // since there's no way to setup a waker.
-                Poll::Ready(Err(Error::ErrTryAgain)) => {}
-                // EOF has been reached => don't touch buf and just return Ok
-                Poll::Ready(Err(Error::ErrEof)) => {
-                    self.read_fut = ReadFut::Idle;
-                    return Poll::Ready(Ok(()));
-                }
-                Poll::Ready(Err(e)) => {
-                    self.read_fut = ReadFut::Idle;
-                    return Poll::Ready(Err(e.into()));
-                }
-                Poll::Ready(Ok(mut temp_buf)) => {
-                    let remaining = buf.remaining();
-                    let len = std::cmp::min(temp_buf.len(), remaining);
-                    buf.put_slice(&temp_buf[..len]);
-                    if temp_buf.len() > remaining {
-                        temp_buf.drain(0..len);
-                        self.read_fut = ReadFut::RemainingData(temp_buf);
-                    } else {
-                        self.read_fut = ReadFut::Idle;
-                    }
-                    return Poll::Ready(Ok(()));
-                }
-            }
-        }
-    }
-}
-
-impl AsyncWrite for PollStream<'_> {
-    fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<io::Result<usize>> {
-        let (fut, fut_is_new) = match self.write_fut.as_mut() {
-            Some(fut) => (fut, false),
-            None => {
-                let stream = self.stream.clone();
-                let bytes = Bytes::copy_from_slice(buf);
-                (
-                    self.write_fut
-                        .get_or_insert(Box::pin(async move { stream.write(&bytes).await })),
-                    true,
-                )
-            }
-        };
-
-        match fut.as_mut().poll(cx) {
-            Poll::Pending => {
-                // If it's the first time we're polling the future, `Poll::Pending` can't be
-                // returned because that would mean the `PollStream` is not ready for writing. And
-                // this is not true since we've just created a future, which is going to write the
-                // buf to the underlying stream.
-                //
-                // It's okay to return `Poll::Ready` if the data is buffered (this is what the
-                // buffered writer and `File` do).
-                if fut_is_new {
-                    Poll::Ready(Ok(buf.len()))
-                } else {
-                    // If it's the subsequent poll, it's okay to return `Poll::Pending` as it
-                    // indicates that the `PollStream` is not ready for writing. Only one future
-                    // can be in progress at the time.
-                    Poll::Pending
-                }
-            }
-            Poll::Ready(Err(e)) => {
-                self.write_fut = None;
-                Poll::Ready(Err(e.into()))
-            }
-            Poll::Ready(Ok(n)) => {
-                self.write_fut = None;
-                Poll::Ready(Ok(n))
-            }
-        }
-    }
-
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        match self.write_fut.as_mut() {
-            Some(fut) => match fut.as_mut().poll(cx) {
-                Poll::Pending => Poll::Pending,
-                Poll::Ready(Err(e)) => {
-                    self.write_fut = None;
-                    Poll::Ready(Err(e.into()))
-                }
-                Poll::Ready(Ok(_)) => {
-                    self.write_fut = None;
-                    Poll::Ready(Ok(()))
-                }
-            },
-            None => Poll::Ready(Ok(())),
-        }
-    }
-
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let fut = match self.shutdown_fut.as_mut() {
-            Some(fut) => fut,
-            None => {
-                let stream = self.stream.clone();
-                self.shutdown_fut
-                    .get_or_insert(Box::pin(async move { stream.close().await }))
-            }
-        };
-
-        match fut.as_mut().poll(cx) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
-            Poll::Ready(Ok(_)) => Poll::Ready(Ok(())),
-        }
-    }
-}
-
-impl<'a> Clone for PollStream<'a> {
-    fn clone(&self) -> PollStream<'a> {
-        PollStream::new(self.clone_inner())
-    }
-}
-
-impl fmt::Debug for PollStream<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PollStream")
-            .field("stream", &self.stream)
-            .finish()
-    }
-}
-
-impl AsRef<Stream> for PollStream<'_> {
-    fn as_ref(&self) -> &Stream {
-        &*self.stream
     }
 }

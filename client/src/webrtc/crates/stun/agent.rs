@@ -3,17 +3,6 @@ use crate::webrtc::stun::message::*;
 
 use rand::Rng;
 
-#[derive(Debug, Clone)]
-pub(crate) enum EventType {
-    Callback,
-}
-
-impl Default for EventType {
-    fn default() -> Self {
-        EventType::Callback
-    }
-}
-
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Default, Debug)]
 pub(crate) struct TransactionId(pub(crate) [u8; TRANSACTION_ID_SIZE]);
 

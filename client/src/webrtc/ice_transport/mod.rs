@@ -24,7 +24,6 @@ pub(crate) mod ice_candidate;
 pub(crate) mod ice_candidate_pair;
 pub(crate) mod ice_candidate_type;
 pub(crate) mod ice_connection_state;
-pub(crate) mod ice_credential_type;
 pub(crate) mod ice_gatherer;
 pub(crate) mod ice_gatherer_state;
 pub(crate) mod ice_gathering_state;

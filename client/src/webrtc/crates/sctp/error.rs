@@ -46,9 +46,6 @@ pub(crate) enum Error {
     #[error("unhandled ParamType")]
     ErrParamTypeUnhandled,
 
-    #[error("unexpected ParamType")]
-    ErrParamTypeUnexpected,
-
     #[error("param header too short")]
     ErrParamHeaderTooShort,
 
@@ -56,9 +53,6 @@ pub(crate) enum Error {
     ErrSsnResetRequestParamTooShort,
     #[error("reconfig response parameter too short")]
     ErrReconfigRespParamTooShort,
-    #[error("invalid algorithm type")]
-    ErrInvalidAlgorithmType,
-
     #[error("ChunkType is not of type INIT")]
     ErrChunkTypeNotTypeInit,
     #[error("chunk Value isn't long enough for mandatory parameters exp")]

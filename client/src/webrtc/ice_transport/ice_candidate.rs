@@ -95,13 +95,3 @@ impl fmt::Display for RTCIceCandidate {
     }
 }
 
-/// ICECandidateInit is used to serialize ice candidates
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct RTCIceCandidateInit {
-    pub(crate) candidate: String,
-    pub(crate) sdp_mid: Option<String>,
-    #[serde(rename = "sdpMLineIndex")]
-    pub(crate) sdp_mline_index: Option<u16>,
-    pub(crate) username_fragment: Option<String>,
-}

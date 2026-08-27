@@ -11,8 +11,6 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 pub(crate) enum Error {
     #[error("attribute not found")]
     ErrAttributeNotFound,
-    #[error("no default reason for ErrorCode")]
-    ErrNoDefaultReason,
     #[error("unexpected EOF")]
     ErrUnexpectedEof,
     #[error("attribute size is invalid")]

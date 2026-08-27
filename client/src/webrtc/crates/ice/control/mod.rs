@@ -2,7 +2,6 @@ use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::checks::*;
 use crate::webrtc::stun::message::*;
 
-use std::fmt;
 
 /// Common helper for ICE-{CONTROLLED,CONTROLLING} and represents the so-called Tiebreaker number.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
@@ -77,38 +76,3 @@ impl Getter for AttrControlling {
     }
 }
 
-/// Represents ICE agent role, which can be controlling or controlled.
-/// Possible ICE agent roles.
-#[derive(PartialEq, Copy, Clone, Debug)]
-pub(crate) enum Role {
-    Controlling,
-    Controlled,
-    Unspecified,
-}
-
-impl Default for Role {
-    fn default() -> Self {
-        Self::Controlling
-    }
-}
-
-impl From<&str> for Role {
-    fn from(raw: &str) -> Self {
-        match raw {
-            "controlling" => Self::Controlling,
-            "controlled" => Self::Controlled,
-            _ => Self::Unspecified,
-        }
-    }
-}
-
-impl fmt::Display for Role {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match *self {
-            Self::Controlling => "controlling",
-            Self::Controlled => "controlled",
-            Self::Unspecified => "unspecified",
-        };
-        write!(f, "{}", s)
-    }
-}
