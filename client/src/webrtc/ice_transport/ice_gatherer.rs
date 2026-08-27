@@ -79,7 +79,6 @@ impl RTCIceGatherer {
             prflx_acceptance_min_wait: None,
             relay_acceptance_min_wait: None,
             nat_1to1_ip_candidate_type: CandidateType::Unspecified,
-            net: None,
             multicast_dns_mode: mdns_mode,
             //TODO: TCPMux:                 self.setting_engine.iceTCPMux,
             //TODO: ProxyDialer:            self.setting_engine.iceProxyDialer,

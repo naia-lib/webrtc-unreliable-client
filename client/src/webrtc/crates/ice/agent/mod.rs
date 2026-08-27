@@ -144,18 +144,7 @@ impl Agent {
             }
         };
 
-        let net = if let Some(net) = config.net {
-            if net.is_virtual() {
-                log::warn!("vnet is enabled");
-                if mdns_mode != MulticastDnsMode::Disabled {
-                    log::warn!("vnet does not support mDNS yet");
-                }
-            }
-
-            net
-        } else {
-            Arc::new(Net::new(None))
-        };
+        let net = Arc::new(Net::new());
 
         let agent = Self {
             internal: Arc::new(ai),
