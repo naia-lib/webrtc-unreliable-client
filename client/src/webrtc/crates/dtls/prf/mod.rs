@@ -2,18 +2,14 @@ use std::convert::TryInto;
 use std::fmt;
 
 use hmac::{Hmac, Mac, NewMac};
-use sha1::Sha1;
 use sha2::Digest;
 use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
-type HmacSha1 = Hmac<Sha1>;
 
 use crate::webrtc::dtls::cipher_suite::CipherSuiteHash;
-use crate::webrtc::dtls::content::ContentType;
 use crate::webrtc::dtls::curve::named_curve::*;
 use crate::webrtc::dtls::error::*;
-use crate::webrtc::dtls::record_layer::record_layer_header::ProtocolVersion;
 
 pub(crate) const PRF_MASTER_SECRET_LABEL: &str = "master secret";
 pub(crate) const PRF_EXTENDED_MASTER_SECRET_LABEL: &str = "extended master secret";
@@ -281,28 +277,3 @@ pub(crate) fn prf_verify_data_server(
     )
 }
 
-// compute the MAC using HMAC-SHA1
-pub(crate) fn prf_mac(
-    epoch: u16,
-    sequence_number: u64,
-    content_type: ContentType,
-    protocol_version: ProtocolVersion,
-    payload: &[u8],
-    key: &[u8],
-) -> Result<Vec<u8>> {
-    let mut hmac = HmacSha1::new_varkey(key).map_err(|e| Error::Other(e.to_string()))?;
-
-    let mut msg = vec![0u8; 13];
-    msg[..2].copy_from_slice(&epoch.to_be_bytes());
-    msg[2..8].copy_from_slice(&sequence_number.to_be_bytes()[2..]);
-    msg[8] = content_type as u8;
-    msg[9] = protocol_version.major;
-    msg[10] = protocol_version.minor;
-    msg[11..].copy_from_slice(&(payload.len() as u16).to_be_bytes());
-
-    hmac.update(&msg);
-    hmac.update(payload);
-    let result = hmac.finalize();
-
-    Ok(result.into_bytes().to_vec())
-}

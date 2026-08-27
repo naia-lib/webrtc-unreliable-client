@@ -1,11 +1,4 @@
-pub(crate) mod cipher_suite_aes_128_ccm;
 pub(crate) mod cipher_suite_aes_128_gcm_sha256;
-pub(crate) mod cipher_suite_aes_256_cbc_sha;
-pub(crate) mod cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm;
-pub(crate) mod cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm8;
-pub(crate) mod cipher_suite_tls_psk_with_aes_128_ccm;
-pub(crate) mod cipher_suite_tls_psk_with_aes_128_ccm8;
-pub(crate) mod cipher_suite_tls_psk_with_aes_128_gcm_sha256;
 
 use std::fmt;
 use std::marker::{Send, Sync};
@@ -14,12 +7,6 @@ use super::error::*;
 use super::record_layer::record_layer_header::*;
 
 use cipher_suite_aes_128_gcm_sha256::*;
-use cipher_suite_aes_256_cbc_sha::*;
-use cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm::*;
-use cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm8::*;
-use cipher_suite_tls_psk_with_aes_128_ccm::*;
-use cipher_suite_tls_psk_with_aes_128_ccm8::*;
-use cipher_suite_tls_psk_with_aes_128_gcm_sha256::*;
 
 // CipherSuiteID is an ID for our supported CipherSuites
 // Supported Cipher Suites
@@ -138,44 +125,24 @@ pub(crate) trait CipherSuite {
 // function.
 pub(crate) fn cipher_suite_for_id(id: CipherSuiteId) -> Result<Box<dyn CipherSuite + Send + Sync>> {
     match id {
-        CipherSuiteId::Tls_Ecdhe_Ecdsa_With_Aes_128_Ccm => {
-            Ok(Box::new(new_cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm()))
-        }
-        CipherSuiteId::Tls_Ecdhe_Ecdsa_With_Aes_128_Ccm_8 => Ok(Box::new(
-            new_cipher_suite_tls_ecdhe_ecdsa_with_aes_128_ccm8(),
-        )),
         CipherSuiteId::Tls_Ecdhe_Ecdsa_With_Aes_128_Gcm_Sha256 => {
             Ok(Box::new(CipherSuiteAes128GcmSha256::new(false)))
         }
         CipherSuiteId::Tls_Ecdhe_Rsa_With_Aes_128_Gcm_Sha256 => {
             Ok(Box::new(CipherSuiteAes128GcmSha256::new(true)))
         }
-        CipherSuiteId::Tls_Ecdhe_Rsa_With_Aes_256_Cbc_Sha => {
-            Ok(Box::new(CipherSuiteAes256CbcSha::new(true)))
-        }
-        CipherSuiteId::Tls_Ecdhe_Ecdsa_With_Aes_256_Cbc_Sha => {
-            Ok(Box::new(CipherSuiteAes256CbcSha::new(false)))
-        }
-        CipherSuiteId::Tls_Psk_With_Aes_128_Ccm => {
-            Ok(Box::new(new_cipher_suite_tls_psk_with_aes_128_ccm()))
-        }
-        CipherSuiteId::Tls_Psk_With_Aes_128_Ccm_8 => {
-            Ok(Box::new(new_cipher_suite_tls_psk_with_aes_128_ccm8()))
-        }
-        CipherSuiteId::Tls_Psk_With_Aes_128_Gcm_Sha256 => {
-            Ok(Box::new(CipherSuiteTlsPskWithAes128GcmSha256::default()))
-        }
         _ => Err(Error::ErrInvalidCipherSuite),
     }
 }
 
-// CipherSuites we support in order of preference
+// CipherSuites we support in order of preference: AES-128-GCM-SHA256 only
+// (ECDSA- and RSA-keyed). This is what webrtc-unreliable (openssl) negotiates;
+// the CCM/CBC/PSK suites the upstream pion port carried were never selected
+// and have been removed.
 pub(crate) fn default_cipher_suites() -> Vec<Box<dyn CipherSuite + Send + Sync>> {
     vec![
         Box::new(CipherSuiteAes128GcmSha256::new(false)),
-        Box::new(CipherSuiteAes256CbcSha::new(false)),
         Box::new(CipherSuiteAes128GcmSha256::new(true)),
-        Box::new(CipherSuiteAes256CbcSha::new(true)),
     ]
 }
 

@@ -157,16 +157,6 @@ impl From<p256::elliptic_curve::Error> for Error {
     }
 }
 
-impl From<block_modes::InvalidKeyIvLength> for Error {
-    fn from(e: block_modes::InvalidKeyIvLength) -> Self {
-        Error::Other(e.to_string())
-    }
-}
-impl From<block_modes::BlockModeError> for Error {
-    fn from(e: block_modes::BlockModeError) -> Self {
-        Error::Other(e.to_string())
-    }
-}
 
 // Because Tokio SendError is parameterized, we sadly lose the backtrace.
 impl<T> From<MpscSendError<T>> for Error {

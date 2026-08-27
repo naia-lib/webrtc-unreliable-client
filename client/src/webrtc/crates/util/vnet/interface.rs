@@ -14,9 +14,6 @@ impl Interface {
         Interface { name, addrs }
     }
 
-    pub(crate) fn add_addr(&mut self, addr: IpNet) {
-        self.addrs.push(addr);
-    }
 
     pub(crate) fn name(&self) -> &str {
         &self.name
