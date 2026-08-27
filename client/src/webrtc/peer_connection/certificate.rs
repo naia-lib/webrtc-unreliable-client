@@ -3,8 +3,7 @@ use crate::webrtc::error::{Error, Result};
 use crate::webrtc::peer_connection::math_rand_alpha;
 
 use crate::webrtc::dtls::crypto::{CryptoPrivateKey, CryptoPrivateKeyKind};
-use rcgen::{CertificateParams, KeyPair, RcgenError};
-use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};
+use rcgen::{CertificateParams, Error as RcgenError, KeyPair};
 use sha2::{Digest, Sha256};
 
 /// Certificate represents a x509Cert used to authenticate WebRTC communications.
@@ -35,35 +34,18 @@ impl RTCCertificate {
         };
 
         let serialized_der = key_pair.serialize_der();
-        let private_key = if key_pair.is_compatible(&rcgen::PKCS_ED25519) {
-            CryptoPrivateKey {
-                kind: CryptoPrivateKeyKind::Ed25519(
-                    Ed25519KeyPair::from_pkcs8(&serialized_der)
-                        .map_err(|e| Error::new(e.to_string()))?,
-                ),
-                serialized_der,
-            }
+        let kind = if key_pair.is_compatible(&rcgen::PKCS_ED25519) {
+            CryptoPrivateKeyKind::Ed25519
         } else if key_pair.is_compatible(&rcgen::PKCS_ECDSA_P256_SHA256) {
-            CryptoPrivateKey {
-                kind: CryptoPrivateKeyKind::Ecdsa256(
-                    EcdsaKeyPair::from_pkcs8(
-                        &ring::signature::ECDSA_P256_SHA256_ASN1_SIGNING,
-                        &serialized_der,
-                    )
-                    .map_err(|e| Error::new(e.to_string()))?,
-                ),
-                serialized_der,
-            }
+            CryptoPrivateKeyKind::Ecdsa256
         } else if key_pair.is_compatible(&rcgen::PKCS_RSA_SHA256) {
-            CryptoPrivateKey {
-                kind: CryptoPrivateKeyKind::Rsa256(
-                    RsaKeyPair::from_pkcs8(&serialized_der)
-                        .map_err(|e| Error::new(e.to_string()))?,
-                ),
-                serialized_der,
-            }
+            CryptoPrivateKeyKind::Rsa256
         } else {
             return Err(Error::new("Unsupported key_pair".to_owned()));
+        };
+        let private_key = CryptoPrivateKey {
+            kind,
+            serialized_der,
         };
         params.key_pair = Some(key_pair);
 

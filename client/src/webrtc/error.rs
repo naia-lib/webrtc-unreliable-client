@@ -1,4 +1,4 @@
-use rcgen::RcgenError;
+use rcgen::Error as RcgenError;
 use std::future::Future;
 use std::num::ParseIntError;
 use std::pin::Pin;

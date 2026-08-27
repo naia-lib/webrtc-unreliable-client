@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::webrtc::util::KeyingMaterialExporterError;
-use rcgen::RcgenError;
+use rcgen::Error as RcgenError;
 use std::io;
 use std::string::FromUtf8Error;
 use tokio::sync::mpsc::error::SendError as MpscSendError;

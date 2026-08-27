@@ -7,8 +7,6 @@ use crate::webrtc::dtls::signature_hash_algorithm::{
     HashAlgorithm, SignatureAlgorithm, SignatureHashAlgorithm,
 };
 
-use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, RsaKeyPair};
-
 #[derive(Clone, PartialEq)]
 pub(crate) struct Certificate {
     /// DER-encoded certificate chain.
@@ -36,72 +34,20 @@ pub(crate) fn value_key_message(
     plaintext
 }
 
-// The keypair values are no longer used for signing (the client sends no
-// CertificateVerify and no signed key exchange); they are kept so the key
-// kind can be validated and the pair reconstructed from serialized_der.
+// The client never signs anything (no CertificateVerify, no signed key
+// exchange), so the private key is carried only as its PKCS#8 DER bytes plus
+// a tag recording which algorithm it is.
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) enum CryptoPrivateKeyKind {
-    #[allow(dead_code)]
-    Ed25519(Ed25519KeyPair),
-    #[allow(dead_code)]
-    Ecdsa256(EcdsaKeyPair),
-    #[allow(dead_code)]
-    Rsa256(RsaKeyPair),
+    Ed25519,
+    Ecdsa256,
+    Rsa256,
 }
 
+#[derive(Clone, PartialEq)]
 pub(crate) struct CryptoPrivateKey {
     pub(crate) kind: CryptoPrivateKeyKind,
     pub(crate) serialized_der: Vec<u8>,
-}
-
-impl PartialEq for CryptoPrivateKey {
-    fn eq(&self, other: &Self) -> bool {
-        if self.serialized_der != other.serialized_der {
-            return false;
-        }
-
-        matches!(
-            (&self.kind, &other.kind),
-            (
-                CryptoPrivateKeyKind::Rsa256(_),
-                CryptoPrivateKeyKind::Rsa256(_)
-            ) | (
-                CryptoPrivateKeyKind::Ecdsa256(_),
-                CryptoPrivateKeyKind::Ecdsa256(_)
-            ) | (
-                CryptoPrivateKeyKind::Ed25519(_),
-                CryptoPrivateKeyKind::Ed25519(_)
-            )
-        )
-    }
-}
-
-impl Clone for CryptoPrivateKey {
-    fn clone(&self) -> Self {
-        match self.kind {
-            CryptoPrivateKeyKind::Ed25519(_) => CryptoPrivateKey {
-                kind: CryptoPrivateKeyKind::Ed25519(
-                    Ed25519KeyPair::from_pkcs8(&self.serialized_der).unwrap(),
-                ),
-                serialized_der: self.serialized_der.clone(),
-            },
-            CryptoPrivateKeyKind::Ecdsa256(_) => CryptoPrivateKey {
-                kind: CryptoPrivateKeyKind::Ecdsa256(
-                    EcdsaKeyPair::from_pkcs8(
-                        &ring::signature::ECDSA_P256_SHA256_ASN1_SIGNING,
-                        &self.serialized_der,
-                    )
-                    .unwrap(),
-                ),
-                serialized_der: self.serialized_der.clone(),
-            },
-            CryptoPrivateKeyKind::Rsa256(_) => CryptoPrivateKey {
-                kind: CryptoPrivateKeyKind::Rsa256(
-                    RsaKeyPair::from_pkcs8(&self.serialized_der).unwrap(),
-                ),
-                serialized_der: self.serialized_der.clone(),
-            },
-        }
-    }
 }
 
 fn verify_signature(

@@ -75,8 +75,8 @@ impl Default for ExtendedMasterSecretType {
 pub(crate) fn validate_config(_is_client: bool, config: &Config) -> Result<()> {
     for cert in &config.certificates {
         match cert.private_key.kind {
-            CryptoPrivateKeyKind::Ed25519(_) => {}
-            CryptoPrivateKeyKind::Ecdsa256(_) => {}
+            CryptoPrivateKeyKind::Ed25519 => {}
+            CryptoPrivateKeyKind::Ecdsa256 => {}
             _ => return Err(Error::ErrInvalidPrivateKey),
         }
     }
