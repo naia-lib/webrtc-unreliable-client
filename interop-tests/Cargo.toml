@@ -13,5 +13,5 @@ webrtc-unreliable-client = { path = "../client" }
 # Path dep: naia with the webrtc-unreliable 0.6.0 (smol Runtime) migration,
 # so this test proves legacy-client <-> 0.6.0-server interop.
 naia-server-socket = { path = "../../naia-webrtc-security/socket/server" }
-tokio = { version = "1.15", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { version = "1.15", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
 log = "0.4"

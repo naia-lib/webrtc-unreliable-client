@@ -70,6 +70,10 @@ fn run_server(signal_addr: &str, data_addr: &str, stop: Arc<AtomicBool>, echoes:
         data_addr.parse().expect("bad data addr"),
         &format!("http://{}", data_addr),
     );
+    run_server_with_addrs(server_addrs, stop, echoes)
+}
+
+fn run_server_with_addrs(server_addrs: ServerAddrs, stop: Arc<AtomicBool>, echoes: Arc<AtomicU32>) {
     let (auth_sender, mut auth_receiver, packet_sender, mut packet_receiver) =
         ServerSocket::listen_with_auth(&server_addrs, &SocketConfig::new(None, None));
 
@@ -193,6 +197,165 @@ fn report_warnings(logger: &CapturingLogger, label: &str, elapsed: Duration) {
     for w in warnings.iter() {
         println!("  UNRESOLVED-EVIDENCE {w}");
     }
+}
+
+/// Deterministic lossy/reordering UDP relay between client and server data
+/// ports: drops datagram #10 (mid-handshake) and #60 (data phase), and
+/// delays ~1/7 of packets by 80ms (reordering them past successors), in both
+/// directions. Loopback never drops packets,
+/// so this is what forces the transport-corrective paths (DTLS handshake
+/// flight retransmission, STUN ping retries, SCTP SACK gap handling /
+/// forward-TSN) to actually run.
+async fn run_lossy_proxy(listen: &str, server: &str) {
+    let sock = std::sync::Arc::new(
+        tokio::net::UdpSocket::bind(listen)
+            .await
+            .expect("proxy bind failed"),
+    );
+    let server_addr: std::net::SocketAddr = server.parse().unwrap();
+    let mut client_addr: Option<std::net::SocketAddr> = None;
+    let mut counter = 0u64;
+    // Max UDP payload: the DTLS certificate flight (4096-bit RSA cert in
+    // webrtc-unreliable 0.6.0) exceeds a typical-MTU-sized buffer, and
+    // recv_from silently truncates.
+    let mut buf = vec![0u8; 65536];
+    loop {
+        let Ok((n, from)) = sock.recv_from(&mut buf).await else {
+            return;
+        };
+        counter += 1;
+        // Calibration evidence (2026-08-27): one dropped handshake packet
+        // costs ~7s of retransmission backoff; sustained aperiodic loss of
+        // even 6.25% keeps the handshake from completing within 30s; and a
+        // periodic every-Nth drop resonates with flight retransmission (a
+        // 16-packet handshake cycle re-lost the same packets forever). Hence
+        // a two-packet deterministic drop: recovery runs, test stays bounded.
+        let mix = counter
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        let roll = mix >> 33;
+        if counter == 10 || counter == 60 {
+            continue; // dropped
+        }
+        let dest = if from == server_addr {
+            match client_addr {
+                Some(addr) => addr,
+                None => continue,
+            }
+        } else {
+            client_addr = Some(from);
+            server_addr
+        };
+        if roll % 7 == 0 {
+            let sock = sock.clone();
+            let data = buf[..n].to_vec();
+            tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_millis(80)).await;
+                let _ = sock.send_to(&data, dest).await;
+            });
+        } else {
+            let _ = sock.send_to(&buf[..n], dest).await;
+        }
+    }
+}
+
+/// Lossy link: the server advertises the proxy's port as its public address,
+/// so all DTLS/SCTP traffic crosses the dropping/reordering relay. The
+/// connection must still establish (handshake retransmission) and a usable
+/// fraction of unreliable messages must still round-trip.
+#[test]
+fn loopback_lossy_link() {
+    let logger = install_logger();
+    // Server listens on 24232 but advertises the proxy at 24233.
+    let server = {
+        let stop = Arc::new(AtomicBool::new(false));
+        let echoes = Arc::new(AtomicU32::new(0));
+        let thread = {
+            let stop = stop.clone();
+            let echoes = echoes.clone();
+            thread::spawn(move || {
+                let server_addrs = ServerAddrs::new(
+                    "127.0.0.1:24231".parse().unwrap(),
+                    "127.0.0.1:24232".parse().unwrap(),
+                    "http://127.0.0.1:24233",
+                );
+                run_server_with_addrs(server_addrs, stop, echoes)
+            })
+        };
+        ServerHandle {
+            stop,
+            echoes,
+            thread,
+        }
+    };
+    let started = std::time::Instant::now();
+
+    const SENT: u32 = 20;
+    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
+    let received = runtime.block_on(async {
+        let proxy = tokio::spawn(run_lossy_proxy("127.0.0.1:24233", "127.0.0.1:24232"));
+        let received = tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+            let mut io = connect_client("127.0.0.1:24231", AUTH_TOKEN)
+                .await
+                .expect("auth unexpectedly rejected");
+            // The id token arrives via HTTP signaling, so it does not prove
+            // the DTLS/SCTP handshake finished. Probe with PROBE messages
+            // (lossy link: any single probe or its echo may vanish) until the
+            // first echo proves the data channel is open end-to-end.
+            loop {
+                io.to_server_sender
+                    .send(b"PROBE".to_vec().into_boxed_slice())
+                    .expect("client send channel closed");
+                match tokio::time::timeout(Duration::from_millis(250), io.to_client_receiver.recv())
+                    .await
+                {
+                    Ok(Some(reply)) if reply.as_ref() == b"PROBE" => break,
+                    Ok(Some(other)) => panic!("unexpected probe reply: {other:?}"),
+                    Ok(None) => panic!("client receive channel closed during probe"),
+                    Err(_) => {} // lost probe or echo; retry
+                }
+            }
+
+            // Unreliable transport over a 25%-loss link: count what survives.
+            let mut received = 0u32;
+            for _ in 0..SENT {
+                io.to_server_sender
+                    .send(b"PING".to_vec().into_boxed_slice())
+                    .expect("client send channel closed");
+                tokio::time::sleep(Duration::from_millis(50)).await;
+            }
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+            while let Ok(Some(reply)) =
+                tokio::time::timeout_at(deadline, io.to_client_receiver.recv()).await
+            {
+                if reply.as_ref() == b"PROBE" {
+                    continue; // straggler echo from the handshake probe phase
+                }
+                assert_eq!(reply.as_ref(), b"PING", "echoed payload corrupted");
+                received += 1;
+            }
+            let _ = io.to_server_disconnect_sender.send(()).await;
+            received
+        })
+        .await
+        .expect("whole-test timeout exceeded (connection never established?)");
+        proxy.abort();
+        received
+    });
+    runtime.shutdown_timeout(Duration::from_secs(5));
+    let echoes = server.shutdown();
+
+    println!("lossy-link: {received}/{SENT} echoes ({echoes} sent by server)");
+    // ~56% of round trips survive a 25%-per-direction loss link in
+    // expectation; require a loose floor, and no phantom extras.
+    assert!(
+        received >= SENT / 4,
+        "only {received}/{SENT} echoes survived the lossy link"
+    );
+    // `echoes` also counts PROBE echoes from the handshake phase, so it only
+    // lower-bounds `received`.
+    assert!(received <= echoes);
+    report_warnings(logger, "lossy-link", started.elapsed());
 }
 
 /// Baseline: 5 bidirectional PING/PONG round trips, deterministic teardown.
