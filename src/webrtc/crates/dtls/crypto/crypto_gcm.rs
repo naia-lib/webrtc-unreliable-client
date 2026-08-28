@@ -114,3 +114,92 @@ impl CryptoGcm {
         Ok(d)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_record(payload: &[u8]) -> (RecordLayerHeader, Vec<u8>) {
+        let h = RecordLayerHeader {
+            content_type: ContentType::ApplicationData,
+            protocol_version: PROTOCOL_VERSION1_2,
+            epoch: 1,
+            sequence_number: 7,
+            content_len: payload.len() as u16,
+        };
+        let mut raw = Vec::new();
+        h.marshal(&mut raw).unwrap();
+        raw.extend_from_slice(payload);
+        (h, raw)
+    }
+
+    /// Same key material on both directions, so what the "local" side seals is
+    /// exactly what the "remote" side is set up to open.
+    fn loopback_gcm() -> CryptoGcm {
+        let key = [0x11u8; 16];
+        let iv = [0x22u8; 4];
+        CryptoGcm::new(&key, &iv, &key, &iv)
+    }
+
+    #[test]
+    fn gcm_round_trip() {
+        let gcm = loopback_gcm();
+        let payload = b"the quick brown fox";
+        let (h, raw) = test_record(payload);
+
+        let sealed = gcm.encrypt(&h, &raw).unwrap();
+        assert_ne!(&sealed[RECORD_LAYER_HEADER_SIZE..], &payload[..]);
+        // explicit nonce (8) + ciphertext + tag (16)
+        assert_eq!(
+            sealed.len(),
+            RECORD_LAYER_HEADER_SIZE + 8 + payload.len() + CRYPTO_GCM_TAG_LENGTH
+        );
+
+        let opened = gcm.decrypt(&sealed).unwrap();
+        assert_eq!(&opened[RECORD_LAYER_HEADER_SIZE..], &payload[..]);
+    }
+
+    #[test]
+    fn gcm_rejects_tampered_ciphertext() {
+        let gcm = loopback_gcm();
+        let (h, raw) = test_record(b"authenticate me");
+
+        let mut sealed = gcm.encrypt(&h, &raw).unwrap();
+        let last = sealed.len() - 1;
+        sealed[last] ^= 0xff;
+
+        assert!(gcm.decrypt(&sealed).is_err());
+    }
+
+    /// The record header is authenticated as additional data, not encrypted.
+    /// If AAD generation is ever decoupled from the header actually on the
+    /// wire, this is the test that catches it -- the payload would still
+    /// decrypt cleanly under a forged epoch/sequence number.
+    #[test]
+    fn gcm_binds_the_record_header_as_aad() {
+        let gcm = loopback_gcm();
+        let (h, raw) = test_record(b"bound to its header");
+
+        let mut sealed = gcm.encrypt(&h, &raw).unwrap();
+        // Flip a bit in the epoch, which lives in the header and is covered by
+        // the AAD but not by the ciphertext.
+        sealed[3] ^= 0x01;
+
+        assert!(gcm.decrypt(&sealed).is_err());
+    }
+
+    #[test]
+    fn gcm_rejects_record_too_short_for_the_explicit_nonce() {
+        let gcm = loopback_gcm();
+        let (h, raw) = test_record(b"x");
+
+        let sealed = gcm.encrypt(&h, &raw).unwrap();
+        // Truncate into the 8-byte explicit nonce that follows the header.
+        let truncated = &sealed[..RECORD_LAYER_HEADER_SIZE + 4];
+
+        assert!(matches!(
+            gcm.decrypt(truncated),
+            Err(Error::ErrNotEnoughRoomForNonce)
+        ));
+    }
+}
