@@ -9,6 +9,9 @@ yanked = "deny"
 
 [licenses]
 version = 2
+# Only licenses actually present in the dependency graph are listed. cargo-deny
+# warns on unmatched allowances, and per the no-ignores policy we fix forward:
+# if a new dependency needs another license, add it then, deliberately.
 allow = [
     "MIT",
     "Apache-2.0",
@@ -16,17 +19,8 @@ allow = [
     "BSD-2-Clause",
     "BSD-3-Clause",
     "ISC",
-    "Zlib",
     "Unicode-3.0",
-    "CC0-1.0",
-    "OpenSSL",
-    "MPL-2.0", # webpki-roots
 ]
-
-[[licenses.clarify]]
-name = "ring"
-expression = "MIT AND ISC AND OpenSSL"
-license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 
 [bans]
 multiple-versions = "allow"
