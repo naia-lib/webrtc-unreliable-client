@@ -23,7 +23,10 @@ use std::{
     time::Duration,
 };
 
-use naia_server_socket::{ServerAddrs, Socket as ServerSocket, shared::SocketConfig};
+use naia_server_socket::{
+    shared::{IdentityToken, SocketConfig},
+    ServerAddrs, Socket as ServerSocket,
+};
 use webrtc_unreliable_client::{ServerAddr, Socket as ClientSocket};
 
 const AUTH_TOKEN: &str = "12345";
@@ -84,7 +87,7 @@ fn run_server_with_addrs(server_addrs: ServerAddrs, stop: Arc<AtomicBool>, echoe
             idle = false;
             if String::from_utf8_lossy(payload) == AUTH_TOKEN {
                 auth_sender
-                    .accept(&address, &"id".to_string())
+                    .accept(&address, &IdentityToken::generate())
                     .expect("server failed to accept auth");
             } else {
                 let _ = auth_sender.reject(&address);
