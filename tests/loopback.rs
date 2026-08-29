@@ -27,9 +27,12 @@ use naia_server_socket::{
     shared::{IdentityToken, SocketConfig},
     ServerAddrs, Socket as ServerSocket,
 };
-use webrtc_unreliable_client::{ServerAddr, Socket as ClientSocket};
+use webrtc_unreliable_client::{ServerAddr, SessionError, Socket as ClientSocket};
 
 const AUTH_TOKEN: &str = "12345";
+/// Stand-in for a serialized naia rejection message (naia-lib/naia#133).
+/// The server sends it base64-encoded in the 401 body.
+const REJECT_REASON: &[u8] = b"bad token, friend";
 const WHOLE_TEST_TIMEOUT: Duration = Duration::from_secs(30);
 const PER_REPLY_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -90,7 +93,7 @@ fn run_server_with_addrs(server_addrs: ServerAddrs, stop: Arc<AtomicBool>, echoe
                     .accept(&address, &IdentityToken::generate())
                     .expect("server failed to accept auth");
             } else {
-                let _ = auth_sender.reject(&address);
+                let _ = auth_sender.reject(&address, Some(REJECT_REASON));
             }
         }
 
@@ -143,7 +146,7 @@ impl ServerHandle {
 async fn connect_client(
     signal_addr: &str,
     token: &str,
-) -> Result<webrtc_unreliable_client::SocketIo, ()> {
+) -> Result<webrtc_unreliable_client::SocketIo, SessionError> {
     let (socket, mut io) = ClientSocket::new();
     socket
         .connect(
@@ -166,7 +169,7 @@ async fn connect_client(
             );
             Ok(io)
         }
-        Err(_) => Err(()),
+        Err(err) => Err(err),
     }
 }
 
@@ -409,21 +412,22 @@ fn loopback_large_payloads_round_trip() {
             let mut io = connect_client("127.0.0.1:24201", AUTH_TOKEN)
                 .await
                 .expect("auth unexpectedly rejected");
-            let payloads: Vec<Vec<u8>> =
-                [512usize, 1000, 1150, webrtc_unreliable_client::MAX_MESSAGE_SIZE]
-                    .iter()
-                    .map(|&n| (0..n).map(|i| (i % 251) as u8).collect())
-                    .collect();
+            let payloads: Vec<Vec<u8>> = [
+                512usize,
+                1000,
+                1150,
+                webrtc_unreliable_client::MAX_MESSAGE_SIZE,
+            ]
+            .iter()
+            .map(|&n| (0..n).map(|i| (i % 251) as u8).collect())
+            .collect();
             let mut count = payloads.len() as u32;
             echo_rounds(&mut io, &payloads).await;
 
             // Oversize sends: must be rejected client-side with a logged
             // error and never reach the server.
             let rejections_before = count_oversize_rejections(logger);
-            for n in [
-                webrtc_unreliable_client::MAX_MESSAGE_SIZE + 1,
-                4000usize,
-            ] {
+            for n in [webrtc_unreliable_client::MAX_MESSAGE_SIZE + 1, 4000usize] {
                 let oversize: Vec<u8> = vec![0xAB; n];
                 io.to_server_sender
                     .send(oversize.into_boxed_slice())
@@ -484,6 +488,36 @@ fn loopback_auth_reject() {
     assert!(outcome.is_err(), "server accepted a wrong auth token");
     assert_eq!(echoes, 0, "no data should flow on a rejected session");
     report_warnings(logger, "auth-reject", started.elapsed());
+}
+
+/// A rejection may carry an application-defined reason in its body. Reporting
+/// only the status code would throw that away, leaving the client unable to
+/// tell the user *why* it was refused (naia-lib/naia#133).
+#[test]
+fn loopback_auth_reject_carries_the_server_reason() {
+    let logger = install_logger();
+    let server = spawn_server("127.0.0.1:24215", "127.0.0.1:24216");
+    let started = std::time::Instant::now();
+
+    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
+    let result = runtime.block_on(async {
+        tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+            connect_client("127.0.0.1:24215", "wrong-token").await
+        })
+        .await
+    });
+    runtime.shutdown_timeout(Duration::from_secs(5));
+    server.shutdown();
+
+    let outcome = result.expect("whole-test timeout exceeded");
+    let error = outcome.err().expect("server accepted a wrong auth token");
+    assert_eq!(error.status_code, 401, "unexpected rejection status");
+    assert_eq!(
+        base64::decode(error.body.trim()).expect("rejection body was not base64"),
+        REJECT_REASON,
+        "the server's reason did not survive the trip to the client"
+    );
+    report_warnings(logger, "auth-reject-reason", started.elapsed());
 }
 
 /// Abrupt teardown: client vanishes mid-session (no disconnect message).

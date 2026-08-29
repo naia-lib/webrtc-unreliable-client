@@ -32,12 +32,34 @@ const MESSAGE_SIZE: usize = 1500;
 /// boundary with a logged error rather than letting them vanish silently.
 pub const MAX_MESSAGE_SIZE: usize = 1200;
 
+/// A signaling session request that did not yield an identity token.
+///
+/// The `webrtc-unreliable` server this client speaks to answers a refused
+/// connection with a 401 whose body may carry an application-defined reason.
+/// Reporting the status code alone would throw that away, so both travel back
+/// to the caller.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SessionError {
+    /// The HTTP status the server answered with. `500` when the response
+    /// arrived but could not be parsed.
+    pub status_code: u16,
+    /// The response body, verbatim, and empty when there was none. This crate
+    /// does not interpret it.
+    pub body: String,
+}
+
+impl SessionError {
+    fn new(status_code: u16, body: String) -> Self {
+        Self { status_code, body }
+    }
+}
+
 pub struct Socket {
     addr_cell: AddrCell,
     to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
     to_server_disconnect_receiver: mpsc::Receiver<()>,
     to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
-    to_client_id_sender: oneshot::Sender<Result<String, u16>>,
+    to_client_id_sender: oneshot::Sender<Result<String, SessionError>>,
 }
 
 pub struct SocketIo {
@@ -45,7 +67,7 @@ pub struct SocketIo {
     pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
     pub to_server_disconnect_sender: mpsc::Sender<()>,
     pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
-    pub to_client_id_receiver: oneshot::Receiver<Result<String, u16>>,
+    pub to_client_id_receiver: oneshot::Receiver<Result<String, SessionError>>,
 }
 
 impl Socket {
@@ -191,7 +213,9 @@ impl Socket {
         };
 
         if !(200..300).contains(&status_code) {
-            to_client_id_sender.send(Err(status_code)).unwrap();
+            to_client_id_sender
+                .send(Err(SessionError::new(status_code, response_string)))
+                .unwrap();
             return;
         }
 
@@ -201,7 +225,9 @@ impl Socket {
             Ok(session_response) => session_response,
             Err(_err) => {
                 // parsing error?
-                to_client_id_sender.send(Err(500)).unwrap();
+                to_client_id_sender
+                    .send(Err(SessionError::new(500, response_string)))
+                    .unwrap();
                 return;
             }
         };
@@ -287,13 +313,27 @@ async fn http_post(
         .ok_or_else(|| Error::msg("malformed HTTP status line"))?
         .parse()?;
 
-    let response_body = if head.to_ascii_lowercase().contains("transfer-encoding: chunked") {
+    let lower_head = head.to_ascii_lowercase();
+    let response_body = if lower_head.contains("transfer-encoding: chunked") {
         dechunk(response_body)?
     } else {
-        response_body.to_string()
+        // We read to EOF, so anything the server pipelined after this response
+        // is still in the buffer. Content-Length says where the body ends.
+        match content_length(&lower_head) {
+            Some(len) if len <= response_body.len() => response_body[..len].to_string(),
+            _ => response_body.to_string(),
+        }
     };
 
     Ok((status_code, response_body))
+}
+
+/// Reads the `Content-Length` header out of an already-lowercased header block.
+fn content_length(lower_head: &str) -> Option<usize> {
+    lower_head
+        .split("\r\n")
+        .find_map(|line| line.strip_prefix("content-length:"))
+        .and_then(|value| value.trim().parse().ok())
 }
 
 /// Decodes an HTTP/1.1 chunked transfer-encoded body.
