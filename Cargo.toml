@@ -1,6 +1,6 @@
 [package]
 name = "webrtc-unreliable-client"
-version = "0.4.1"
+version = "0.5.0"
 authors = []
 description = "Just enough hacks to connect a native client to a https://github.com/triplehex/webrtc-unreliable server"
 license = "MIT OR Apache-2.0"
