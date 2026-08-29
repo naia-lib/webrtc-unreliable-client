@@ -1,5 +1,6 @@
 use std::fmt;
 
+
 // HashAlgorithm is used to indicate the hash algorithm used
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-18
 // Supported hash hash algorithms
@@ -74,7 +75,8 @@ pub(crate) struct SignatureHashAlgorithm {
     pub(crate) signature: SignatureAlgorithm,
 }
 
-impl SignatureHashAlgorithm {}
+impl SignatureHashAlgorithm {
+}
 
 pub(crate) fn default_signature_schemes() -> Vec<SignatureHashAlgorithm> {
     vec![

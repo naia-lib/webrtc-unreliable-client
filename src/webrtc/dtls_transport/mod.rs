@@ -72,7 +72,9 @@ impl RTCDtlsTransport {
         self.state.load(Ordering::SeqCst).into()
     }
 
-    async fn prepare_transport(&self) -> Result<(DTLSRole, crate::webrtc::dtls::config::Config)> {
+    async fn prepare_transport(
+        &self,
+    ) -> Result<(DTLSRole, crate::webrtc::dtls::config::Config)> {
         self.ensure_ice_conn()?;
 
         if self.state() != RTCDtlsTransportState::New {
