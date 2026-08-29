@@ -482,3 +482,56 @@ fn candidate_to_addr(candidate_str: &str) -> Option<SocketAddr> {
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_the_address_out_of_a_host_candidate() {
+        assert_eq!(
+            candidate_to_addr("candidate:1 1 UDP 1755993416 127.0.0.1 14192 typ host"),
+            Some("127.0.0.1:14192".parse().unwrap())
+        );
+    }
+
+    #[test]
+    fn reads_an_ipv6_address() {
+        assert_eq!(
+            candidate_to_addr("candidate:1 1 UDP 1755993416 ::1 14192 typ host"),
+            Some("[::1]:14192".parse().unwrap())
+        );
+    }
+
+    #[test]
+    fn parses_an_srflx_candidate_with_a_raddr_tail() {
+        // Server-reflexive candidates carry a longer tail than host ones. The
+        // raddr address in it is followed by the literal "rport", so it never
+        // forms a second (ip, port) pair for the scan to trip over.
+        assert_eq!(
+            candidate_to_addr("candidate:842163049 1 udp 1686052607 10.0.0.5 51234 typ srflx raddr 0.0.0.0 rport 0"),
+            Some("10.0.0.5:51234".parse().unwrap())
+        );
+    }
+
+    #[test]
+    fn returns_none_when_there_is_no_address() {
+        // This is the branch that used to panic. It now warns and leaves the
+        // address channel unresolved, so the None has to actually come back.
+        assert_eq!(
+            candidate_to_addr("candidate:1 1 UDP 1755993416 typ host"),
+            None
+        );
+        assert_eq!(candidate_to_addr(""), None);
+        assert_eq!(candidate_to_addr("not a candidate line at all"), None);
+    }
+
+    #[test]
+    fn returns_none_when_the_port_is_not_a_port() {
+        // An address with no valid port beside it is not a usable pair.
+        assert_eq!(
+            candidate_to_addr("candidate:1 1 UDP 1755993416 127.0.0.1 99999 typ host"),
+            None
+        );
+    }
+}
