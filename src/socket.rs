@@ -1,4 +1,8 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    net::{IpAddr, SocketAddr},
+    sync::Arc,
+    time::Duration,
+};
 
 use anyhow::{Error, Result};
 use bytes::Bytes;
@@ -15,8 +19,6 @@ use crate::webrtc::{
     data_channel::internal::data_channel::DataChannel,
     peer_connection::{sdp::session_description::RTCSessionDescription, RTCPeerConnection},
 };
-
-use super::addr_cell::AddrCell;
 
 const MESSAGE_SIZE: usize = 1500;
 
@@ -55,7 +57,7 @@ impl SessionError {
 }
 
 pub struct Socket {
-    addr_cell: AddrCell,
+    to_client_addr_sender: oneshot::Sender<SocketAddr>,
     to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
     to_server_disconnect_receiver: mpsc::Receiver<()>,
     to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
@@ -63,7 +65,10 @@ pub struct Socket {
 }
 
 pub struct SocketIo {
-    pub addr_cell: AddrCell,
+    /// Resolves once, with the server's data-channel address, as soon as the
+    /// server's ICE candidate has been parsed. Consumers that want a polled
+    /// "found it yet?" view build one over this; this crate does not.
+    pub to_client_addr_receiver: oneshot::Receiver<SocketAddr>,
     pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
     pub to_server_disconnect_sender: mpsc::Sender<()>,
     pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
@@ -72,7 +77,7 @@ pub struct SocketIo {
 
 impl Socket {
     pub fn new() -> (Self, SocketIo) {
-        let addr_cell = AddrCell::default();
+        let (to_client_addr_sender, to_client_addr_receiver) = oneshot::channel();
         let (to_server_sender, to_server_receiver) = mpsc::unbounded_channel();
         let (to_server_disconnect_sender, to_server_disconnect_receiver) = mpsc::channel(1);
         let (to_client_sender, to_client_receiver) = mpsc::unbounded_channel();
@@ -80,14 +85,14 @@ impl Socket {
 
         (
             Self {
-                addr_cell: addr_cell.clone(),
+                to_client_addr_sender,
                 to_server_receiver,
                 to_server_disconnect_receiver,
                 to_client_sender,
                 to_client_id_sender,
             },
             SocketIo {
-                addr_cell,
+                to_client_addr_receiver,
                 to_server_sender,
                 to_server_disconnect_sender,
                 to_client_receiver,
@@ -103,7 +108,7 @@ impl Socket {
         auth_headers_opt: Option<Vec<(String, String)>>,
     ) {
         let Self {
-            addr_cell,
+            to_client_addr_sender,
             to_server_receiver,
             to_server_disconnect_receiver,
             to_client_sender,
@@ -248,9 +253,18 @@ impl Socket {
             .await
             .expect("cannot set remote description");
 
-        addr_cell
-            .receive_candidate(session_response.candidate.candidate.as_str())
-            .await;
+        // Hand the caller the server's data address. Parsing stays here because
+        // the candidate line is this crate's business; the caller gets a plain
+        // SocketAddr.
+        match candidate_to_addr(session_response.candidate.candidate.as_str()) {
+            Some(addr) => {
+                let _ = to_client_addr_sender.send(addr);
+            }
+            None => warn!(
+                "no SocketAddr found in ICE candidate: {}",
+                session_response.candidate.candidate
+            ),
+        }
 
         // add ice candidate to connection
         if let Err(error) = peer_connection
@@ -450,4 +464,21 @@ fn get_session_response(input: &str) -> Result<JsSessionResponse, String> {
         answer: SessionAnswer { sdp },
         candidate: SessionCandidate { candidate },
     })
+}
+
+/// Extracts the server's address from an ICE candidate line.
+///
+/// The line looks like
+/// "candidate:<foundation> <component> udp <priority> <ip> <port> typ host ...";
+/// we take the first adjacent (ip, port) token pair.
+fn candidate_to_addr(candidate_str: &str) -> Option<SocketAddr> {
+    let tokens: Vec<&str> = candidate_str.split_whitespace().collect();
+    for w in tokens.windows(2) {
+        if let Ok(ip_addr) = w[0].parse::<IpAddr>() {
+            if let Ok(port) = w[1].parse::<u16>() {
+                return Some(SocketAddr::new(ip_addr, port));
+            }
+        }
+    }
+    None
 }

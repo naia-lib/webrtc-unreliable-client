@@ -27,7 +27,7 @@ use naia_server_socket::{
     shared::{IdentityToken, SocketConfig},
     ServerAddrs, Socket as ServerSocket,
 };
-use webrtc_unreliable_client::{ServerAddr, SessionError, Socket as ClientSocket};
+use webrtc_unreliable_client::{SessionError, Socket as ClientSocket};
 
 const AUTH_TOKEN: &str = "12345";
 /// Stand-in for a serialized naia rejection message (naia-lib/naia#133).
@@ -163,10 +163,11 @@ async fn connect_client(
     match id_result {
         Ok(id) => {
             assert!(!id.is_empty(), "empty id token");
-            assert!(
-                matches!(io.addr_cell.get(), ServerAddr::Found(_)),
-                "server data addr not resolved after handshake"
-            );
+            // connect() has run to completion above, so the candidate has been
+            // parsed and the address is already sitting in the channel.
+            io.to_client_addr_receiver
+                .try_recv()
+                .expect("server data addr not resolved after handshake");
             Ok(io)
         }
         Err(err) => Err(err),

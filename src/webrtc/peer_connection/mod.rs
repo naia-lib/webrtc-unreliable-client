@@ -615,8 +615,7 @@ impl RTCPeerConnection {
                             ice_role,
                             dtls_role,
                         );
-                        pc.start_transports(ice_role, dtls_role, ru, rp)
-                            .await;
+                        pc.start_transports(ice_role, dtls_role, ru, rp).await;
 
                         if we_offer {
                             let _ = pc.maybe_start_sctp(rd).await;

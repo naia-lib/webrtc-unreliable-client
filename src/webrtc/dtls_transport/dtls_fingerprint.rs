@@ -1,4 +1,3 @@
-
 /// DTLSFingerprint specifies the hash function algorithm and certificate
 /// fingerprint as described in <https://tools.ietf.org/html/rfc4572>.
 #[derive(Default, Debug, Clone)]
