@@ -24,10 +24,7 @@ pub(crate) struct DataChannel {
 
 impl DataChannel {
     pub(crate) fn new(stream: Arc<Stream>) -> Self {
-        Self {
-            stream,
-            ..Default::default()
-        }
+        Self { stream }
     }
 
     /// Dial opens a data channels over SCTP

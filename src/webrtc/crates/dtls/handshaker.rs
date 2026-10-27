@@ -7,6 +7,8 @@ use crate::webrtc::dtls::signature_hash_algorithm::*;
 
 use log::*;
 use std::fmt;
+use futures_util::{select, FutureExt};
+use std::time::Duration;
 
 //use std::io::BufWriter;
 
@@ -69,7 +71,7 @@ pub(crate) struct HandshakeConfig {
     pub(crate) local_signature_schemes: Vec<SignatureHashAlgorithm>, // Available signature schemes
     pub(crate) extended_master_secret: ExtendedMasterSecretType, // Policy for the Extended Master Support extension
     pub(crate) server_name: String,
-    pub(crate) retransmit_interval: tokio::time::Duration,
+    pub(crate) retransmit_interval: Duration,
     pub(crate) initial_epoch: u16,
 }
 
@@ -80,7 +82,7 @@ impl Default for HandshakeConfig {
             local_signature_schemes: vec![],
             extended_master_secret: ExtendedMasterSecretType::Disable,
             server_name: String::new(),
-            retransmit_interval: tokio::time::Duration::from_secs(0),
+            retransmit_interval: Duration::from_secs(0),
             initial_epoch: 0,
         }
     }
@@ -99,8 +101,8 @@ impl DTLSConn {
             trace!(
                 "[handshake:{}] {}: {}",
                 srv_cli_str(self.state.is_client),
-                self.current_flight.to_string(),
-                state.to_string()
+                self.current_flight,
+                state
             );
 
             if state == HandshakeState::Finished && !self.is_handshake_completed_successfully() {
@@ -200,14 +202,11 @@ impl DTLSConn {
         }
     }
     async fn wait(&mut self) -> Result<HandshakeState> {
-        let retransmit_timer = tokio::time::sleep(self.cfg.retransmit_interval);
-        tokio::pin!(retransmit_timer);
-
         loop {
-            tokio::select! {
-                 done = self.handshake_rx.recv() =>{
-                    if done.is_none() {
-                        trace!("[handshake:{}] {} handshake_tx is dropped", srv_cli_str(self.state.is_client), self.current_flight.to_string());
+            select! {
+                 done = self.handshake_rx.recv().fuse() =>{
+                    if done.is_err() {
+                        trace!("[handshake:{}] {} handshake_tx is dropped", srv_cli_str(self.state.is_client), self.current_flight);
                         return Err(Error::ErrAlertFatalOrClose);
                     }
 
@@ -218,7 +217,7 @@ impl DTLSConn {
                         Err((alert, mut err)) => {
                             trace!("[handshake:{}] {} result alert:{:?}, err:{:?}",
                                     srv_cli_str(self.state.is_client),
-                                    self.current_flight.to_string(),
+                                    self.current_flight,
                                     alert,
                                     err);
 
@@ -236,7 +235,7 @@ impl DTLSConn {
                             }
                         }
                         Ok(next_flight) => {
-                            trace!("[handshake:{}] {} -> {}", srv_cli_str(self.state.is_client), self.current_flight.to_string(), next_flight.to_string());
+                            trace!("[handshake:{}] {} -> {}", srv_cli_str(self.state.is_client), self.current_flight, next_flight);
                             if next_flight.is_last_recv_flight() && self.current_flight.to_string() == next_flight.to_string() {
                                 return Ok(HandshakeState::Finished);
                             }
@@ -246,8 +245,8 @@ impl DTLSConn {
                     };
                 }
 
-                _ = retransmit_timer.as_mut() =>{
-                    trace!("[handshake:{}] {} retransmit_timer", srv_cli_str(self.state.is_client), self.current_flight.to_string());
+                _ = smol::Timer::after(self.cfg.retransmit_interval).fuse() =>{
+                    trace!("[handshake:{}] {} retransmit_timer", srv_cli_str(self.state.is_client), self.current_flight);
 
                     if !self.retransmit {
                         return Ok(HandshakeState::Waiting);
@@ -262,12 +261,10 @@ impl DTLSConn {
         }
     }
     async fn finish(&mut self) -> Result<HandshakeState> {
-        let retransmit_timer = tokio::time::sleep(self.cfg.retransmit_interval);
-
-        tokio::select! {
-            done = self.handshake_rx.recv() =>{
-                if done.is_none() {
-                    trace!("[handshake:{}] {} handshake_tx is dropped", srv_cli_str(self.state.is_client), self.current_flight.to_string());
+        select! {
+            done = self.handshake_rx.recv().fuse() =>{
+                if done.is_err() {
+                    trace!("[handshake:{}] {} handshake_tx is dropped", srv_cli_str(self.state.is_client), self.current_flight);
                     return Err(Error::ErrAlertFatalOrClose);
                 }
                 let result = self.current_flight.parse(&mut self.handle_queue_tx, &mut self.state, &self.cache, &self.cfg).await;
@@ -287,7 +284,7 @@ impl DTLSConn {
                         }
                     }
                     Ok(_) => {
-                        retransmit_timer.await;
+                        smol::Timer::after(self.cfg.retransmit_interval).await;
                         // Retransmit last flight
                         return Ok(HandshakeState::Sending);
                     }

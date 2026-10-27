@@ -5,15 +5,16 @@ use std::{
 };
 
 use anyhow::{Error, Result};
+use async_net::TcpStream;
 use bytes::Bytes;
+use futures_channel::oneshot;
+use smol::channel;
+use futures_util::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    select, FutureExt,
+};
 use log::warn;
 use tinyjson::JsonValue;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
-    sync::{mpsc, oneshot},
-    time::sleep,
-};
 
 use crate::webrtc::{
     data_channel::internal::data_channel::DataChannel,
@@ -58,9 +59,9 @@ impl SessionError {
 
 pub struct Socket {
     to_client_addr_sender: oneshot::Sender<SocketAddr>,
-    to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
-    to_server_disconnect_receiver: mpsc::Receiver<()>,
-    to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
+    to_server_receiver: channel::Receiver<Box<[u8]>>,
+    to_server_disconnect_receiver: channel::Receiver<()>,
+    to_client_sender: channel::Sender<Box<[u8]>>,
     to_client_id_sender: oneshot::Sender<Result<String, SessionError>>,
 }
 
@@ -69,18 +70,18 @@ pub struct SocketIo {
     /// server's ICE candidate has been parsed. Consumers that want a polled
     /// "found it yet?" view build one over this; this crate does not.
     pub to_client_addr_receiver: oneshot::Receiver<SocketAddr>,
-    pub to_server_sender: mpsc::UnboundedSender<Box<[u8]>>,
-    pub to_server_disconnect_sender: mpsc::Sender<()>,
-    pub to_client_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
+    pub to_server_sender: channel::Sender<Box<[u8]>>,
+    pub to_server_disconnect_sender: channel::Sender<()>,
+    pub to_client_receiver: channel::Receiver<Box<[u8]>>,
     pub to_client_id_receiver: oneshot::Receiver<Result<String, SessionError>>,
 }
 
 impl Socket {
     pub fn new() -> (Self, SocketIo) {
         let (to_client_addr_sender, to_client_addr_receiver) = oneshot::channel();
-        let (to_server_sender, to_server_receiver) = mpsc::unbounded_channel();
-        let (to_server_disconnect_sender, to_server_disconnect_receiver) = mpsc::channel(1);
-        let (to_client_sender, to_client_receiver) = mpsc::unbounded_channel();
+        let (to_server_sender, to_server_receiver) = channel::unbounded();
+        let (to_server_disconnect_sender, to_server_disconnect_receiver) = channel::bounded(1);
+        let (to_client_sender, to_client_receiver) = channel::unbounded();
         let (to_client_id_sender, to_client_id_receiver) = oneshot::channel();
 
         (
@@ -154,16 +155,17 @@ impl Socket {
 
                     let detached_data_channel_1 = Arc::clone(&detached_data_channel);
                     let detached_data_channel_2 = Arc::clone(&detached_data_channel);
-                    tokio::spawn(async move {
+                    smol::spawn(async move {
                         let _loop_result =
                             read_loop(detached_data_channel_1, to_client_sender).await;
 
                         // do nothing with result, just close thread
                         peer_connection_ref_3.internal.close().await;
-                    });
+                    })
+                    .detach();
 
                     // Handle writing to the data channel
-                    tokio::spawn(async move {
+                    smol::spawn(async move {
                         let detached_data_channel_3 = Arc::clone(&detached_data_channel_2);
                         let _loop_result = write_loop(
                             detached_data_channel_3,
@@ -176,7 +178,8 @@ impl Socket {
                         detached_data_channel_2.close().await;
 
                         peer_connection_ref_4.internal.close().await;
-                    });
+                    })
+                    .detach();
                 })
             }))
             .await;
@@ -212,7 +215,7 @@ impl Socket {
                 }
                 Err(err) => {
                     warn!("Could not send request, original error: {:?}", err);
-                    sleep(Duration::from_secs(1)).await;
+                    smol::Timer::after(Duration::from_secs(1)).await;
                 }
             };
         };
@@ -373,7 +376,7 @@ fn dechunk(mut input: &str) -> Result<String> {
 // read_loop shows how to read from the datachannel directly
 async fn read_loop(
     data_channel: Arc<DataChannel>,
-    to_client_sender: mpsc::UnboundedSender<Box<[u8]>>,
+    to_client_sender: channel::Sender<Box<[u8]>>,
 ) -> Result<()> {
     let mut buffer = vec![0u8; MESSAGE_SIZE];
     loop {
@@ -385,11 +388,8 @@ async fn read_loop(
             }
         };
 
-        match to_client_sender.send(buffer[..message_length].into()) {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(Error::new(e));
-            }
+        if let Err(e) = to_client_sender.try_send(buffer[..message_length].into()) {
+            return Err(Error::msg(format!("send failed: {e:?}")));
         }
     }
 }
@@ -397,16 +397,16 @@ async fn read_loop(
 // write_loop shows how to write to the datachannel directly
 async fn write_loop(
     data_channel: Arc<DataChannel>,
-    mut to_server_receiver: mpsc::UnboundedReceiver<Box<[u8]>>,
-    mut to_server_disconnect_receiver: mpsc::Receiver<()>,
+    to_server_receiver: channel::Receiver<Box<[u8]>>,
+    to_server_disconnect_receiver: channel::Receiver<()>,
 ) -> Result<()> {
     loop {
-        tokio::select! {
-            _ = to_server_disconnect_receiver.recv() => {
+        select! {
+            _ = to_server_disconnect_receiver.recv().fuse() => {
                 return Ok(());
             }
-            result = to_server_receiver.recv() => {
-                if let Some(mut write_message) = result {
+            result = to_server_receiver.recv().fuse() => {
+                if let Ok(mut write_message) = result {
                     if write_message.len() > MAX_MESSAGE_SIZE {
                         log::error!(
                             "dropping outgoing message of {} bytes: exceeds MAX_MESSAGE_SIZE ({} bytes); \

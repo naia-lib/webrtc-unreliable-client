@@ -5,7 +5,7 @@ use super::handshake::handshake_random::*;
 use std::marker::{Send, Sync};
 use std::sync::atomic::AtomicU16;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 // State holds the dtls connection state and implements both encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
 pub(crate) struct State {

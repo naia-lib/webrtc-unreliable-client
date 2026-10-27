@@ -13,7 +13,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
 use std::sync::Arc;
 
-use tokio::sync::{Mutex, Notify};
+use async_lock::Mutex;
 
 pub(crate) type OnDataChannelHdlrFn = Box<
     dyn (FnMut(Arc<RTCDataChannel>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)
@@ -47,8 +47,6 @@ pub(crate) struct RTCSctpTransport {
     pub(crate) data_channels: Arc<Mutex<Vec<Arc<RTCDataChannel>>>>,
     pub(crate) data_channels_opened: Arc<AtomicU32>,
     pub(crate) data_channels_requested: Arc<AtomicU32>,
-
-    notify_tx: Arc<Notify>,
 }
 
 impl RTCSctpTransport {
@@ -65,7 +63,6 @@ impl RTCSctpTransport {
             data_channels: Arc::new(Mutex::new(vec![])),
             data_channels_opened: Arc::new(AtomicU32::new(0)),
             data_channels_requested: Arc::new(AtomicU32::new(0)),
-            notify_tx: Arc::new(Notify::new()),
         }
     }
 
@@ -121,8 +118,6 @@ impl RTCSctpTransport {
 
         self.state
             .store(RTCSctpTransportState::Closed as u8, Ordering::SeqCst);
-
-        self.notify_tx.notify_waiters();
 
         Ok(())
     }

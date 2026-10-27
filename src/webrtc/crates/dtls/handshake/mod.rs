@@ -30,6 +30,7 @@ use handshake_message_server_key_exchange::*;
 
 // https://tools.ietf.org/html/rfc5246#section-7.4
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Default)]
 pub(crate) enum HandshakeType {
     HelloRequest = 0,
     ClientHello = 1,
@@ -42,6 +43,7 @@ pub(crate) enum HandshakeType {
     CertificateVerify = 15,
     ClientKeyExchange = 16,
     Finished = 20,
+    #[default]
     Invalid,
 }
 
@@ -83,11 +85,6 @@ impl From<u8> for HandshakeType {
     }
 }
 
-impl Default for HandshakeType {
-    fn default() -> Self {
-        HandshakeType::Invalid
-    }
-}
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum HandshakeMessage {

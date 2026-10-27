@@ -8,11 +8,13 @@ use std::io::Write;
 
 // https://tools.ietf.org/html/rfc4346#section-6.2.1
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Default)]
 pub(crate) enum ContentType {
     ChangeCipherSpec = 20,
     Alert = 21,
     Handshake = 22,
     ApplicationData = 23,
+    #[default]
     Invalid,
 }
 
@@ -28,11 +30,6 @@ impl From<u8> for ContentType {
     }
 }
 
-impl Default for ContentType {
-    fn default() -> Self {
-        ContentType::Invalid
-    }
-}
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum Content {

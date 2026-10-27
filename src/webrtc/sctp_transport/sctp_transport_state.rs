@@ -2,7 +2,9 @@ use std::fmt;
 
 /// SCTPTransportState indicates the state of the SCTP transport.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum RTCSctpTransportState {
+    #[default]
     Unspecified,
 
     /// SCTPTransportStateConnecting indicates the SCTPTransport is in the
@@ -21,11 +23,6 @@ pub(crate) enum RTCSctpTransportState {
     Closed,
 }
 
-impl Default for RTCSctpTransportState {
-    fn default() -> Self {
-        RTCSctpTransportState::Unspecified
-    }
-}
 
 const SCTP_TRANSPORT_STATE_CONNECTING_STR: &str = "connecting";
 const SCTP_TRANSPORT_STATE_CONNECTED_STR: &str = "connected";

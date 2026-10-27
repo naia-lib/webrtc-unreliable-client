@@ -24,17 +24,51 @@ use std::{
 };
 
 use naia_server_socket::{
-    shared::{IdentityToken, SocketConfig},
+    shared::{stamp_protocol_id_header, IdentityToken, SocketConfig},
     ServerAddrs, Socket as ServerSocket,
 };
+use futures_util::future::{Either, select};
 use webrtc_unreliable_client::{SessionError, Socket as ClientSocket};
 
 const AUTH_TOKEN: &str = "12345";
+/// Protocol fingerprint the test client stamps and the test server expects
+/// (naia server `listen_with_auth` refuses requests without an exact match).
+const PROTOCOL_ID: &str = "00112233445566778899aabbccddeeff";
 /// Stand-in for a serialized naia rejection message (naia-lib/naia#133).
 /// The server sends it base64-encoded in the 401 body.
 const REJECT_REASON: &[u8] = b"bad token, friend";
 const WHOLE_TEST_TIMEOUT: Duration = Duration::from_secs(30);
 const PER_REPLY_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Test-only timeout: `Err(Elapsed)` when `duration` passes before `fut`.
+#[derive(Debug)]
+struct Elapsed;
+
+async fn timeout<T>(
+    duration: Duration,
+    fut: impl std::future::Future<Output = T>,
+) -> Result<T, Elapsed> {
+    match select(
+        Box::pin(smol::Timer::after(duration)),
+        Box::pin(fut),
+    )
+    .await
+    {
+        Either::Left(_) => Err(Elapsed),
+        Either::Right((out, _)) => Ok(out),
+    }
+}
+
+async fn timeout_at<T>(
+    deadline: std::time::Instant,
+    fut: impl std::future::Future<Output = T>,
+) -> Result<T, Elapsed> {
+    timeout(
+        deadline.saturating_duration_since(std::time::Instant::now()),
+        fut,
+    )
+    .await
+}
 
 /// Captures WARN/ERROR records from the whole process so teardown artifacts
 /// (e.g. the known SCTP heartbeat parse warning) are surfaced, not filtered.
@@ -81,7 +115,7 @@ fn run_server(signal_addr: &str, data_addr: &str, stop: Arc<AtomicBool>, echoes:
 
 fn run_server_with_addrs(server_addrs: ServerAddrs, stop: Arc<AtomicBool>, echoes: Arc<AtomicU32>) {
     let (auth_sender, mut auth_receiver, packet_sender, mut packet_receiver) =
-        ServerSocket::listen_with_auth(&server_addrs, &SocketConfig::new(None, None));
+        ServerSocket::listen_with_auth(&server_addrs, &SocketConfig::new(None, None), PROTOCOL_ID);
 
     while !stop.load(Ordering::Relaxed) {
         let mut idle = true;
@@ -152,11 +186,11 @@ async fn connect_client(
         .connect(
             &format!("http://{}/rtc_session", signal_addr),
             Some(token.as_bytes().to_vec()),
-            None,
+            Some(stamp_protocol_id_header(None, PROTOCOL_ID)),
         )
         .await;
 
-    let id_result = tokio::time::timeout(Duration::from_secs(10), &mut io.to_client_id_receiver)
+    let id_result = timeout(Duration::from_secs(10), &mut io.to_client_id_receiver)
         .await
         .expect("timed out waiting for auth outcome (signaling/DTLS handshake)")
         .expect("id channel dropped");
@@ -178,12 +212,12 @@ async fn connect_client(
 async fn echo_rounds(io: &mut webrtc_unreliable_client::SocketIo, payloads: &[Vec<u8>]) {
     for (i, payload) in payloads.iter().enumerate() {
         io.to_server_sender
-            .send(payload.clone().into_boxed_slice())
+            .try_send(payload.clone().into_boxed_slice())
             .expect("client send channel closed");
-        let reply = tokio::time::timeout(PER_REPLY_TIMEOUT, io.to_client_receiver.recv())
+        let reply = timeout(PER_REPLY_TIMEOUT, io.to_client_receiver.recv())
             .await
             .unwrap_or_else(|_| panic!("round {i}: no echo within {PER_REPLY_TIMEOUT:?}"))
-            .unwrap_or_else(|| panic!("round {i}: client receive channel closed"));
+            .unwrap_or_else(|_| panic!("round {i}: client receive channel closed"));
         assert_eq!(
             reply.as_ref(),
             payload.as_slice(),
@@ -215,7 +249,7 @@ fn report_warnings(logger: &CapturingLogger, label: &str, elapsed: Duration) {
 /// forward-TSN) to actually run.
 async fn run_lossy_proxy(listen: &str, server: &str) {
     let sock = std::sync::Arc::new(
-        tokio::net::UdpSocket::bind(listen)
+        async_net::UdpSocket::bind(listen)
             .await
             .expect("proxy bind failed"),
     );
@@ -253,13 +287,14 @@ async fn run_lossy_proxy(listen: &str, server: &str) {
             client_addr = Some(from);
             server_addr
         };
-        if roll % 7 == 0 {
+        if roll.is_multiple_of(7) {
             let sock = sock.clone();
             let data = buf[..n].to_vec();
-            tokio::spawn(async move {
-                tokio::time::sleep(Duration::from_millis(80)).await;
+            smol::spawn(async move {
+                smol::Timer::after(Duration::from_millis(80)).await;
                 let _ = sock.send_to(&data, dest).await;
-            });
+            })
+            .detach();
         } else {
             let _ = sock.send_to(&buf[..n], dest).await;
         }
@@ -298,11 +333,10 @@ fn loopback_lossy_link() {
     let started = std::time::Instant::now();
 
     const SENT: u32 = 20;
-    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
-    let received = runtime.block_on(async {
-        let proxy = tokio::spawn(run_lossy_proxy("127.0.0.1:24233", "127.0.0.1:24232"));
-        let received = tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
-            let mut io = connect_client("127.0.0.1:24231", AUTH_TOKEN)
+    let received = smol::block_on(async {
+        let proxy = smol::spawn(run_lossy_proxy("127.0.0.1:24233", "127.0.0.1:24232"));
+        let received = timeout(WHOLE_TEST_TIMEOUT, async {
+            let io = connect_client("127.0.0.1:24231", AUTH_TOKEN)
                 .await
                 .expect("auth unexpectedly rejected");
             // The id token arrives via HTTP signaling, so it does not prove
@@ -311,14 +345,14 @@ fn loopback_lossy_link() {
             // first echo proves the data channel is open end-to-end.
             loop {
                 io.to_server_sender
-                    .send(b"PROBE".to_vec().into_boxed_slice())
+                    .try_send(b"PROBE".to_vec().into_boxed_slice())
                     .expect("client send channel closed");
-                match tokio::time::timeout(Duration::from_millis(250), io.to_client_receiver.recv())
+                match timeout(Duration::from_millis(250), io.to_client_receiver.recv())
                     .await
                 {
-                    Ok(Some(reply)) if reply.as_ref() == b"PROBE" => break,
-                    Ok(Some(other)) => panic!("unexpected probe reply: {other:?}"),
-                    Ok(None) => panic!("client receive channel closed during probe"),
+                    Ok(Ok(reply)) if reply.as_ref() == b"PROBE" => break,
+                    Ok(Ok(other)) => panic!("unexpected probe reply: {other:?}"),
+                    Ok(Err(_)) => panic!("client receive channel closed during probe"),
                     Err(_) => {} // lost probe or echo; retry
                 }
             }
@@ -327,13 +361,13 @@ fn loopback_lossy_link() {
             let mut received = 0u32;
             for _ in 0..SENT {
                 io.to_server_sender
-                    .send(b"PING".to_vec().into_boxed_slice())
+                    .try_send(b"PING".to_vec().into_boxed_slice())
                     .expect("client send channel closed");
-                tokio::time::sleep(Duration::from_millis(50)).await;
+                smol::Timer::after(Duration::from_millis(50)).await;
             }
-            let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
-            while let Ok(Some(reply)) =
-                tokio::time::timeout_at(deadline, io.to_client_receiver.recv()).await
+            let deadline = std::time::Instant::now() + Duration::from_secs(5);
+            while let Ok(Ok(reply)) =
+                timeout_at(deadline, io.to_client_receiver.recv()).await
             {
                 if reply.as_ref() == b"PROBE" {
                     continue; // straggler echo from the handshake probe phase
@@ -346,10 +380,9 @@ fn loopback_lossy_link() {
         })
         .await
         .expect("whole-test timeout exceeded (connection never established?)");
-        proxy.abort();
+        drop(proxy); // detach: the proxy task is process-scoped, like the test
         received
     });
-    runtime.shutdown_timeout(Duration::from_secs(5));
     let echoes = server.shutdown();
 
     println!("lossy-link: {received}/{SENT} echoes ({echoes} sent by server)");
@@ -372,9 +405,8 @@ fn loopback_ping_pong_round_trips() {
     let server = spawn_server("127.0.0.1:24191", "127.0.0.1:24192");
     let started = std::time::Instant::now();
 
-    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
-    let result = runtime.block_on(async {
-        tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+    let result = smol::block_on(async {
+        timeout(WHOLE_TEST_TIMEOUT, async {
             let mut io = connect_client("127.0.0.1:24191", AUTH_TOKEN)
                 .await
                 .expect("auth unexpectedly rejected");
@@ -382,11 +414,10 @@ fn loopback_ping_pong_round_trips() {
             echo_rounds(&mut io, &payloads).await;
             // Deterministic client-side shutdown before the server stops.
             let _ = io.to_server_disconnect_sender.send(()).await;
-            tokio::time::sleep(Duration::from_millis(250)).await;
+            smol::Timer::after(Duration::from_millis(250)).await;
         })
         .await
     });
-    runtime.shutdown_timeout(Duration::from_secs(5));
     let echoes = server.shutdown();
 
     result.expect("whole-test timeout exceeded");
@@ -407,9 +438,8 @@ fn loopback_large_payloads_round_trip() {
     let server = spawn_server("127.0.0.1:24201", "127.0.0.1:24202");
     let started = std::time::Instant::now();
 
-    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
-    let result = runtime.block_on(async {
-        tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+    let result = smol::block_on(async {
+        timeout(WHOLE_TEST_TIMEOUT, async {
             let mut io = connect_client("127.0.0.1:24201", AUTH_TOKEN)
                 .await
                 .expect("auth unexpectedly rejected");
@@ -431,7 +461,7 @@ fn loopback_large_payloads_round_trip() {
             for n in [webrtc_unreliable_client::MAX_MESSAGE_SIZE + 1, 4000usize] {
                 let oversize: Vec<u8> = vec![0xAB; n];
                 io.to_server_sender
-                    .send(oversize.into_boxed_slice())
+                    .try_send(oversize.into_boxed_slice())
                     .expect("client send channel closed");
             }
             // The connection must survive: a small follow-up still echoes,
@@ -445,12 +475,11 @@ fn loopback_large_payloads_round_trip() {
             );
 
             let _ = io.to_server_disconnect_sender.send(()).await;
-            tokio::time::sleep(Duration::from_millis(250)).await;
+            smol::Timer::after(Duration::from_millis(250)).await;
             count
         })
         .await
     });
-    runtime.shutdown_timeout(Duration::from_secs(5));
     let echoes = server.shutdown();
 
     let count = result.expect("whole-test timeout exceeded");
@@ -475,14 +504,12 @@ fn loopback_auth_reject() {
     let server = spawn_server("127.0.0.1:24211", "127.0.0.1:24212");
     let started = std::time::Instant::now();
 
-    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
-    let result = runtime.block_on(async {
-        tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+    let result = smol::block_on(async {
+        timeout(WHOLE_TEST_TIMEOUT, async {
             connect_client("127.0.0.1:24211", "wrong-token").await
         })
         .await
     });
-    runtime.shutdown_timeout(Duration::from_secs(5));
     let echoes = server.shutdown();
 
     let outcome = result.expect("whole-test timeout exceeded");
@@ -500,14 +527,12 @@ fn loopback_auth_reject_carries_the_server_reason() {
     let server = spawn_server("127.0.0.1:24215", "127.0.0.1:24216");
     let started = std::time::Instant::now();
 
-    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
-    let result = runtime.block_on(async {
-        tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+    let result = smol::block_on(async {
+        timeout(WHOLE_TEST_TIMEOUT, async {
             connect_client("127.0.0.1:24215", "wrong-token").await
         })
         .await
     });
-    runtime.shutdown_timeout(Duration::from_secs(5));
     server.shutdown();
 
     let outcome = result.expect("whole-test timeout exceeded");
@@ -530,9 +555,8 @@ fn loopback_abrupt_client_teardown() {
     let server = spawn_server("127.0.0.1:24221", "127.0.0.1:24222");
     let started = std::time::Instant::now();
 
-    let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
-    let result = runtime.block_on(async {
-        tokio::time::timeout(WHOLE_TEST_TIMEOUT, async {
+    let result = smol::block_on(async {
+        timeout(WHOLE_TEST_TIMEOUT, async {
             let mut io = connect_client("127.0.0.1:24221", AUTH_TOKEN)
                 .await
                 .expect("auth unexpectedly rejected");
@@ -542,8 +566,6 @@ fn loopback_abrupt_client_teardown() {
         })
         .await
     });
-    // Kill the entire client runtime abruptly too.
-    runtime.shutdown_timeout(Duration::from_millis(100));
     result.expect("whole-test timeout exceeded");
 
     // Server must still be alive and polling after the client vanished.

@@ -3,7 +3,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use futures_util::{select, FutureExt};
+use smol::channel;
 
 use crate::webrtc::error::Result;
 
@@ -22,23 +23,24 @@ impl fmt::Debug for Operation {
 #[derive(Default)]
 pub(crate) struct Operations {
     length: Arc<AtomicUsize>,
-    ops_tx: Option<Arc<mpsc::UnboundedSender<Operation>>>,
+    ops_tx: Option<Arc<channel::Sender<Operation>>>,
     // Removing this causes exceptions
     #[allow(dead_code)]
-    close_tx: Option<mpsc::Sender<()>>,
+    close_tx: Option<channel::Sender<()>>,
 }
 
 impl Operations {
     pub(crate) fn new() -> Self {
         let length = Arc::new(AtomicUsize::new(0));
-        let (ops_tx, ops_rx) = mpsc::unbounded_channel();
-        let (close_tx, close_rx) = mpsc::channel(1);
+        let (ops_tx, ops_rx) = channel::unbounded();
+        let (close_tx, close_rx) = channel::bounded(1);
         let l = Arc::clone(&length);
         let ops_tx = Arc::new(ops_tx);
         let ops_tx2 = Arc::clone(&ops_tx);
-        tokio::spawn(async move {
+        smol::spawn(async move {
             Operations::start(l, ops_tx, ops_rx, close_rx).await;
-        });
+        })
+        .detach();
 
         Operations {
             length,
@@ -59,28 +61,28 @@ impl Operations {
 
     fn enqueue_inner(
         op: Operation,
-        ops_tx: &Arc<mpsc::UnboundedSender<Operation>>,
+        ops_tx: &Arc<channel::Sender<Operation>>,
         length: &Arc<AtomicUsize>,
     ) -> Result<()> {
         length.fetch_add(1, Ordering::SeqCst);
-        let _ = ops_tx.send(op)?;
+        ops_tx.try_send(op)?;
 
         Ok(())
     }
 
     pub(crate) async fn start(
         length: Arc<AtomicUsize>,
-        ops_tx: Arc<mpsc::UnboundedSender<Operation>>,
-        mut ops_rx: mpsc::UnboundedReceiver<Operation>,
-        mut close_rx: mpsc::Receiver<()>,
+        ops_tx: Arc<channel::Sender<Operation>>,
+        ops_rx: channel::Receiver<Operation>,
+        close_rx: channel::Receiver<()>,
     ) {
         loop {
-            tokio::select! {
-                _ = close_rx.recv() => {
+            select! {
+                _ = close_rx.recv().fuse() => {
                     break;
                 }
-                result = ops_rx.recv() => {
-                    if let Some(mut f) = result {
+                result = ops_rx.recv().fuse() => {
+                    if let Ok(mut f) = result {
                         length.fetch_sub(1, Ordering::SeqCst);
                         if f.0().await {
                             // Requeue this operation

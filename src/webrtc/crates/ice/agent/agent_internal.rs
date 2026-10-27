@@ -4,7 +4,7 @@ use crate::webrtc::ice::util::*;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 
 pub(crate) type ChanCandidateTx =
-    Arc<Mutex<Option<mpsc::Sender<Option<Arc<dyn Candidate + Send + Sync>>>>>>;
+    Arc<Mutex<Option<channel::Sender<Option<Arc<dyn Candidate + Send + Sync>>>>>>;
 
 #[derive(Default)]
 pub(crate) struct UfragPwd {
@@ -16,19 +16,19 @@ pub(crate) struct UfragPwd {
 
 pub(crate) struct AgentInternal {
     // State owned by the taskLoop
-    pub(crate) on_connected_tx: Mutex<Option<mpsc::Sender<()>>>,
-    pub(crate) on_connected_rx: Mutex<Option<mpsc::Receiver<()>>>,
+    pub(crate) on_connected_tx: Mutex<Option<channel::Sender<()>>>,
+    pub(crate) on_connected_rx: Mutex<Option<channel::Receiver<()>>>,
 
     // State for closing
-    pub(crate) done_tx: Mutex<Option<mpsc::Sender<()>>>,
+    pub(crate) done_tx: Mutex<Option<channel::Sender<()>>>,
     // force candidate to be contacted immediately (instead of waiting for task ticker)
-    pub(crate) force_candidate_contact_tx: mpsc::Sender<bool>,
+    pub(crate) force_candidate_contact_tx: channel::Sender<bool>,
     pub(crate) done_and_force_candidate_contact_rx:
-        Mutex<Option<(mpsc::Receiver<()>, mpsc::Receiver<bool>)>>,
+        Mutex<Option<(channel::Receiver<()>, channel::Receiver<bool>)>>,
 
     pub(crate) chan_candidate_tx: ChanCandidateTx,
-    pub(crate) chan_candidate_pair_tx: Mutex<Option<mpsc::Sender<()>>>,
-    pub(crate) chan_state_tx: Mutex<Option<mpsc::Sender<ConnectionState>>>,
+    pub(crate) chan_candidate_pair_tx: Mutex<Option<channel::Sender<()>>>,
+    pub(crate) chan_state_tx: Mutex<Option<channel::Sender<ConnectionState>>>,
 
     pub(crate) on_connection_state_change_hdlr: Mutex<Option<OnConnectionStateChangeHdlrFn>>,
     pub(crate) on_selected_candidate_pair_change_hdlr:
@@ -44,7 +44,11 @@ pub(crate) struct AgentInternal {
 
     pub(crate) connection_state: AtomicU8, //ConnectionState,
 
-    pub(crate) started_ch_tx: Mutex<Option<broadcast::Sender<()>>>,
+    pub(crate) started_ch_tx: Mutex<Option<async_broadcast::Sender<()>>>,
+    // Parked keep-alive: async-broadcast closes the channel when the last
+    // receiver is dropped (tokio broadcast did not) and new_receiver() will
+    // not re-open it. Without this, every started receiver is born closed.
+    pub(crate) _started_ch_rx: async_broadcast::Receiver<()>,
 
     pub(crate) ufrag_pwd: Mutex<UfragPwd>,
 
@@ -78,13 +82,13 @@ pub(crate) struct AgentInternal {
 
 impl AgentInternal {
     pub(crate) fn new(config: &AgentConfig) -> (Self, ChanReceivers) {
-        let (chan_state_tx, chan_state_rx) = mpsc::channel(1);
-        let (chan_candidate_tx, chan_candidate_rx) = mpsc::channel(1);
-        let (chan_candidate_pair_tx, chan_candidate_pair_rx) = mpsc::channel(1);
-        let (on_connected_tx, on_connected_rx) = mpsc::channel(1);
-        let (done_tx, done_rx) = mpsc::channel(1);
-        let (force_candidate_contact_tx, force_candidate_contact_rx) = mpsc::channel(1);
-        let (started_ch_tx, _) = broadcast::channel(1);
+        let (chan_state_tx, chan_state_rx) = channel::bounded(1);
+        let (chan_candidate_tx, chan_candidate_rx) = channel::bounded(1);
+        let (chan_candidate_pair_tx, chan_candidate_pair_rx) = channel::bounded(1);
+        let (on_connected_tx, on_connected_rx) = channel::bounded(1);
+        let (done_tx, done_rx) = channel::bounded(1);
+        let (force_candidate_contact_tx, force_candidate_contact_rx) = channel::bounded(1);
+        let (started_ch_tx, started_ch_rx) = async_broadcast::broadcast(1);
 
         let ai = AgentInternal {
             on_connected_tx: Mutex::new(Some(on_connected_tx)),
@@ -115,6 +119,7 @@ impl AgentInternal {
             connection_state: AtomicU8::new(ConnectionState::New as u8),
 
             started_ch_tx: Mutex::new(Some(started_ch_tx)),
+            _started_ch_rx: started_ch_rx,
 
             //won't change after init_with_defaults()
             max_binding_requests: 0,
@@ -246,11 +251,11 @@ impl AgentInternal {
             done_and_force_candidate_contact_rx.take()
         };
 
-        if let Some((mut done_rx, mut force_candidate_contact_rx)) =
+        if let Some((done_rx, force_candidate_contact_rx)) =
             done_and_force_candidate_contact_rx
         {
             let ai = Arc::clone(self);
-            tokio::spawn(async move {
+            smol::spawn(async move {
                 loop {
                     let mut interval = DEFAULT_CHECK_INTERVAL;
 
@@ -274,22 +279,20 @@ impl AgentInternal {
                     update_interval(disconnected_timeout);
                     update_interval(failed_timeout);
 
-                    let t = tokio::time::sleep(interval);
-                    tokio::pin!(t);
-
-                    tokio::select! {
-                        _ = t.as_mut() => {
+                    select! {
+                        _ = smol::Timer::after(interval).fuse() => {
                             ai.contact(&mut last_connection_state, &mut checking_duration).await;
                         },
-                        _ = force_candidate_contact_rx.recv() => {
+                        _ = force_candidate_contact_rx.recv().fuse() => {
                             ai.contact(&mut last_connection_state, &mut checking_duration).await;
                         },
-                        _ = done_rx.recv() => {
+                        _ = done_rx.recv().fuse() => {
                             return;
                         }
                     }
                 }
-            });
+            })
+            .detach();
         }
     }
 
@@ -555,7 +558,7 @@ impl AgentInternal {
     ) -> Result<()> {
         let initialized_ch = {
             let started_ch_tx = self.started_ch_tx.lock().await;
-            (*started_ch_tx).as_ref().map(|tx| tx.subscribe())
+            (*started_ch_tx).as_ref().map(|tx| tx.new_receiver())
         };
 
         self.start_candidate(c, initialized_ch).await;
@@ -612,7 +615,7 @@ impl AgentInternal {
     }
 
     pub(crate) async fn close(&self) -> Result<()> {
-        let _d = {
+        {
             let mut done_tx = self.done_tx.lock().await;
             if done_tx.is_none() {
                 return Err(Error::ErrClosed);
@@ -951,7 +954,7 @@ impl AgentInternal {
     ) -> bool {
         self.find_remote_candidate(local.network_type(), remote)
             .await
-            .map_or(false, |remote_candidate| {
+            .is_some_and(|remote_candidate| {
                 remote_candidate.seen(false);
                 true
             })
@@ -994,9 +997,9 @@ impl AgentInternal {
     async fn start_candidate(
         self: &Arc<Self>,
         candidate: &Arc<dyn Candidate + Send + Sync>,
-        initialized_ch: Option<broadcast::Receiver<()>>,
+        initialized_ch: Option<async_broadcast::Receiver<()>>,
     ) {
-        let (closed_ch_tx, closed_ch_rx) = broadcast::channel(1);
+        let (closed_ch_tx, closed_ch_rx) = async_broadcast::broadcast(1);
         {
             let closed_ch = candidate.get_closed_ch();
             let mut closed = closed_ch.lock().await;
@@ -1008,11 +1011,12 @@ impl AgentInternal {
             let conn = Arc::clone(conn);
             let addr = candidate.addr().await;
             let ai = Arc::clone(self);
-            tokio::spawn(async move {
+            smol::spawn(async move {
                 let _ = ai
                     .recv_loop(cand, closed_ch_rx, initialized_ch, conn, addr)
                     .await;
-            });
+            })
+            .detach();
         } else {
             log::error!("[{}]: Can't start due to conn is_none", self.get_name(),);
         }
@@ -1020,15 +1024,15 @@ impl AgentInternal {
 
     pub(crate) async fn start_on_connection_state_change_routine(
         self: &Arc<Self>,
-        mut chan_state_rx: mpsc::Receiver<ConnectionState>,
-        mut chan_candidate_rx: mpsc::Receiver<Option<Arc<dyn Candidate + Send + Sync>>>,
-        mut chan_candidate_pair_rx: mpsc::Receiver<()>,
+        chan_state_rx: channel::Receiver<ConnectionState>,
+        chan_candidate_rx: channel::Receiver<Option<Arc<dyn Candidate + Send + Sync>>>,
+        chan_candidate_pair_rx: channel::Receiver<()>,
     ) {
         let ai = Arc::clone(self);
-        tokio::spawn(async move {
+        smol::spawn(async move {
             // CandidatePair and ConnectionState are usually changed at once.
             // Blocking one by the other one causes deadlock.
-            while chan_candidate_pair_rx.recv().await.is_some() {
+            while chan_candidate_pair_rx.recv().await.is_ok() {
                 let selected_pair = {
                     let selected_pair = ai.agent_conn.selected_pair.lock().await;
                     selected_pair.clone()
@@ -1044,20 +1048,21 @@ impl AgentInternal {
                     }
                 }
             }
-        });
+        })
+        .detach();
 
         let ai = Arc::clone(self);
-        tokio::spawn(async move {
+        smol::spawn(async move {
             loop {
-                tokio::select! {
-                    opt_state = chan_state_rx.recv() => {
-                        if let Some(s) = opt_state {
+                select! {
+                    opt_state = chan_state_rx.recv().fuse() => {
+                        if let Ok(s) = opt_state {
                             let mut on_connection_state_change_hdlr = ai.on_connection_state_change_hdlr.lock().await;
                             if let Some(f) = &mut *on_connection_state_change_hdlr{
                                 f(s).await;
                             }
                         } else {
-                            while let Some(c) = chan_candidate_rx.recv().await {
+                            while let Ok(c) = chan_candidate_rx.recv().await {
                                 let mut on_candidate_hdlr = ai.on_candidate_hdlr.lock().await;
                                 if let Some(f) = &mut *on_candidate_hdlr {
                                     f(c).await;
@@ -1066,14 +1071,14 @@ impl AgentInternal {
                             break;
                         }
                     },
-                    opt_cand = chan_candidate_rx.recv() => {
-                        if let Some(c) = opt_cand {
+                    opt_cand = chan_candidate_rx.recv().fuse() => {
+                        if let Ok(c) = opt_cand {
                             let mut on_candidate_hdlr = ai.on_candidate_hdlr.lock().await;
                             if let Some(f) = &mut *on_candidate_hdlr{
                                 f(c).await;
                             }
                         } else {
-                            while let Some(s) = chan_state_rx.recv().await {
+                            while let Ok(s) = chan_state_rx.recv().await {
                                 let mut on_connection_state_change_hdlr = ai.on_connection_state_change_hdlr.lock().await;
                                 if let Some(f) = &mut *on_connection_state_change_hdlr{
                                     f(s).await;
@@ -1084,21 +1089,22 @@ impl AgentInternal {
                     }
                 }
             }
-        });
+        })
+        .detach();
     }
 
     async fn recv_loop(
         self: &Arc<Self>,
         candidate: Arc<dyn Candidate + Send + Sync>,
-        mut closed_ch_rx: broadcast::Receiver<()>,
-        initialized_ch: Option<broadcast::Receiver<()>>,
+        mut closed_ch_rx: async_broadcast::Receiver<()>,
+        initialized_ch: Option<async_broadcast::Receiver<()>>,
         conn: Arc<dyn crate::webrtc::util::Conn + Send + Sync>,
         addr: SocketAddr,
     ) -> Result<()> {
         if let Some(mut initialized_ch) = initialized_ch {
-            tokio::select! {
-                _ = initialized_ch.recv() => {}
-                _ = closed_ch_rx.recv() => return Err(Error::ErrClosed),
+            select! {
+                _ = initialized_ch.recv().fuse() => {}
+                _ = closed_ch_rx.recv().fuse() => return Err(Error::ErrClosed),
             }
         }
 
@@ -1106,8 +1112,8 @@ impl AgentInternal {
         let mut n;
         let mut src_addr;
         loop {
-            tokio::select! {
-               result = conn.recv_from(&mut buffer) => {
+            select! {
+               result = conn.recv_from(&mut buffer).fuse() => {
                    match result {
                        Ok((num, src)) => {
                             n = num;
@@ -1116,7 +1122,7 @@ impl AgentInternal {
                        Err(err) => return Err(Error::Other(err.to_string())),
                    }
                },
-                _  = closed_ch_rx.recv() => return Err(Error::ErrClosed),
+                _  = closed_ch_rx.recv().fuse() => return Err(Error::ErrClosed),
             }
 
             self.handle_inbound_candidate_msg(&candidate, &buffer[..n], src_addr, addr)

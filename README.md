@@ -11,3 +11,10 @@ At first this was going to just wrap [webrtc-rs](https://github.com/webrtc-rs/we
 
 If anyone knows of a good way to anayze during run-time which functions are never called, please get in touch!
 
+## Runtime
+
+This crate is executor-agnostic: it spawns tasks with `smol::spawn` on the
+global executor and performs I/O with `async-net`, so any executor driving the
+returned futures (for example `smol::block_on`) can run it. It does not start
+or require a `tokio` runtime.
+

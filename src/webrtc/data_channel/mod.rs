@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 
 use crate::webrtc::sctp::stream::OnBufferedAmountLowFn;
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 use data_channel_state::RTCDataChannelState;
 
@@ -113,7 +113,7 @@ impl RTCDataChannel {
         let on_open_handler = Arc::clone(&self.on_open_handler);
         let detach_data_channels = true;
         let detach_called = Arc::clone(&self.detach_called);
-        tokio::spawn(async move {
+        smol::spawn(async move {
             let mut handler = on_open_handler.lock().await;
             if let Some(f) = handler.take() {
                 f().await;
@@ -127,7 +127,8 @@ impl RTCDataChannel {
                     );
                 }
             }
-        });
+        })
+        .detach();
     }
 
     pub(crate) async fn handle_open(

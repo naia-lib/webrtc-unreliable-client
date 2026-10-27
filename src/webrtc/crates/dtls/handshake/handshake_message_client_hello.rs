@@ -56,13 +56,11 @@ impl fmt::Debug for HandshakeMessageClientHello {
             cipher_suites_str += &cipher_suite.to_string();
             cipher_suites_str += " ";
         }
-        let s = vec![
-            format!("version: {:?} random: {:?}", self.version, self.random),
+        let s = [format!("version: {:?} random: {:?}", self.version, self.random),
             format!("cookie: {:?}", self.cookie),
             format!("cipher_suites: {:?}", cipher_suites_str),
             format!("compression_methods: {:?}", self.compression_methods),
-            format!("extensions: {:?}", self.extensions),
-        ];
+            format!("extensions: {:?}", self.extensions)];
         write!(f, "{}", s.join(" "))
     }
 }

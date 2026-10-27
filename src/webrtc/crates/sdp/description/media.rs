@@ -107,12 +107,10 @@ pub(crate) struct MediaName {
 
 impl fmt::Display for MediaName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = vec![
-            self.media.clone(),
+        let s = [self.media.clone(),
             self.port.to_string(),
             self.protos.join("/"),
-            self.formats.join(" "),
-        ];
+            self.formats.join(" ")];
         write!(f, "{}", s.join(" "))
     }
 }

@@ -2,7 +2,7 @@ use crate::webrtc::sctp::chunk::chunk_payload_data::ChunkPayloadData;
 
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 /// pendingBaseQueue
 pub(crate) type PendingBaseQueue = VecDeque<ChunkPayloadData>;
@@ -41,16 +41,16 @@ impl PendingQueue {
         if self.selected.load(Ordering::SeqCst) {
             if self.unordered_is_selected.load(Ordering::SeqCst) {
                 let unordered_queue = self.unordered_queue.lock().await;
-                return unordered_queue.get(0).cloned();
+                return unordered_queue.front().cloned();
             } else {
                 let ordered_queue = self.ordered_queue.lock().await;
-                return ordered_queue.get(0).cloned();
+                return ordered_queue.front().cloned();
             }
         }
 
         let c = {
             let unordered_queue = self.unordered_queue.lock().await;
-            unordered_queue.get(0).cloned()
+            unordered_queue.front().cloned()
         };
 
         if c.is_some() {
@@ -58,7 +58,7 @@ impl PendingQueue {
         }
 
         let ordered_queue = self.ordered_queue.lock().await;
-        ordered_queue.get(0).cloned()
+        ordered_queue.front().cloned()
     }
 
     pub(crate) async fn pop(

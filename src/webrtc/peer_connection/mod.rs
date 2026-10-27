@@ -42,7 +42,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";
 
@@ -166,9 +166,7 @@ impl RTCPeerConnection {
         // audio RTCRtpTransceiver was added to connection, but while performing the in-parallel
         // steps to create an offer, a video RTCRtpTransceiver was added, requiring additional
         // inspection of video system resources.
-        let offer;
-
-        loop {
+        let offer = {
             // in-parallel steps to create an offer
             // https://w3c.github.io/webrtc-pc/#dfn-in-parallel-steps-to-create-an-offer
             let is_plan_b = {
@@ -236,14 +234,12 @@ impl RTCPeerConnection {
             }
             let sdp = d.marshal();
 
-            offer = RTCSessionDescription {
+            RTCSessionDescription {
                 sdp_type: RTCSdpType::Offer,
                 sdp,
                 parsed: Some(d),
-            };
-
-            break;
-        }
+            }
+        };
 
         {
             let mut last_offer = self.internal.last_offer.lock().await;

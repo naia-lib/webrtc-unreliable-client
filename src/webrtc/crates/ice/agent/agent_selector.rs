@@ -12,7 +12,7 @@ use async_trait::async_trait;
 use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use tokio::time::{Duration, Instant};
+use std::time::{Duration, Instant};
 
 #[async_trait]
 trait ControllingSelector {
@@ -101,7 +101,7 @@ impl AgentInternal {
                         Box::new(BINDING_REQUEST),
                         Box::new(TransactionId::new()),
                         Box::new(Username::new(ATTR_USERNAME, username)),
-                        Box::new(UseCandidateAttr::default()),
+                        Box::new(UseCandidateAttr),
                         Box::new(AttrControlling(self.tie_breaker.load(Ordering::SeqCst))),
                         Box::new(PriorityAttr(pair.local.priority())),
                         Box::new(MessageIntegrity::new_short_term_integrity(
@@ -235,8 +235,8 @@ impl ControllingSelector for AgentInternal {
                 if let Some(p) = self.agent_conn.get_best_valid_candidate_pair().await {
                     log::trace!(
                         "Nominatable pair found, nominating ({}, {})",
-                        p.local.to_string(),
-                        p.remote.to_string()
+                        p.local,
+                        p.remote
                     );
                     p.nominated.store(true, Ordering::SeqCst);
                     {

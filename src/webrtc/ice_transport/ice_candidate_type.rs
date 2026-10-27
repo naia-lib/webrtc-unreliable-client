@@ -3,7 +3,9 @@ use std::fmt;
 
 /// ICECandidateType represents the type of the ICE candidate used.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum RTCIceCandidateType {
+    #[default]
     Unspecified,
 
     /// ICECandidateTypeHost indicates that the candidate is of Host type as
@@ -14,11 +16,6 @@ pub(crate) enum RTCIceCandidateType {
     Host,
 }
 
-impl Default for RTCIceCandidateType {
-    fn default() -> Self {
-        RTCIceCandidateType::Unspecified
-    }
-}
 
 const ICE_CANDIDATE_TYPE_HOST_STR: &str = "host";
 

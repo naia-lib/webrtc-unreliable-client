@@ -7,12 +7,14 @@ use crate::webrtc::mux::mux_func::MatchFunc;
 
 use crate::webrtc::util::{Buffer, Conn};
 use crate::webrtc::RECEIVE_MTU;
+use async_lock::Mutex;
+use futures_util::{select, FutureExt};
+use smol::channel;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex};
 
-/// mux multiplexes packets on a single socket (RFC7983)
+// mux multiplexes packets on a single socket (RFC7983)
 
 /// The maximum amount of data that can be buffered before returning errors.
 const MAX_BUFFER_SIZE: usize = 1000 * 1000; // 1MB
@@ -29,12 +31,12 @@ pub(crate) struct Mux {
     id: Arc<AtomicUsize>,
     next_conn: Arc<dyn Conn + Send + Sync>,
     endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
-    closed_ch_tx: Option<mpsc::Sender<()>>,
+    closed_ch_tx: Option<channel::Sender<()>>,
 }
 
 impl Mux {
     pub(crate) fn new(config: Config) -> Self {
-        let (closed_ch_tx, closed_ch_rx) = mpsc::channel(1);
+        let (closed_ch_tx, closed_ch_rx) = channel::bounded(1);
         let m = Mux {
             id: Arc::new(AtomicUsize::new(0)),
             next_conn: Arc::clone(&config.conn),
@@ -44,9 +46,10 @@ impl Mux {
 
         let next_conn = Arc::clone(&m.next_conn);
         let endpoints = Arc::clone(&m.endpoints);
-        tokio::spawn(async move {
+        smol::spawn(async move {
             Mux::read_loop(next_conn, closed_ch_rx, endpoints).await;
-        });
+        })
+        .detach();
 
         m
     }
@@ -73,15 +76,15 @@ impl Mux {
 
     async fn read_loop(
         next_conn: Arc<dyn Conn + Send + Sync>,
-        mut closed_ch_rx: mpsc::Receiver<()>,
+        closed_ch_rx: channel::Receiver<()>,
         endpoints: Arc<Mutex<HashMap<usize, Arc<Endpoint>>>>,
     ) {
         let mut buf = vec![0u8; RECEIVE_MTU];
         let mut n = 0usize;
         loop {
-            tokio::select! {
-                _ = closed_ch_rx.recv() => break,
-                result = next_conn.recv(&mut buf) => {
+            select! {
+                _ = closed_ch_rx.recv().fuse() => break,
+                result = next_conn.recv(&mut buf).fuse() => {
                     if let Ok(m) = result{
                         n = m;
                     }

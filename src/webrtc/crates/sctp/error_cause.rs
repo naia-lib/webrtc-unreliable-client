@@ -72,7 +72,6 @@ pub(crate) type ErrorCauseUnrecognizedChunkType = ErrorCause;
 ///     \                                                               \
 ///     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ///
-
 pub(crate) const ERROR_CAUSE_HEADER_LENGTH: usize = 4;
 
 /// makes ErrorCauseHeader printable

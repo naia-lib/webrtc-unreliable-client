@@ -2,7 +2,9 @@ use std::fmt;
 
 /// PeerConnectionState indicates the state of the PeerConnection.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum RTCPeerConnectionState {
+    #[default]
     Unspecified,
 
     /// PeerConnectionStateNew indicates that any of the ICETransports or
@@ -35,11 +37,6 @@ pub(crate) enum RTCPeerConnectionState {
     Closed,
 }
 
-impl Default for RTCPeerConnectionState {
-    fn default() -> Self {
-        RTCPeerConnectionState::Unspecified
-    }
-}
 
 const PEER_CONNECTION_STATE_NEW_STR: &str = "new";
 const PEER_CONNECTION_STATE_CONNECTING_STR: &str = "connecting";

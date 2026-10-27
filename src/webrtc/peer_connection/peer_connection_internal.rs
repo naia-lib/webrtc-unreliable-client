@@ -1,6 +1,6 @@
 use crate::webrtc::peer_connection::*;
 use std::sync::atomic::AtomicIsize;
-use tokio::sync::Notify;
+use futures_util::future::pending;
 
 pub(crate) struct PeerConnectionInternal {
     /// a value containing the last known greater mid value
@@ -102,13 +102,12 @@ impl PeerConnectionInternal {
         remote_desc: Arc<RTCSessionDescription>,
     ) -> Result<()> {
         let dtls_transport = Arc::clone(&self.dtls_transport);
-        let notify = Arc::new(Notify::new());
-
         // No idea why, but this code here that doesn't do anything is necessary for this app to function ...
-        tokio::spawn(async move {
+        smol::spawn(async move {
             let _holder = Arc::clone(&dtls_transport);
-            notify.notified().await;
-        });
+            pending::<()>().await;
+        })
+        .detach();
 
         if let Some(parsed) = &remote_desc.parsed {
             if have_application_media_section(parsed) {
@@ -247,7 +246,6 @@ impl PeerConnectionInternal {
             media_sections.push(MediaSection {
                 id: format!("{}", media_sections.len()),
                 data: true,
-                ..Default::default()
             });
         }
 
@@ -300,8 +298,8 @@ impl PeerConnectionInternal {
         let mut media_sections = vec![];
 
         // If we are offering also include unmatched local transceivers
-        if include_unmatched {
-            if self
+        if include_unmatched
+            && self
                 .sctp_transport
                 .data_channels_requested
                 .load(Ordering::SeqCst)
@@ -311,17 +309,14 @@ impl PeerConnectionInternal {
                     media_sections.push(MediaSection {
                         id: "data".to_owned(),
                         data: true,
-                        ..Default::default()
                     });
                 } else {
                     media_sections.push(MediaSection {
                         id: format!("{}", media_sections.len()),
                         data: true,
-                        ..Default::default()
                     });
                 }
             }
-        }
 
         let dtls_fingerprints = if let Some(cert) = self.dtls_transport.certificates.first() {
             cert.get_fingerprints()?

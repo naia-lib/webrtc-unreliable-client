@@ -73,7 +73,6 @@ impl RTCIceCandidate {
                         priority: self.priority,
                         ..Default::default()
                     },
-                    ..Default::default()
                 };
                 config.new_candidate_host().await?
             }

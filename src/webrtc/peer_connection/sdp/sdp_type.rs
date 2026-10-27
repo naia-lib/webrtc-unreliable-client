@@ -2,7 +2,9 @@ use std::fmt;
 
 /// SDPType describes the type of an SessionDescription.
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Default)]
 pub(crate) enum RTCSdpType {
+    #[default]
     Unspecified = 0,
 
     /// indicates that a description MUST be treated as an SDP offer.
@@ -28,11 +30,6 @@ pub(crate) enum RTCSdpType {
     Rollback,
 }
 
-impl Default for RTCSdpType {
-    fn default() -> Self {
-        RTCSdpType::Unspecified
-    }
-}
 
 const SDP_TYPE_OFFER_STR: &str = "offer";
 const SDP_TYPE_PRANSWER_STR: &str = "pranswer";

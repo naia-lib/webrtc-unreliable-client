@@ -4,7 +4,7 @@ use crate::webrtc::dtls::handshake::*;
 use std::collections::HashMap;
 use std::io::BufReader;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 use sha2::{Digest, Sha256};
 

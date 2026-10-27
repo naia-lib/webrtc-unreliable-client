@@ -13,6 +13,7 @@ use std::sync::Arc;
 /// Some of these functions are also exported globally using the
 /// defaultAPI object. Note that the global version of the API
 /// may be phased out in the future.
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) struct API;
 
 impl API {

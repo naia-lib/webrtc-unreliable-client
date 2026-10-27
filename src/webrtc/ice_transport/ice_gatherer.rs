@@ -11,7 +11,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 pub(crate) type OnLocalCandidateHdlrFn = Box<
     dyn (FnMut(Option<RTCIceCandidate>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)

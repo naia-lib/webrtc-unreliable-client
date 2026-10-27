@@ -45,7 +45,9 @@ use std::fmt;
 use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use tokio::sync::{broadcast, mpsc, Mutex};
+use async_lock::Mutex;
+use futures_util::{select, FutureExt};
+use smol::channel;
 
 pub(crate) const RECEIVE_MTU: usize = 8192;
 /// MTU for inbound packet (from DTLS)
@@ -105,7 +107,9 @@ impl fmt::Display for AssociationState {
 
 /// retransmission timer IDs
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum RtxTimerId {
+    #[default]
     T1Init,
     T1Cookie,
     T2Shutdown,
@@ -113,11 +117,6 @@ pub(crate) enum RtxTimerId {
     Reconfig,
 }
 
-impl Default for RtxTimerId {
-    fn default() -> Self {
-        RtxTimerId::T1Init
-    }
-}
 
 impl fmt::Display for RtxTimerId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -134,14 +133,11 @@ impl fmt::Display for RtxTimerId {
 
 /// ack mode (for testing)
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum AckMode {
+    #[default]
     Normal,
     AlwaysDelay,
-}
-impl Default for AckMode {
-    fn default() -> Self {
-        AckMode::Normal
-    }
 }
 
 impl fmt::Display for AckMode {
@@ -156,17 +152,14 @@ impl fmt::Display for AckMode {
 
 /// ack transmission state
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum AckState {
+    #[default]
     Idle,      // ack timer is off
     Immediate, // will send ack immediately
     Delay,     // ack timer is on (ack is being delayed)
 }
 
-impl Default for AckState {
-    fn default() -> Self {
-        AckState::Idle
-    }
-}
 
 impl fmt::Display for AckState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -215,9 +208,9 @@ pub(crate) struct Association {
 impl Association {
     /// Client opens a SCTP stream over a conn
     pub(crate) async fn client(config: Config) -> Result<Self> {
-        let (a, mut handshake_completed_ch_rx) = Association::new(config, true).await?;
+        let (a, handshake_completed_ch_rx) = Association::new(config, true).await?;
 
-        if let Some(err_opt) = handshake_completed_ch_rx.recv().await {
+        if let Ok(err_opt) = handshake_completed_ch_rx.recv().await {
             if let Some(err) = err_opt {
                 Err(err)
             } else {
@@ -238,15 +231,19 @@ impl Association {
         ai.close().await
     }
 
-    async fn new(config: Config, is_client: bool) -> Result<(Self, mpsc::Receiver<Option<Error>>)> {
+    async fn new(config: Config, is_client: bool) -> Result<(Self, channel::Receiver<Option<Error>>)> {
         let net_conn = Arc::clone(&config.net_conn);
 
-        let (awake_write_loop_ch_tx, awake_write_loop_ch_rx) = mpsc::channel(1);
-        let (accept_ch_tx, _accept_ch_rx) = mpsc::channel(ACCEPT_CH_SIZE);
-        let (handshake_completed_ch_tx, handshake_completed_ch_rx) = mpsc::channel(1);
-        let (close_loop_ch_tx, _) = broadcast::channel(1);
-        let (close_loop_ch_rx1, close_loop_ch_rx2) =
-            (close_loop_ch_tx.subscribe(), close_loop_ch_tx.subscribe());
+        let (awake_write_loop_ch_tx, awake_write_loop_ch_rx) = channel::bounded(1);
+        let (accept_ch_tx, _accept_ch_rx) = channel::bounded(ACCEPT_CH_SIZE);
+        let (handshake_completed_ch_tx, handshake_completed_ch_rx) = channel::bounded(1);
+        // NOTE: the original receiver must stay alive: dropping it closes the
+        // channel (async-broadcast closes when receiver count hits zero and
+        // new_receiver() will not re-open it), which would make every recv()
+        // return Err(Closed) instantly and kill both loops on first poll.
+        // (tokio broadcast::channel did not close on receiver drop.)
+        let (close_loop_ch_tx, close_loop_ch_rx1) = async_broadcast::broadcast(1);
+        let close_loop_ch_rx2 = close_loop_ch_tx.new_receiver();
         let awake_write_loop_ch = Arc::new(awake_write_loop_ch_tx);
 
         let ai = AssociationInternal::new(
@@ -319,7 +316,7 @@ impl Association {
             ));
         }
 
-        tokio::spawn(async move {
+        smol::spawn(async move {
             Association::read_loop(
                 name1,
                 bytes_received1,
@@ -328,9 +325,10 @@ impl Association {
                 association_internal1,
             )
             .await;
-        });
+        })
+        .detach();
 
-        tokio::spawn(async move {
+        smol::spawn(async move {
             Association::write_loop(
                 name2,
                 bytes_sent2,
@@ -340,7 +338,8 @@ impl Association {
                 awake_write_loop_ch_rx,
             )
             .await;
-        });
+        })
+        .detach();
 
         if is_client {
             let mut ai = association_internal.lock().await;
@@ -367,7 +366,7 @@ impl Association {
         name: String,
         bytes_received: Arc<AtomicUsize>,
         net_conn: Arc<dyn Conn + Send + Sync>,
-        mut close_loop_ch: broadcast::Receiver<()>,
+        mut close_loop_ch: async_broadcast::Receiver<()>,
         association_internal: Arc<Mutex<AssociationInternal>>,
     ) {
         log::debug!("[{}] read_loop entered", name);
@@ -376,9 +375,11 @@ impl Association {
         let mut done = false;
         let mut n;
         while !done {
-            tokio::select! {
-                _ = close_loop_ch.recv() => break,
-                result = net_conn.recv(&mut buffer) => {
+            select! {
+                _ = close_loop_ch.recv().fuse() => {
+                    break;
+                }
+                result = net_conn.recv(&mut buffer).fuse() => {
                     match result {
                         Ok(m) => {
                             n=m;
@@ -422,9 +423,9 @@ impl Association {
         name: String,
         bytes_sent: Arc<AtomicUsize>,
         net_conn: Arc<dyn Conn + Send + Sync>,
-        mut close_loop_ch: broadcast::Receiver<()>,
+        mut close_loop_ch: async_broadcast::Receiver<()>,
         association_internal: Arc<Mutex<AssociationInternal>>,
-        mut awake_write_loop_ch: mpsc::Receiver<()>,
+        awake_write_loop_ch: channel::Receiver<()>,
     ) {
         log::debug!("[{}] write_loop entered", name);
         let mut done = false;
@@ -453,9 +454,9 @@ impl Association {
             }
 
             //log::debug!("[{}] wait awake_write_loop_ch", name);
-            tokio::select! {
-                _ = awake_write_loop_ch.recv() =>{}
-                _ = close_loop_ch.recv() => {
+            select! {
+                _ = awake_write_loop_ch.recv().fuse() =>{}
+                _ = close_loop_ch.recv().fuse() => {
                     done = true;
                 }
             };

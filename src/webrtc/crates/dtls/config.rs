@@ -2,7 +2,7 @@ use crate::webrtc::dtls::cipher_suite::*;
 use crate::webrtc::dtls::crypto::*;
 use crate::webrtc::dtls::error::*;
 
-use tokio::time::Duration;
+use std::time::Duration;
 
 /// Config is used to configure a DTLS client.
 /// After a Config is passed to a DTLS function it must not be modified.
@@ -11,6 +11,7 @@ use tokio::time::Duration;
 /// authenticated server, so the upstream PSK, client-auth policy, SRTP
 /// negotiation, and rustls/webpki chain-verification knobs have been removed.
 #[derive(Clone)]
+#[derive(Default)]
 pub(crate) struct Config {
     /// certificates contains certificate chain to present to the other side of the connection.
     pub(crate) certificates: Vec<Certificate>,
@@ -41,36 +42,20 @@ pub(crate) struct Config {
     pub(crate) replay_protection_window: usize,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            certificates: vec![],
-            cipher_suites: vec![],
-            extended_master_secret: ExtendedMasterSecretType::default(),
-            flight_interval: Duration::default(),
-            server_name: String::default(),
-            mtu: 0,
-            replay_protection_window: 0,
-        }
-    }
-}
 
 pub(crate) const DEFAULT_MTU: usize = 1200; // bytes
 
 // ExtendedMasterSecretType declares the policy the client and server
 // will follow for the Extended Master Secret extension
 #[derive(PartialEq, Copy, Clone)]
+#[derive(Default)]
 pub(crate) enum ExtendedMasterSecretType {
+    #[default]
     Request = 0,
     Require = 1,
     Disable = 2,
 }
 
-impl Default for ExtendedMasterSecretType {
-    fn default() -> Self {
-        ExtendedMasterSecretType::Request
-    }
-}
 
 pub(crate) fn validate_config(_is_client: bool, config: &Config) -> Result<()> {
     for cert in &config.certificates {

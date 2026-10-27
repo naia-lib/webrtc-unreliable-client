@@ -11,7 +11,9 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex, Notify};
+use super::super::util::notify::Notify;
+use async_lock::Mutex;
+use smol::channel;
 
 pub(crate) type OnBufferedAmountLowFn =
     Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
@@ -24,7 +26,7 @@ pub(crate) struct Stream {
     pub(crate) max_payload_size: u32,
     pub(crate) max_message_size: Arc<AtomicU32>, // clone from association
     pub(crate) state: Arc<AtomicU8>,             // clone from association
-    pub(crate) awake_write_loop_ch: Option<Arc<mpsc::Sender<()>>>,
+    pub(crate) awake_write_loop_ch: Option<Arc<channel::Sender<()>>>,
     pub(crate) pending_queue: Arc<PendingQueue>,
 
     pub(crate) stream_identifier: u16,
@@ -63,7 +65,7 @@ impl Stream {
         max_payload_size: u32,
         max_message_size: Arc<AtomicU32>,
         state: Arc<AtomicU8>,
-        awake_write_loop_ch: Option<Arc<mpsc::Sender<()>>>,
+        awake_write_loop_ch: Option<Arc<channel::Sender<()>>>,
         pending_queue: Arc<PendingQueue>,
     ) -> Self {
         Stream {

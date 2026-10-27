@@ -23,11 +23,11 @@ impl Conn for Endpoint {
     async fn recv(&self, buf: &mut [u8]) -> Result<usize> {
         match self.buffer.read(buf, None).await {
             Ok(n) => Ok(n),
-            Err(err) => Err(io::Error::new(io::ErrorKind::Other, err.to_string()).into()),
+            Err(err) => Err(io::Error::other(err.to_string()).into()),
         }
     }
     async fn recv_from(&self, _buf: &mut [u8]) -> Result<(usize, SocketAddr)> {
-        Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
+        Err(io::Error::other("Not applicable").into())
     }
 
     /// writes bytes to the underlying conn
@@ -36,7 +36,7 @@ impl Conn for Endpoint {
     }
 
     async fn send_to(&self, _buf: &[u8], _target: SocketAddr) -> Result<usize> {
-        Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
+        Err(io::Error::other("Not applicable").into())
     }
 
     async fn local_addr(&self) -> Result<SocketAddr> {

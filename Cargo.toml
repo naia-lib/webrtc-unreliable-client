@@ -17,8 +17,14 @@ maintenance = { status = "actively-developed" }
 anyhow = { version = "1.0"}
 bytes = { version = "1.1"}
 tinyjson = { version = "2.3" }
+smol = { version = "2" }
+futures-channel = { version = "0.3" }
+futures-core = { version = "0.3" }
+futures-util = { version = "0.3", features = ["io"] }
+async-lock = { version = "3" }
+async-net = { version = "2" }
+async-broadcast = { version = "0.7" }
 log = { version = "0.4" }
-tokio = { version = "1.15.0", features = ["full"] }
 async-trait = "0.1.52"
 rand = { version = "0.8.4"}
 thiserror = { version = "1.0.30"}

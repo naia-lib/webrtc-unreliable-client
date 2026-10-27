@@ -2,7 +2,9 @@ use std::fmt;
 
 /// ICEGatheringState describes the state of the candidate gathering process.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum RTCIceGatheringState {
+    #[default]
     Unspecified,
 
     /// ICEGatheringStateNew indicates that any of the ICETransports are
@@ -19,11 +21,6 @@ pub(crate) enum RTCIceGatheringState {
     Complete,
 }
 
-impl Default for RTCIceGatheringState {
-    fn default() -> Self {
-        RTCIceGatheringState::Unspecified
-    }
-}
 
 const ICE_GATHERING_STATE_NEW_STR: &str = "new";
 const ICE_GATHERING_STATE_GATHERING_STR: &str = "gathering";

@@ -46,7 +46,7 @@ impl FragmentBuffer {
 
             self.cache
                 .entry(handshake_header.message_sequence)
-                .or_insert_with(Vec::new);
+                .or_default();
 
             // end index should be the length of handshake header but if the handshake
             // was fragmented, we should keep them all

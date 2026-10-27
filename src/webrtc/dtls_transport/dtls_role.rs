@@ -5,7 +5,9 @@ use std::fmt;
 
 /// DtlsRole indicates the role of the DTLS transport.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum DTLSRole {
+    #[default]
     Unspecified = 0,
 
     /// DTLSRoleAuto defines the DTLS role is determined based on
@@ -25,11 +27,6 @@ pub(crate) enum DTLSRole {
 /// before it receives the answer.
 pub(crate) const DEFAULT_DTLS_ROLE_OFFER: DTLSRole = DTLSRole::Auto;
 
-impl Default for DTLSRole {
-    fn default() -> Self {
-        DTLSRole::Unspecified
-    }
-}
 
 impl fmt::Display for DTLSRole {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -6,7 +6,8 @@ use std::sync::Arc;
 use crate::webrtc::ice::candidate::Candidate;
 use crate::webrtc::ice::state::ConnectionState;
 use crate::webrtc::util::Conn;
-use tokio::sync::{mpsc, Mutex};
+use async_lock::Mutex;
+use smol::channel;
 
 use ice_candidate::RTCIceCandidate;
 use ice_candidate_pair::RTCIceCandidatePair;
@@ -49,7 +50,7 @@ struct ICETransportInternal {
     role: RTCIceRole,
     conn: Option<Arc<dyn Conn + Send + Sync>>, //AgentConn
     mux: Option<Mux>,
-    cancel_tx: Option<mpsc::Sender<()>>,
+    cancel_tx: Option<channel::Sender<()>>,
 }
 
 /// ICETransport allows an application access to information about the ICE
@@ -133,7 +134,7 @@ impl RTCIceTransport {
                 RTCIceRole::Controlled
             };
 
-            let (cancel_tx, cancel_rx) = mpsc::channel(1);
+            let (cancel_tx, cancel_rx) = channel::bounded(1);
             {
                 let mut internal = self.internal.lock().await;
                 internal.role = role;

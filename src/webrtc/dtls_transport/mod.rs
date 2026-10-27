@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::webrtc::dtls::conn::DTLSConn;
 use crate::webrtc::util::Conn;
-use tokio::sync::Mutex;
+use async_lock::Mutex;
 
 use dtls_role::*;
 

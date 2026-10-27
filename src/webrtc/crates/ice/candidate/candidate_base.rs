@@ -10,7 +10,7 @@ use std::ops::Add;
 use std::sync::atomic::{AtomicU16, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::sync::{broadcast, Mutex};
+use async_lock::Mutex;
 
 #[derive(Default)]
 pub(crate) struct CandidateBaseConfig {
@@ -40,7 +40,7 @@ pub(crate) struct CandidateBase {
     pub(crate) last_received: AtomicU64,
 
     pub(crate) conn: Option<Arc<dyn crate::webrtc::util::Conn + Send + Sync>>,
-    pub(crate) closed_ch: Arc<Mutex<Option<broadcast::Sender<()>>>>,
+    pub(crate) closed_ch: Arc<Mutex<Option<async_broadcast::Sender<()>>>>,
 
     pub(crate) foundation_override: String,
     pub(crate) priority_override: u32,
@@ -281,7 +281,7 @@ impl Candidate for CandidateBase {
         self.conn.as_ref()
     }
 
-    fn get_closed_ch(&self) -> Arc<Mutex<Option<broadcast::Sender<()>>>> {
+    fn get_closed_ch(&self) -> Arc<Mutex<Option<async_broadcast::Sender<()>>>> {
         self.closed_ch.clone()
     }
 }
@@ -338,14 +338,13 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
     if split.len() > 8 {
         let split2 = &split[8..];
 
-        if split2[0] == "raddr" {
-            if split2.len() < 4 {
+        if split2[0] == "raddr"
+            && split2.len() < 4 {
                 return Err(Error::Other(format!(
                     "{:?}: incorrect length",
                     Error::ErrParseRelatedAddr
                 )));
             }
-        }
     }
 
     match typ {

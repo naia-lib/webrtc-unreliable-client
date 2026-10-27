@@ -216,7 +216,6 @@ pub(crate) struct SessionDescription {
 impl SessionDescription {
     /// API to match draft-ietf-rtcweb-jsep
     /// Move to webrtc or its own package?
-
     /// NewJSEPSessionDescription creates a new SessionDescription with
     /// some settings that are required by the JSEP spec.
     pub(crate) fn new_jsep_session_description(identity: bool) -> Self {
@@ -336,7 +335,7 @@ impl SessionDescription {
         result += key_value_build("i=", self.session_information.as_ref()).as_str();
 
         if let Some(uri) = &self.uri {
-            result += key_value_build("u=", Some(&format!("{}", uri))).as_str();
+            result += key_value_build("u=", Some(&uri.to_string())).as_str();
         }
         result += key_value_build("e=", self.email_address.as_ref()).as_str();
         result += key_value_build("p=", self.phone_number.as_ref()).as_str();
@@ -1058,7 +1057,7 @@ fn unmarshal_time_zones<'a, R: io::BufRead + io::Seek>(
     // z=<adjustment time> <offset> <adjustment time> <offset> ....
     // so we are making sure that there are actually multiple of 2 total.
     let fields: Vec<&str> = value.split_whitespace().collect();
-    if fields.len() % 2 != 0 {
+    if !fields.len().is_multiple_of(2) {
         return Err(Error::SdpInvalidSyntax(format!("`t={}`", value)));
     }
 

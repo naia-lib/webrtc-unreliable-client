@@ -12,7 +12,7 @@ pub(crate) struct AssociationInternal {
     pub(crate) state: Arc<AtomicU8>,
     pub(crate) max_message_size: Arc<AtomicU32>,
     pub(crate) will_send_shutdown: Arc<AtomicBool>,
-    awake_write_loop_ch: Option<Arc<mpsc::Sender<()>>>,
+    awake_write_loop_ch: Option<Arc<channel::Sender<()>>>,
 
     peer_verification_tag: u32,
     pub(crate) my_verification_tag: u32,
@@ -72,9 +72,9 @@ pub(crate) struct AssociationInternal {
 
     streams: HashMap<u16, Arc<Stream>>,
 
-    close_loop_ch_tx: Option<broadcast::Sender<()>>,
-    accept_ch_tx: Option<mpsc::Sender<Arc<Stream>>>,
-    handshake_completed_ch_tx: Option<mpsc::Sender<Option<Error>>>,
+    close_loop_ch_tx: Option<async_broadcast::Sender<()>>,
+    accept_ch_tx: Option<channel::Sender<Arc<Stream>>>,
+    handshake_completed_ch_tx: Option<channel::Sender<Option<Error>>>,
 
     // per inbound packet context
     delayed_ack_triggered: bool,
@@ -88,10 +88,10 @@ pub(crate) struct AssociationInternal {
 impl AssociationInternal {
     pub(crate) fn new(
         config: Config,
-        close_loop_ch_tx: broadcast::Sender<()>,
-        accept_ch_tx: mpsc::Sender<Arc<Stream>>,
-        handshake_completed_ch_tx: mpsc::Sender<Option<Error>>,
-        awake_write_loop_ch: Arc<mpsc::Sender<()>>,
+        close_loop_ch_tx: async_broadcast::Sender<()>,
+        accept_ch_tx: channel::Sender<Arc<Stream>>,
+        handshake_completed_ch_tx: channel::Sender<Option<Error>>,
+        awake_write_loop_ch: Arc<channel::Sender<()>>,
     ) -> Self {
         let max_receive_buffer_size = if config.max_receive_buffer_size == 0 {
             INITIAL_RECV_BUF_SIZE
@@ -211,9 +211,10 @@ impl AssociationInternal {
 
             self.close_all_timers().await;
 
-            // awake read/write_loop to exit
+            // awake read/write_loop to exit; no receivers means the loops are
+            // already gone, so a closed or full channel is not an error here
             if let Some(sender) = self.close_loop_ch_tx.take() {
-                sender.send(()).unwrap();
+                let _ = sender.try_broadcast(());
             }
 
             for si in self.streams.keys().cloned().collect::<Vec<u16>>() {
@@ -794,7 +795,7 @@ impl AssociationInternal {
                     }
                 }
             } else {
-                if let Some(_) = param.as_any().downcast_ref::<ParamForwardTsnSupported>() {
+                if param.as_any().downcast_ref::<ParamForwardTsnSupported>().is_some() {
                     log::debug!("[{}] use ForwardTSN (on initAck)", self.name);
                     self.use_forward_tsn = true;
                 }
@@ -1036,11 +1037,7 @@ impl AssociationInternal {
             bytes_queued += s.get_num_bytes_in_reassembly_queue().await as u32;
         }
 
-        if bytes_queued >= self.max_receive_buffer_size {
-            0
-        } else {
-            self.max_receive_buffer_size - bytes_queued
-        }
+        self.max_receive_buffer_size.saturating_sub(bytes_queued)
     }
 
     pub(crate) fn open_stream(&mut self, stream_identifier: u16) -> Result<Arc<Stream>> {
@@ -1661,7 +1658,7 @@ impl AssociationInternal {
     }
 
     async fn handle_forward_tsn(&mut self, c: &ChunkForwardTsn) -> Result<Vec<Packet>> {
-        log::trace!("[{}] FwdTSN: {}", self.name, c.to_string());
+        log::trace!("[{}] FwdTSN: {}", self.name, c);
 
         if !self.use_forward_tsn {
             log::warn!("[{}] received FwdTSN but not enabled", self.name);

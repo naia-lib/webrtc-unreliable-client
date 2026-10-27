@@ -54,7 +54,7 @@ pub(crate) struct Message {
 
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let t_id = base64::encode(&self.transaction_id.0);
+        let t_id = base64::encode(self.transaction_id.0);
         write!(
             f,
             "{} l={} attrs={} id={}",
@@ -165,7 +165,7 @@ impl Message {
         };
 
         // Checking that attribute value needs padding.
-        if attr.length as usize % PADDING != 0 {
+        if !(attr.length as usize).is_multiple_of(PADDING) {
             // Performing padding.
             let bytes_to_add = nearest_padded_value_length(v.len()) - v.len();
             last += bytes_to_add;

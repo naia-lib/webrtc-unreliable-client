@@ -14,7 +14,7 @@ impl Agent {
     /// closes.
     pub(crate) async fn dial(
         &self,
-        mut cancel_rx: mpsc::Receiver<()>,
+        cancel_rx: channel::Receiver<()>,
         remote_ufrag: String,
         remote_pwd: String,
     ) -> Result<Arc<impl Conn>> {
@@ -30,11 +30,11 @@ impl Agent {
             )
         };
 
-        if let Some(mut on_connected_rx) = on_connected_rx {
+        if let Some(on_connected_rx) = on_connected_rx {
             // block until pair selected
-            tokio::select! {
-                _ = on_connected_rx.recv() => {},
-                _ = cancel_rx.recv() => {
+            select! {
+                _ = on_connected_rx.recv().fuse() => {},
+                _ = cancel_rx.recv().fuse() => {
                     return Err(Error::ErrCanceledByCaller);
                 }
             }
@@ -49,7 +49,7 @@ impl Agent {
     /// closes.
     pub(crate) async fn accept(
         &self,
-        mut cancel_rx: mpsc::Receiver<()>,
+        cancel_rx: channel::Receiver<()>,
         remote_ufrag: String,
         remote_pwd: String,
     ) -> Result<Arc<impl Conn>> {
@@ -65,11 +65,11 @@ impl Agent {
             )
         };
 
-        if let Some(mut on_connected_rx) = on_connected_rx {
+        if let Some(on_connected_rx) = on_connected_rx {
             // block until pair selected
-            tokio::select! {
-                _ = on_connected_rx.recv() => {},
-                _ = cancel_rx.recv() => {
+            select! {
+                _ = on_connected_rx.recv().fuse() => {},
+                _ = cancel_rx.recv().fuse() => {
                     return Err(Error::ErrCanceledByCaller);
                 }
             }
@@ -155,12 +155,12 @@ impl AgentConn {
 impl Conn for AgentConn {
     async fn recv(&self, buf: &mut [u8]) -> std::result::Result<usize, crate::webrtc::util::Error> {
         if self.done.load(Ordering::SeqCst) {
-            return Err(io::Error::new(io::ErrorKind::Other, "Conn is closed").into());
+            return Err(io::Error::other("Conn is closed").into());
         }
 
         let n = match self.buffer.read(buf, None).await {
             Ok(n) => n,
-            Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err.to_string()).into()),
+            Err(err) => return Err(io::Error::other(err.to_string()).into()),
         };
         self.bytes_received.fetch_add(n, Ordering::SeqCst);
 
@@ -175,13 +175,13 @@ impl Conn for AgentConn {
             let n = self.recv(buf).await?;
             Ok((n, raddr))
         } else {
-            Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
+            Err(io::Error::other("Not applicable").into())
         }
     }
 
     async fn send(&self, buf: &[u8]) -> std::result::Result<usize, crate::webrtc::util::Error> {
         if self.done.load(Ordering::SeqCst) {
-            return Err(io::Error::new(io::ErrorKind::Other, "Conn is closed").into());
+            return Err(io::Error::other("Conn is closed").into());
         }
 
         if is_message(buf) {
@@ -203,7 +203,7 @@ impl Conn for AgentConn {
                 self.bytes_sent.fetch_add(buf.len(), Ordering::SeqCst);
                 Ok(n)
             }
-            Err(err) => Err(io::Error::new(io::ErrorKind::Other, err.to_string()).into()),
+            Err(err) => Err(io::Error::other(err.to_string()).into()),
         }
     }
 
@@ -212,7 +212,7 @@ impl Conn for AgentConn {
         _buf: &[u8],
         _target: SocketAddr,
     ) -> std::result::Result<usize, crate::webrtc::util::Error> {
-        Err(io::Error::new(io::ErrorKind::Other, "Not applicable").into())
+        Err(io::Error::other("Not applicable").into())
     }
 
     async fn local_addr(&self) -> std::result::Result<SocketAddr, crate::webrtc::util::Error> {

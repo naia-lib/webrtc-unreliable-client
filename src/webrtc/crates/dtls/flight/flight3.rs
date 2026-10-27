@@ -39,7 +39,7 @@ impl fmt::Display for Flight3 {
 impl Flight for Flight3 {
     async fn parse(
         &self,
-        _tx: &mut mpsc::Sender<mpsc::Sender<()>>,
+        _tx: &mut channel::Sender<channel::Sender<()>>,
         state: &mut State,
         cache: &HandshakeCache,
         cfg: &HandshakeConfig,
@@ -157,13 +157,10 @@ impl Flight for Flight3 {
             }
 
             for extension in &h.extensions {
-                match extension {
-                    Extension::UseExtendedMasterSecret(_) => {
-                        if cfg.extended_master_secret != ExtendedMasterSecretType::Disable {
-                            state.extended_master_secret = true;
-                        }
+                if let Extension::UseExtendedMasterSecret(_) = extension {
+                    if cfg.extended_master_secret != ExtendedMasterSecretType::Disable {
+                        state.extended_master_secret = true;
                     }
-                    _ => {}
                 };
             }
 

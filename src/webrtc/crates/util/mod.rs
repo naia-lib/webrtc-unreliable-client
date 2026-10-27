@@ -26,6 +26,7 @@ pub(crate) mod buffer;
 pub(crate) mod conn;
 pub(crate) mod ifaces;
 pub(crate) mod marshal;
+pub(crate) mod notify;
 pub(crate) mod vnet;
 pub(crate) use crate::webrtc::util::buffer::Buffer;
 pub(crate) use crate::webrtc::util::conn::Conn;

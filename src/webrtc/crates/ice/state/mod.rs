@@ -2,7 +2,9 @@ use std::fmt;
 
 /// An enum showing the state of a ICE Connection List of supported States.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum ConnectionState {
+    #[default]
     Unspecified,
 
     /// ICE agent is gathering addresses.
@@ -27,11 +29,6 @@ pub(crate) enum ConnectionState {
     Closed,
 }
 
-impl Default for ConnectionState {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
 
 impl fmt::Display for ConnectionState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -66,7 +63,9 @@ impl From<u8> for ConnectionState {
 
 /// Describes the state of the candidate gathering process.
 #[derive(PartialEq, Copy, Clone)]
+#[derive(Default)]
 pub(crate) enum GatheringState {
+    #[default]
     Unspecified,
 
     /// Indicates candidate gathering is not yet started.
@@ -90,11 +89,6 @@ impl From<u8> for GatheringState {
     }
 }
 
-impl Default for GatheringState {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
 
 impl fmt::Display for GatheringState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

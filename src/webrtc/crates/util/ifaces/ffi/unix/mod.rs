@@ -1,4 +1,4 @@
-use ::std::io::{Error, ErrorKind};
+use ::std::io::Error;
 use std::ffi::CStr;
 use std::{net, ptr};
 
@@ -191,6 +191,6 @@ pub(crate) fn ifaces() -> Result<Vec<Interface>, Error> {
             unsafe { freeifaddrs(ifaddrs_ptr) };
             Ok(ret)
         }
-        _ => Err(Error::new(ErrorKind::Other, "Oh, no ...")), // Err(nix::errno::Errno::last());
+        _ => Err(Error::other("Oh, no ...")), // Err(nix::errno::Errno::last());
     }
 }

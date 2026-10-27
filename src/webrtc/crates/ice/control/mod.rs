@@ -17,7 +17,7 @@ impl TieBreaker {
         t: AttrType,
     ) -> Result<(), crate::webrtc::stun::Error> {
         let mut v = vec![0; TIE_BREAKER_SIZE];
-        v.copy_from_slice(&(self.0 as u64).to_be_bytes());
+        v.copy_from_slice(&self.0.to_be_bytes());
         m.add(t, &v);
         Ok(())
     }

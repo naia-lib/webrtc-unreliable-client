@@ -1,8 +1,10 @@
 use crate::webrtc::sctp::association::RtxTimerId;
 use async_trait::async_trait;
 use std::sync::{Arc, Weak};
-use tokio::sync::{mpsc, Mutex};
-use tokio::time::Duration;
+use async_lock::Mutex;
+use smol::channel;
+use futures_util::{select, FutureExt};
+use std::time::Duration;
 
 pub(crate) const RTO_INITIAL: u64 = 3000; // msec
 pub(crate) const RTO_MIN: u64 = 1000; // msec
@@ -50,10 +52,7 @@ impl RtoManager {
             self.srtt = ((RTO_BASE - RTO_ALPHA) * self.srtt + RTO_ALPHA * rtt) / RTO_BASE;
         }
 
-        self.rto = std::cmp::min(
-            std::cmp::max(self.srtt + (4.0 * self.rttvar) as u64, RTO_MIN),
-            RTO_MAX,
-        );
+        self.rto = (self.srtt + (4.0 * self.rttvar) as u64).clamp(RTO_MIN, RTO_MAX);
 
         self.srtt
     }
@@ -92,7 +91,7 @@ pub(crate) struct RtxTimer<T: 'static + RtxTimerObserver + Send> {
     pub(crate) timeout_observer: Weak<Mutex<T>>,
     pub(crate) id: RtxTimerId,
     pub(crate) max_retrans: usize,
-    pub(crate) close_tx: Arc<Mutex<Option<mpsc::Sender<()>>>>,
+    pub(crate) close_tx: Arc<Mutex<Option<channel::Sender<()>>>>,
 }
 
 impl<T: 'static + RtxTimerObserver + Send> RtxTimer<T> {
@@ -120,13 +119,13 @@ impl<T: 'static + RtxTimerObserver + Send> RtxTimer<T> {
         // value at RTO.Min or at RTO.Max.
 
         // this timer is already closed
-        let mut close_rx = {
+        let close_rx = {
             let mut close = self.close_tx.lock().await;
             if close.is_some() {
                 return false;
             }
 
-            let (close_tx, close_rx) = mpsc::channel(1);
+            let (close_tx, close_rx) = channel::bounded(1);
             *close = Some(close_tx);
             close_rx
         };
@@ -136,16 +135,14 @@ impl<T: 'static + RtxTimerObserver + Send> RtxTimer<T> {
         let close_tx = Arc::clone(&self.close_tx);
         let timeout_observer = self.timeout_observer.clone();
 
-        tokio::spawn(async move {
+        smol::spawn(async move {
             let mut n_rtos = 0;
 
             loop {
                 let interval = calculate_next_timeout(rto, n_rtos);
-                let timer = tokio::time::sleep(Duration::from_millis(interval));
-                tokio::pin!(timer);
 
-                tokio::select! {
-                    _ = timer.as_mut() => {
+                select! {
+                    _ = smol::Timer::after(Duration::from_millis(interval)).fuse() => {
                         n_rtos+=1;
 
                         let failure = {
@@ -168,10 +165,11 @@ impl<T: 'static + RtxTimerObserver + Send> RtxTimer<T> {
                             break;
                         }
                     }
-                    _ = close_rx.recv() => break,
+                    _ = close_rx.recv().fuse() => break,
                 }
             }
-        });
+        })
+        .detach();
 
         true
     }

@@ -4,7 +4,7 @@ use crate::webrtc::util::KeyingMaterialExporterError;
 use rcgen::Error as RcgenError;
 use std::io;
 use std::string::FromUtf8Error;
-use tokio::sync::mpsc::error::SendError as MpscSendError;
+use smol::channel::SendError as MpscSendError;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
@@ -126,7 +126,7 @@ impl From<p256::elliptic_curve::Error> for Error {
 }
 
 
-// Because Tokio SendError is parameterized, we sadly lose the backtrace.
+// Because channel SendError is parameterized, we sadly lose the backtrace.
 impl<T> From<MpscSendError<T>> for Error {
     fn from(e: MpscSendError<T>) -> Self {
         Error::MpscSend(e.to_string())

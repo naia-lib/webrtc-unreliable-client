@@ -6,7 +6,7 @@ use ipnet::IpNet;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::net::UdpSocket;
+use async_net::UdpSocket;
 
 // Net represents the local network stack: the system's real interfaces and
 // real UDP sockets. (The upstream "virtual network" test scaffolding this

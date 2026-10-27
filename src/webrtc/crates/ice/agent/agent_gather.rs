@@ -45,26 +45,24 @@ impl Agent {
         let wg = WaitGroup::new();
 
         for t in &params.candidate_types {
-            match t {
-                CandidateType::Host => {
-                    let local_params = GatherCandidatesLocalParams {
-                        network_types: params.network_types.clone(),
-                        mdns_mode: params.mdns_mode,
-                        mdns_name: params.mdns_name.clone(),
-                        interface_filter: Arc::clone(&params.interface_filter),
-                        ext_ip_mapper: Arc::clone(&params.ext_ip_mapper),
-                        net: Arc::clone(&params.net),
-                        agent_internal: Arc::clone(&params.agent_internal),
-                    };
+            if t == &CandidateType::Host {
+                let local_params = GatherCandidatesLocalParams {
+                    network_types: params.network_types.clone(),
+                    mdns_mode: params.mdns_mode,
+                    mdns_name: params.mdns_name.clone(),
+                    interface_filter: Arc::clone(&params.interface_filter),
+                    ext_ip_mapper: Arc::clone(&params.ext_ip_mapper),
+                    net: Arc::clone(&params.net),
+                    agent_internal: Arc::clone(&params.agent_internal),
+                };
 
-                    let w = wg.worker();
-                    tokio::spawn(async move {
-                        let _d = w;
+                let w = wg.worker();
+                smol::spawn(async move {
+                    let _d = w;
 
-                        Self::gather_candidates_local(local_params).await;
-                    });
-                }
-                _ => {}
+                    Self::gather_candidates_local(local_params).await;
+                })
+                .detach();
             }
         }
 
@@ -115,7 +113,7 @@ impl Agent {
             params.agent_internal,
         );
 
-        let ips = local_interfaces(&net, &*interface_filter, &network_types).await;
+        let ips = local_interfaces(&net, &interface_filter, &network_types).await;
         for ip in ips {
             let mut mapped_ip = ip;
 
@@ -180,7 +178,6 @@ impl Agent {
                     conn: Some(conn),
                     ..CandidateBaseConfig::default()
                 },
-                ..CandidateHostConfig::default()
             };
 
             let candidate: Arc<dyn Candidate + Send + Sync> =

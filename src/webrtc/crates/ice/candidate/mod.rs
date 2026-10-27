@@ -11,7 +11,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use tokio::sync::{broadcast, Mutex};
+use async_lock::Mutex;
 
 pub(crate) const RECEIVE_MTU: usize = 8192;
 pub(crate) const DEFAULT_LOCAL_PREFERENCE: u16 = 65535;
@@ -66,12 +66,14 @@ pub(crate) trait Candidate: fmt::Display {
     fn equal(&self, other: &dyn Candidate) -> bool;
     async fn set_ip(&self, ip: &IpAddr) -> Result<()>;
     fn get_conn(&self) -> Option<&Arc<dyn crate::webrtc::util::Conn + Send + Sync>>;
-    fn get_closed_ch(&self) -> Arc<Mutex<Option<broadcast::Sender<()>>>>;
+    fn get_closed_ch(&self) -> Arc<Mutex<Option<async_broadcast::Sender<()>>>>;
 }
 
 /// Represents the type of candidate `CandidateType` enum.
 #[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(Default)]
 pub(crate) enum CandidateType {
+    #[default]
     Unspecified,
     Host,
 }
@@ -87,11 +89,6 @@ impl fmt::Display for CandidateType {
     }
 }
 
-impl Default for CandidateType {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
 
 impl CandidateType {
     /// Returns the preference weight of a `CandidateType`.
@@ -125,7 +122,9 @@ impl fmt::Display for CandidateRelatedAddress {
 
 /// Represent the ICE candidate pair state.
 #[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(Default)]
 pub(crate) enum CandidatePairState {
+    #[default]
     Unspecified = 0,
 
     /// Means a check has not been performed for this pair.
@@ -154,11 +153,6 @@ impl From<u8> for CandidatePairState {
     }
 }
 
-impl Default for CandidatePairState {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
 
 impl fmt::Display for CandidatePairState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

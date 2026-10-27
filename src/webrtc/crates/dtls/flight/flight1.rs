@@ -35,7 +35,7 @@ impl fmt::Display for Flight1 {
 impl Flight for Flight1 {
     async fn parse(
         &self,
-        tx: &mut mpsc::Sender<mpsc::Sender<()>>,
+        tx: &mut channel::Sender<channel::Sender<()>>,
         state: &mut State,
         cache: &HandshakeCache,
         cfg: &HandshakeConfig,

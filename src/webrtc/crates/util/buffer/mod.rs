@@ -1,8 +1,9 @@
 use crate::webrtc::util::error::{Error, Result};
 
 use std::sync::Arc;
-use tokio::sync::{Mutex, Notify};
-use tokio::time::{timeout, Duration};
+use super::notify::Notify;
+use async_lock::Mutex;
+use std::time::Duration;
 
 const MIN_SIZE: usize = 2048;
 const CUTOFF_SIZE: usize = 128 * 1024;
@@ -254,7 +255,7 @@ impl Buffer {
 
             // Wait for signal.
             if let Some(d) = duration {
-                if timeout(d, self.notify.notified()).await.is_err() {
+                if !self.notify.notified_timeout(d).await {
                     return Err(Error::ErrTimeout);
                 }
             } else {

@@ -27,8 +27,10 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use tokio::sync::{broadcast, mpsc, Mutex};
-use tokio::time::{Duration, Instant};
+use async_lock::Mutex;
+use futures_util::{select, FutureExt};
+use smol::channel;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
 pub(crate) struct BindingRequest {
@@ -72,9 +74,9 @@ pub(crate) type OnCandidateHdlrFn = Box<
 pub(crate) type GatherCandidateCancelFn = Box<dyn Fn() + Send + Sync>;
 
 pub(crate) struct ChanReceivers {
-    chan_state_rx: mpsc::Receiver<ConnectionState>,
-    chan_candidate_rx: mpsc::Receiver<Option<Arc<dyn Candidate + Send + Sync>>>,
-    chan_candidate_pair_rx: mpsc::Receiver<()>,
+    chan_state_rx: channel::Receiver<ConnectionState>,
+    chan_candidate_rx: channel::Receiver<Option<Arc<dyn Candidate + Send + Sync>>>,
+    chan_candidate_pair_rx: channel::Receiver<()>,
 }
 
 /// Represents the ICE agent.
@@ -222,9 +224,10 @@ impl Agent {
         } else {
             let ai = Arc::clone(&self.internal);
             let candidate = Arc::clone(c);
-            tokio::spawn(async move {
+            smol::spawn(async move {
                 ai.add_remote_candidate(&candidate).await;
-            });
+            })
+            .detach();
         }
 
         Ok(())
@@ -363,9 +366,10 @@ impl Agent {
             gathering_state: Arc::clone(&self.gathering_state),
             chan_candidate_tx: Arc::clone(&self.internal.chan_candidate_tx),
         };
-        tokio::spawn(async move {
+        smol::spawn(async move {
             Self::gather_candidates_internal(params).await;
-        });
+        })
+        .detach();
 
         Ok(())
     }

@@ -4,7 +4,7 @@ use std::num::ParseIntError;
 use std::pin::Pin;
 use std::string::FromUtf8Error;
 use thiserror::Error;
-use tokio::sync::mpsc::error::SendError as MpscSendError;
+use futures_channel::mpsc::SendError as MpscSendError;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
@@ -125,9 +125,23 @@ pub(crate) enum Error {
 pub(crate) type OnErrorHdlrFn =
     Box<dyn (FnMut(Error) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;
 
-// Because Tokio SendError is parameterized, we sadly lose the backtrace.
-impl<T> From<MpscSendError<T>> for Error {
-    fn from(e: MpscSendError<T>) -> Self {
+// futures-channel's mpsc SendError carries no payload; keep the message only.
+impl From<MpscSendError> for Error {
+    fn from(e: MpscSendError) -> Self {
+        Error::MpscSend(e.to_string())
+    }
+}
+
+// `smol::channel` (async-channel) replaces `tokio::sync::mpsc` for all
+// intra-crate signaling; both its send errors funnel into the same variant.
+impl<T> From<smol::channel::SendError<T>> for Error {
+    fn from(e: smol::channel::SendError<T>) -> Self {
+        Error::MpscSend(e.to_string())
+    }
+}
+
+impl<T> From<smol::channel::TrySendError<T>> for Error {
+    fn from(e: smol::channel::TrySendError<T>) -> Self {
         Error::MpscSend(e.to_string())
     }
 }

@@ -36,7 +36,7 @@ impl Flight for Flight5 {
 
     async fn parse(
         &self,
-        _tx: &mut mpsc::Sender<mpsc::Sender<()>>,
+        _tx: &mut channel::Sender<channel::Sender<()>>,
         state: &mut State,
         cache: &HandshakeCache,
         cfg: &HandshakeConfig,
@@ -249,8 +249,7 @@ impl Flight for Flight5 {
 
         // Append not-yet-sent packets
         let mut merged = vec![];
-        let mut seq_pred = state.handshake_send_sequence as u16;
-        for p in &mut pkts {
+        for (seq_pred, p) in (state.handshake_send_sequence as u16..).zip(pkts.iter_mut()) {
             let h = match &mut p.record.content {
                 Content::Handshake(h) => h,
                 _ => {
@@ -264,7 +263,6 @@ impl Flight for Flight5 {
                 }
             };
             h.handshake_header.message_sequence = seq_pred;
-            seq_pred += 1;
 
             let mut raw = vec![];
             {

@@ -11,7 +11,7 @@ use crate::webrtc::dtls::state::*;
 
 use async_trait::async_trait;
 use std::fmt;
-use tokio::sync::mpsc;
+use smol::channel;
 
 /*
   DTLS messages are grouped into a series of message flights, according
@@ -66,7 +66,7 @@ pub(crate) trait Flight: fmt::Display + fmt::Debug {
 
     async fn parse(
         &self,
-        tx: &mut mpsc::Sender<mpsc::Sender<()>>,
+        tx: &mut channel::Sender<channel::Sender<()>>,
         state: &mut State,
         cache: &HandshakeCache,
         cfg: &HandshakeConfig,

@@ -2,7 +2,9 @@ use std::fmt;
 
 /// DTLSTransportState indicates the DTLS transport establishment state.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub(crate) enum RTCDtlsTransportState {
+    #[default]
     Unspecified = 0,
 
     /// DTLSTransportStateNew indicates that DTLS has not started negotiating
@@ -28,11 +30,6 @@ pub(crate) enum RTCDtlsTransportState {
     Failed = 5,
 }
 
-impl Default for RTCDtlsTransportState {
-    fn default() -> Self {
-        RTCDtlsTransportState::Unspecified
-    }
-}
 
 const DTLS_TRANSPORT_STATE_NEW_STR: &str = "new";
 const DTLS_TRANSPORT_STATE_CONNECTING_STR: &str = "connecting";

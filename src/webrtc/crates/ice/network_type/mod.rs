@@ -12,7 +12,9 @@ pub(crate) fn supported_network_types() -> Vec<NetworkType> {
 
 /// Represents the type of network.
 #[derive(PartialEq, Debug, Copy, Clone, Eq, Hash)]
+#[derive(Default)]
 pub(crate) enum NetworkType {
+    #[default]
     Unspecified,
 
     /// Indicates UDP over IPv4.
@@ -43,11 +45,6 @@ impl fmt::Display for NetworkType {
     }
 }
 
-impl Default for NetworkType {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
 
 impl NetworkType {
     /// Returns the short network description.

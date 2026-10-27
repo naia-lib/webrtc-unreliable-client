@@ -5,6 +5,7 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error, PartialEq)]
 #[non_exhaustive]
+#[allow(clippy::enum_variant_names)]
 pub(crate) enum Error {
     #[error("raw is too small for a SCTP chunk")]
     ErrChunkHeaderTooSmall,
@@ -165,7 +166,7 @@ impl From<Error> for io::Error {
             e @ Error::ErrStreamClosed => {
                 io::Error::new(io::ErrorKind::ConnectionAborted, e.to_string())
             }
-            e => io::Error::new(io::ErrorKind::Other, e.to_string()),
+            e => io::Error::other(e.to_string()),
         }
     }
 }

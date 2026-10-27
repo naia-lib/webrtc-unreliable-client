@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use std::sync::Weak;
-use tokio::sync::{mpsc, Mutex};
-use tokio::time::Duration;
+use async_lock::Mutex;
+use smol::channel;
+use futures_util::{select, FutureExt};
+use std::time::Duration;
 
 pub(crate) const ACK_INTERVAL: Duration = Duration::from_millis(200);
 
@@ -16,7 +18,7 @@ pub(crate) trait AckTimerObserver {
 pub(crate) struct AckTimer<T: 'static + AckTimerObserver + Send> {
     pub(crate) timeout_observer: Weak<Mutex<T>>,
     pub(crate) interval: Duration,
-    pub(crate) close_tx: Option<mpsc::Sender<()>>,
+    pub(crate) close_tx: Option<channel::Sender<()>>,
 }
 
 impl<T: 'static + AckTimerObserver + Send> AckTimer<T> {
@@ -36,24 +38,22 @@ impl<T: 'static + AckTimerObserver + Send> AckTimer<T> {
             return false;
         }
 
-        let (close_tx, mut close_rx) = mpsc::channel(1);
+        let (close_tx, close_rx) = channel::bounded(1);
         let interval = self.interval;
         let timeout_observer = self.timeout_observer.clone();
 
-        tokio::spawn(async move {
-            let timer = tokio::time::sleep(interval);
-            tokio::pin!(timer);
-
-            tokio::select! {
-                _ = timer.as_mut() => {
+        smol::spawn(async move {
+            select! {
+                _ = smol::Timer::after(interval).fuse() => {
                     if let Some(observer) = timeout_observer.upgrade(){
                         let mut observer = observer.lock().await;
                         observer.on_ack_timeout().await;
                     }
                  }
-                _ = close_rx.recv() => {},
+                _ = close_rx.recv().fuse() => {},
             }
-        });
+        })
+        .detach();
 
         self.close_tx = Some(close_tx);
         true
