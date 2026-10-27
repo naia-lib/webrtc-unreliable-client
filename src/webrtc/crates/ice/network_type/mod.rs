@@ -11,8 +11,7 @@ pub(crate) fn supported_network_types() -> Vec<NetworkType> {
 }
 
 /// Represents the type of network.
-#[derive(PartialEq, Debug, Copy, Clone, Eq, Hash)]
-#[derive(Default)]
+#[derive(PartialEq, Debug, Copy, Clone, Eq, Hash, Default)]
 pub(crate) enum NetworkType {
     #[default]
     Unspecified,
@@ -44,7 +43,6 @@ impl fmt::Display for NetworkType {
         write!(f, "{}", s)
     }
 }
-
 
 impl NetworkType {
     /// Returns the short network description.

@@ -3,14 +3,12 @@ use crate::webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 
 use std::fmt;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum StateChangeOp {
     #[default]
     SetLocal,
     SetRemote,
 }
-
 
 impl fmt::Display for StateChangeOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -23,8 +21,7 @@ impl fmt::Display for StateChangeOp {
 }
 
 /// SignalingState indicates the signaling state of the offer/answer process.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCSignalingState {
     #[default]
     Unspecified = 0,
@@ -55,7 +52,6 @@ pub(crate) enum RTCSignalingState {
     /// SignalingStateClosed indicates The PeerConnection has been closed.
     Closed,
 }
-
 
 const SIGNALING_STATE_STABLE_STR: &str = "stable";
 const SIGNALING_STATE_HAVE_LOCAL_OFFER_STR: &str = "have-local-offer";
@@ -153,10 +149,9 @@ pub(crate) fn check_next_signaling_state(
                         }
                     }
                     // have-local-offer->SetRemote(pranswer)->have-remote-pranswer
-                    RTCSdpType::Pranswer
-                        if next == RTCSignalingState::HaveRemotePranswer => {
-                            return Ok(next);
-                        }
+                    RTCSdpType::Pranswer if next == RTCSignalingState::HaveRemotePranswer => {
+                        return Ok(next);
+                    }
                     _ => {}
                 }
             }
@@ -179,10 +174,9 @@ pub(crate) fn check_next_signaling_state(
                         }
                     }
                     // have-remote-offer->SetLocal(pranswer)->have-local-pranswer
-                    RTCSdpType::Pranswer
-                        if next == RTCSignalingState::HaveLocalPranswer => {
-                            return Ok(next);
-                        }
+                    RTCSdpType::Pranswer if next == RTCSignalingState::HaveLocalPranswer => {
+                        return Ok(next);
+                    }
                     _ => {}
                 }
             }

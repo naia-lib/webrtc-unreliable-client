@@ -1,6 +1,6 @@
 use crate::webrtc::peer_connection::*;
-use std::sync::atomic::AtomicIsize;
 use futures_util::future::pending;
+use std::sync::atomic::AtomicIsize;
 
 pub(crate) struct PeerConnectionInternal {
     /// a value containing the last known greater mid value
@@ -304,19 +304,19 @@ impl PeerConnectionInternal {
                 .data_channels_requested
                 .load(Ordering::SeqCst)
                 != 0
-            {
-                if detected_plan_b {
-                    media_sections.push(MediaSection {
-                        id: "data".to_owned(),
-                        data: true,
-                    });
-                } else {
-                    media_sections.push(MediaSection {
-                        id: format!("{}", media_sections.len()),
-                        data: true,
-                    });
-                }
+        {
+            if detected_plan_b {
+                media_sections.push(MediaSection {
+                    id: "data".to_owned(),
+                    data: true,
+                });
+            } else {
+                media_sections.push(MediaSection {
+                    id: format!("{}", media_sections.len()),
+                    data: true,
+                });
             }
+        }
 
         let dtls_fingerprints = if let Some(cert) = self.dtls_transport.certificates.first() {
             cert.get_fingerprints()?

@@ -2,11 +2,11 @@ use super::interface::*;
 use crate::webrtc::util::error::*;
 use crate::webrtc::util::{ifaces, Conn};
 
+use async_net::UdpSocket;
 use ipnet::IpNet;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use async_net::UdpSocket;
 
 // Net represents the local network stack: the system's real interfaces and
 // real UDP sockets. (The upstream "virtual network" test scaffolding this

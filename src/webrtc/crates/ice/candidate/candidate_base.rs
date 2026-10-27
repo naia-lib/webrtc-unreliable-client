@@ -3,6 +3,7 @@ use crate::webrtc::ice::candidate::candidate_host::CandidateHostConfig;
 use crate::webrtc::ice::error::*;
 use crate::webrtc::ice::util::*;
 
+use async_lock::Mutex;
 use async_trait::async_trait;
 use crc::{Crc, CRC_32_ISCSI};
 use std::fmt;
@@ -10,7 +11,6 @@ use std::ops::Add;
 use std::sync::atomic::{AtomicU16, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use async_lock::Mutex;
 
 #[derive(Default)]
 pub(crate) struct CandidateBaseConfig {
@@ -338,13 +338,12 @@ pub(crate) async fn unmarshal_candidate(raw: &str) -> Result<impl Candidate> {
     if split.len() > 8 {
         let split2 = &split[8..];
 
-        if split2[0] == "raddr"
-            && split2.len() < 4 {
-                return Err(Error::Other(format!(
-                    "{:?}: incorrect length",
-                    Error::ErrParseRelatedAddr
-                )));
-            }
+        if split2[0] == "raddr" && split2.len() < 4 {
+            return Err(Error::Other(format!(
+                "{:?}: incorrect length",
+                Error::ErrParseRelatedAddr
+            )));
+        }
     }
 
     match typ {

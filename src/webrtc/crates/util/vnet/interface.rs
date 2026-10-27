@@ -14,7 +14,6 @@ impl Interface {
         Interface { name, addrs }
     }
 
-
     pub(crate) fn name(&self) -> &str {
         &self.name
     }

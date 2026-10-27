@@ -4,8 +4,7 @@ use crate::webrtc::sdp::util::ConnectionRole;
 use std::fmt;
 
 /// DtlsRole indicates the role of the DTLS transport.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum DTLSRole {
     #[default]
     Unspecified = 0,
@@ -26,7 +25,6 @@ pub(crate) enum DTLSRole {
 /// value of setup:actpass and be prepared to receive a client_hello
 /// before it receives the answer.
 pub(crate) const DEFAULT_DTLS_ROLE_OFFER: DTLSRole = DTLSRole::Auto;
-
 
 impl fmt::Display for DTLSRole {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

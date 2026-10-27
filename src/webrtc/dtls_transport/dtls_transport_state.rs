@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// DTLSTransportState indicates the DTLS transport establishment state.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCDtlsTransportState {
     #[default]
     Unspecified = 0,
@@ -29,7 +28,6 @@ pub(crate) enum RTCDtlsTransportState {
     /// validate the remote fingerprint).
     Failed = 5,
 }
-
 
 const DTLS_TRANSPORT_STATE_NEW_STR: &str = "new";
 const DTLS_TRANSPORT_STATE_CONNECTING_STR: &str = "connecting";

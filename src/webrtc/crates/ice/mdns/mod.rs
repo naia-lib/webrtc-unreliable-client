@@ -1,8 +1,7 @@
 use rand::Rng;
 
 /// Represents the different Multicast modes that ICE can run.
-#[derive(PartialEq, Debug, Copy, Clone)]
-#[derive(Default)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 pub(crate) enum MulticastDnsMode {
     #[default]
     Unspecified,
@@ -16,7 +15,6 @@ pub(crate) enum MulticastDnsMode {
     /// Means remote mDNS candidates will be accepted, and local host candidates will use mDNS.
     QueryAndGather,
 }
-
 
 pub(crate) fn generate_multicast_dns_name() -> String {
     // https://tools.ietf.org/id/draft-ietf-rtcweb-mdns-ice-candidates-02.html#gathering

@@ -2,7 +2,6 @@ use crate::webrtc::stun::attributes::*;
 use crate::webrtc::stun::checks::*;
 use crate::webrtc::stun::message::*;
 
-
 /// Common helper for ICE-{CONTROLLED,CONTROLLING} and represents the so-called Tiebreaker number.
 #[derive(Default, PartialEq, Debug, Copy, Clone)]
 pub(crate) struct TieBreaker(pub(crate) u64);
@@ -75,4 +74,3 @@ impl Getter for AttrControlling {
         Ok(())
     }
 }
-

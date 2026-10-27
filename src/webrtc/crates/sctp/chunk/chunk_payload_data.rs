@@ -28,7 +28,6 @@ pub(crate) enum PayloadProtocolIdentifier {
     Unknown,
 }
 
-
 impl fmt::Display for PayloadProtocolIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {

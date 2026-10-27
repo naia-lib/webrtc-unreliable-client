@@ -7,8 +7,7 @@ use crate::webrtc::dtls::error::*;
 use std::io::Write;
 
 // https://tools.ietf.org/html/rfc4346#section-6.2.1
-#[derive(Copy, Clone, PartialEq, Debug)]
-#[derive(Default)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub(crate) enum ContentType {
     ChangeCipherSpec = 20,
     Alert = 21,
@@ -29,7 +28,6 @@ impl From<u8> for ContentType {
         }
     }
 }
-
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum Content {

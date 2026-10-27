@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// ConnectionRole indicates which of the end points should initiate the connection establishment
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum ConnectionRole {
     #[default]
     Unspecified,
@@ -19,7 +18,6 @@ pub(crate) enum ConnectionRole {
     /// ConnectionRoleHoldconn indicates the endpoint does not want the connection to be established for the time being.
     Holdconn,
 }
-
 
 const CONNECTION_ROLE_ACTIVE_STR: &str = "active";
 const CONNECTION_ROLE_PASSIVE_STR: &str = "passive";

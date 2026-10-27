@@ -2,8 +2,7 @@ use crate::webrtc::ice::state::ConnectionState;
 use std::fmt;
 
 /// ICETransportState represents the current state of the ICE transport.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCIceTransportState {
     #[default]
     Unspecified,
@@ -44,7 +43,6 @@ pub(crate) enum RTCIceTransportState {
     /// and is no longer responding to STUN requests.
     Closed,
 }
-
 
 const ICE_TRANSPORT_STATE_NEW_STR: &str = "new";
 const ICE_TRANSPORT_STATE_CHECKING_STR: &str = "checking";

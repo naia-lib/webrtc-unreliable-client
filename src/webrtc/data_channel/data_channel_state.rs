@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// DataChannelState indicates the state of a data channel.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCDataChannelState {
     #[default]
     Unspecified = 0,
@@ -24,7 +23,6 @@ pub(crate) enum RTCDataChannelState {
     /// has been closed or could not be established.
     Closed,
 }
-
 
 const DATA_CHANNEL_STATE_CONNECTING_STR: &str = "connecting";
 const DATA_CHANNEL_STATE_OPEN_STR: &str = "open";

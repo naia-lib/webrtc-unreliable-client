@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// PeerConnectionState indicates the state of the PeerConnection.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCPeerConnectionState {
     #[default]
     Unspecified,
@@ -36,7 +35,6 @@ pub(crate) enum RTCPeerConnectionState {
     /// and the isClosed member variable of PeerConnection is true.
     Closed,
 }
-
 
 const PEER_CONNECTION_STATE_NEW_STR: &str = "new";
 const PEER_CONNECTION_STATE_CONNECTING_STR: &str = "connecting";

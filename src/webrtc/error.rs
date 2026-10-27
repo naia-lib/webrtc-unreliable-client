@@ -1,10 +1,10 @@
+use futures_channel::mpsc::SendError as MpscSendError;
 use rcgen::Error as RcgenError;
 use std::future::Future;
 use std::num::ParseIntError;
 use std::pin::Pin;
 use std::string::FromUtf8Error;
 use thiserror::Error;
-use futures_channel::mpsc::SendError as MpscSendError;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 

@@ -23,11 +23,11 @@ use std::{
     time::Duration,
 };
 
+use futures_util::future::{select, Either};
 use naia_server_socket::{
     shared::{stamp_protocol_id_header, IdentityToken, SocketConfig},
     ServerAddrs, Socket as ServerSocket,
 };
-use futures_util::future::{Either, select};
 use webrtc_unreliable_client::{SessionError, Socket as ClientSocket};
 
 const AUTH_TOKEN: &str = "12345";
@@ -48,12 +48,7 @@ async fn timeout<T>(
     duration: Duration,
     fut: impl std::future::Future<Output = T>,
 ) -> Result<T, Elapsed> {
-    match select(
-        Box::pin(smol::Timer::after(duration)),
-        Box::pin(fut),
-    )
-    .await
-    {
+    match select(Box::pin(smol::Timer::after(duration)), Box::pin(fut)).await {
         Either::Left(_) => Err(Elapsed),
         Either::Right((out, _)) => Ok(out),
     }
@@ -347,9 +342,7 @@ fn loopback_lossy_link() {
                 io.to_server_sender
                     .try_send(b"PROBE".to_vec().into_boxed_slice())
                     .expect("client send channel closed");
-                match timeout(Duration::from_millis(250), io.to_client_receiver.recv())
-                    .await
-                {
+                match timeout(Duration::from_millis(250), io.to_client_receiver.recv()).await {
                     Ok(Ok(reply)) if reply.as_ref() == b"PROBE" => break,
                     Ok(Ok(other)) => panic!("unexpected probe reply: {other:?}"),
                     Ok(Err(_)) => panic!("client receive channel closed during probe"),
@@ -366,9 +359,7 @@ fn loopback_lossy_link() {
                 smol::Timer::after(Duration::from_millis(50)).await;
             }
             let deadline = std::time::Instant::now() + Duration::from_secs(5);
-            while let Ok(Ok(reply)) =
-                timeout_at(deadline, io.to_client_receiver.recv()).await
-            {
+            while let Ok(Ok(reply)) = timeout_at(deadline, io.to_client_receiver.recv()).await {
                 if reply.as_ref() == b"PROBE" {
                     continue; // straggler echo from the handshake probe phase
                 }

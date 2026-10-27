@@ -1,8 +1,8 @@
 use crate::webrtc::util::error::{Error, Result};
 
-use std::sync::Arc;
 use super::notify::Notify;
 use async_lock::Mutex;
+use std::sync::Arc;
 use std::time::Duration;
 
 const MIN_SIZE: usize = 2048;

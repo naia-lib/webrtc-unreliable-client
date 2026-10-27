@@ -7,11 +7,11 @@ use crate::webrtc::ice::agent::Agent;
 use crate::webrtc::ice::candidate::{Candidate, CandidateType};
 
 use crate::webrtc::ice::mdns::MulticastDnsMode;
+use async_lock::Mutex;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
-use async_lock::Mutex;
 
 pub(crate) type OnLocalCandidateHdlrFn = Box<
     dyn (FnMut(Option<RTCIceCandidate>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>)

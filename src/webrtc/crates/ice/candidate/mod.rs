@@ -5,13 +5,13 @@ use crate::webrtc::ice::error::Result;
 use crate::webrtc::ice::network_type::*;
 use candidate_base::*;
 
+use async_lock::Mutex;
 use async_trait::async_trait;
 use std::fmt;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use async_lock::Mutex;
 
 pub(crate) const RECEIVE_MTU: usize = 8192;
 pub(crate) const DEFAULT_LOCAL_PREFERENCE: u16 = 65535;
@@ -70,8 +70,7 @@ pub(crate) trait Candidate: fmt::Display {
 }
 
 /// Represents the type of candidate `CandidateType` enum.
-#[derive(PartialEq, Debug, Copy, Clone)]
-#[derive(Default)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 pub(crate) enum CandidateType {
     #[default]
     Unspecified,
@@ -88,7 +87,6 @@ impl fmt::Display for CandidateType {
         write!(f, "{}", s)
     }
 }
-
 
 impl CandidateType {
     /// Returns the preference weight of a `CandidateType`.
@@ -121,8 +119,7 @@ impl fmt::Display for CandidateRelatedAddress {
 }
 
 /// Represent the ICE candidate pair state.
-#[derive(PartialEq, Debug, Copy, Clone)]
-#[derive(Default)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 pub(crate) enum CandidatePairState {
     #[default]
     Unspecified = 0,
@@ -152,7 +149,6 @@ impl From<u8> for CandidatePairState {
         }
     }
 }
-
 
 impl fmt::Display for CandidatePairState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

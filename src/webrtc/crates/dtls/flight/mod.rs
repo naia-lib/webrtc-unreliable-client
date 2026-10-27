@@ -10,8 +10,8 @@ use crate::webrtc::dtls::record_layer::*;
 use crate::webrtc::dtls::state::*;
 
 use async_trait::async_trait;
-use std::fmt;
 use smol::channel;
+use std::fmt;
 
 /*
   DTLS messages are grouped into a series of message flights, according

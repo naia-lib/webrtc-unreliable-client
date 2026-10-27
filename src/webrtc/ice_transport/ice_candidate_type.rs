@@ -2,8 +2,7 @@ use crate::webrtc::ice::candidate::CandidateType;
 use std::fmt;
 
 /// ICECandidateType represents the type of the ICE candidate used.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCIceCandidateType {
     #[default]
     Unspecified,
@@ -15,7 +14,6 @@ pub(crate) enum RTCIceCandidateType {
     /// ones, such as ones obtained through VPNs.
     Host,
 }
-
 
 const ICE_CANDIDATE_TYPE_HOST_STR: &str = "host";
 

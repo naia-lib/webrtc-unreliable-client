@@ -29,8 +29,7 @@ use handshake_message_server_hello_done::*;
 use handshake_message_server_key_exchange::*;
 
 // https://tools.ietf.org/html/rfc5246#section-7.4
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-#[derive(Default)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub(crate) enum HandshakeType {
     HelloRequest = 0,
     ClientHello = 1,
@@ -84,7 +83,6 @@ impl From<u8> for HandshakeType {
         }
     }
 }
-
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum HandshakeMessage {

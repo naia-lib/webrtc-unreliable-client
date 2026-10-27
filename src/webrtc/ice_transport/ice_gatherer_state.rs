@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// ICEGathererState represents the current state of the ICE gatherer.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCIceGathererState {
     #[default]
     Unspecified,
@@ -22,7 +21,6 @@ pub(crate) enum RTCIceGathererState {
     /// when the ICEGatherer has been closed intentionally by calling close().
     Closed,
 }
-
 
 const ICE_GATHERED_STATE_NEW_STR: &str = "new";
 const ICE_GATHERED_STATE_GATHERING_STR: &str = "gathering";

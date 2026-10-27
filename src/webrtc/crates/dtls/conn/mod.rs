@@ -19,17 +19,17 @@ use crate::webrtc::dtls::state::*;
 
 use crate::webrtc::util::{replay_detector::*, Conn};
 
+use async_lock::Mutex;
 use async_trait::async_trait;
+use futures_util::{select, FutureExt};
 use log::*;
+use smol::channel;
 use std::collections::HashMap;
 use std::io::{BufReader, BufWriter};
 use std::marker::{Send, Sync};
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 use std::sync::Arc;
-use async_lock::Mutex;
-use futures_util::{select, FutureExt};
-use smol::channel;
 use std::time::Duration;
 
 pub(crate) const INITIAL_TICKER_INTERVAL: Duration = Duration::from_secs(1);
@@ -71,7 +71,7 @@ pub(crate) struct DTLSConn {
     conn: Arc<dyn Conn + Send + Sync>,
     pub(crate) cache: HandshakeCache, // caching of handshake messages for verifyData generation
     decrypted_rx: Mutex<channel::Receiver<Result<Vec<u8>>>>, // Decrypted Application Data or error, pull by calling `Read`
-    pub(crate) state: State,                              // Internal state
+    pub(crate) state: State,                                 // Internal state
 
     handshake_completed_successfully: Arc<AtomicBool>,
     // closeLock              sync.Mutex

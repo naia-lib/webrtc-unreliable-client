@@ -1,10 +1,10 @@
+use futures_util::{select, FutureExt};
+use smol::channel;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use futures_util::{select, FutureExt};
-use smol::channel;
 
 use crate::webrtc::error::Result;
 

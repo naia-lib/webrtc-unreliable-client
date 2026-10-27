@@ -36,13 +36,13 @@ use crate::webrtc::ice::candidate::candidate_base::unmarshal_candidate;
 use crate::webrtc::ice::candidate::Candidate;
 use crate::webrtc::sdp::description::session::*;
 use crate::webrtc::sdp::util::ConnectionRole;
+use async_lock::Mutex;
 use peer_connection_internal::*;
 use rand::{thread_rng, Rng};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
-use async_lock::Mutex;
 
 pub(crate) const MEDIA_SECTION_APPLICATION: &str = "application";
 
@@ -611,8 +611,7 @@ impl RTCPeerConnection {
                             ice_role,
                             dtls_role,
                         );
-                        pc.start_transports(ice_role, dtls_role, ru, rp)
-                            .await;
+                        pc.start_transports(ice_role, dtls_role, ru, rp).await;
 
                         if we_offer {
                             let _ = pc.maybe_start_sctp(rd).await;

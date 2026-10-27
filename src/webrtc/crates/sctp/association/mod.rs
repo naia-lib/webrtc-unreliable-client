@@ -38,16 +38,16 @@ use association_internal::*;
 use association_stats::*;
 
 use crate::webrtc::util::Conn;
+use async_lock::Mutex;
 use bytes::Bytes;
+use futures_util::{select, FutureExt};
 use rand::random;
+use smol::channel;
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
-use async_lock::Mutex;
-use futures_util::{select, FutureExt};
-use smol::channel;
 
 pub(crate) const RECEIVE_MTU: usize = 8192;
 /// MTU for inbound packet (from DTLS)
@@ -106,8 +106,7 @@ impl fmt::Display for AssociationState {
 }
 
 /// retransmission timer IDs
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RtxTimerId {
     #[default]
     T1Init,
@@ -116,7 +115,6 @@ pub(crate) enum RtxTimerId {
     T3RTX,
     Reconfig,
 }
-
 
 impl fmt::Display for RtxTimerId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -132,8 +130,7 @@ impl fmt::Display for RtxTimerId {
 }
 
 /// ack mode (for testing)
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum AckMode {
     #[default]
     Normal,
@@ -151,15 +148,13 @@ impl fmt::Display for AckMode {
 }
 
 /// ack transmission state
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum AckState {
     #[default]
-    Idle,      // ack timer is off
+    Idle, // ack timer is off
     Immediate, // will send ack immediately
     Delay,     // ack timer is on (ack is being delayed)
 }
-
 
 impl fmt::Display for AckState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -231,7 +226,10 @@ impl Association {
         ai.close().await
     }
 
-    async fn new(config: Config, is_client: bool) -> Result<(Self, channel::Receiver<Option<Error>>)> {
+    async fn new(
+        config: Config,
+        is_client: bool,
+    ) -> Result<(Self, channel::Receiver<Option<Error>>)> {
         let net_conn = Arc::clone(&config.net_conn);
 
         let (awake_write_loop_ch_tx, awake_write_loop_ch_rx) = channel::bounded(1);

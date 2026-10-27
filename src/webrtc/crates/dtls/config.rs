@@ -10,8 +10,7 @@ use std::time::Duration;
 /// This port only runs the WebRTC client role against a fingerprint-
 /// authenticated server, so the upstream PSK, client-auth policy, SRTP
 /// negotiation, and rustls/webpki chain-verification knobs have been removed.
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct Config {
     /// certificates contains certificate chain to present to the other side of the connection.
     pub(crate) certificates: Vec<Certificate>,
@@ -42,20 +41,17 @@ pub(crate) struct Config {
     pub(crate) replay_protection_window: usize,
 }
 
-
 pub(crate) const DEFAULT_MTU: usize = 1200; // bytes
 
 // ExtendedMasterSecretType declares the policy the client and server
 // will follow for the Extended Master Secret extension
-#[derive(PartialEq, Copy, Clone)]
-#[derive(Default)]
+#[derive(PartialEq, Copy, Clone, Default)]
 pub(crate) enum ExtendedMasterSecretType {
     #[default]
     Request = 0,
     Require = 1,
     Disable = 2,
 }
-
 
 pub(crate) fn validate_config(_is_client: bool, config: &Config) -> Result<()> {
     for cert in &config.certificates {

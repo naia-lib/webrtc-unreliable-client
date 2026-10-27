@@ -1,8 +1,8 @@
 use thiserror::Error;
 
+use smol::channel::SendError as MpscSendError;
 use std::io;
 use std::string::FromUtf8Error;
-use smol::channel::SendError as MpscSendError;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 

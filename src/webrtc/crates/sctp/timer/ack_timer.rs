@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use std::sync::Weak;
 use async_lock::Mutex;
-use smol::channel;
+use async_trait::async_trait;
 use futures_util::{select, FutureExt};
+use smol::channel;
+use std::sync::Weak;
 use std::time::Duration;
 
 pub(crate) const ACK_INTERVAL: Duration = Duration::from_millis(200);

@@ -1,8 +1,8 @@
 use crate::webrtc::sctp::chunk::chunk_payload_data::ChunkPayloadData;
 
+use async_lock::Mutex;
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use async_lock::Mutex;
 
 /// pendingBaseQueue
 pub(crate) type PendingBaseQueue = VecDeque<ChunkPayloadData>;

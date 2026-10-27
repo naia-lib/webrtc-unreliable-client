@@ -795,7 +795,11 @@ impl AssociationInternal {
                     }
                 }
             } else {
-                if param.as_any().downcast_ref::<ParamForwardTsnSupported>().is_some() {
+                if param
+                    .as_any()
+                    .downcast_ref::<ParamForwardTsnSupported>()
+                    .is_some()
+                {
                     log::debug!("[{}] use ForwardTSN (on initAck)", self.name);
                     self.use_forward_tsn = true;
                 }

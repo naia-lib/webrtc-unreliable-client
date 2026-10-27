@@ -2,9 +2,9 @@ use thiserror::Error;
 
 use crate::webrtc::util::KeyingMaterialExporterError;
 use rcgen::Error as RcgenError;
+use smol::channel::SendError as MpscSendError;
 use std::io;
 use std::string::FromUtf8Error;
-use smol::channel::SendError as MpscSendError;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
@@ -124,7 +124,6 @@ impl From<p256::elliptic_curve::Error> for Error {
         Error::P256(P256Error(e))
     }
 }
-
 
 // Because channel SendError is parameterized, we sadly lose the backtrace.
 impl<T> From<MpscSendError<T>> for Error {

@@ -18,7 +18,6 @@ pub(crate) enum ReconfigResult {
     Unknown,
 }
 
-
 impl fmt::Display for ReconfigResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {

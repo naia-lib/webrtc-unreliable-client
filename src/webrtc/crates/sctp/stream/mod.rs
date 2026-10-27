@@ -5,15 +5,15 @@ use crate::webrtc::sctp::queue::reassembly_queue::ReassemblyQueue;
 
 use crate::webrtc::sctp::queue::pending_queue::PendingQueue;
 
+use super::super::util::notify::Notify;
+use async_lock::Mutex;
 use bytes::Bytes;
+use smol::channel;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU32, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
-use super::super::util::notify::Notify;
-use async_lock::Mutex;
-use smol::channel;
 
 pub(crate) type OnBufferedAmountLowFn =
     Box<dyn (FnMut() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>) + Send + Sync>;

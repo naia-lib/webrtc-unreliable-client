@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// SDPType describes the type of an SessionDescription.
-#[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Default)]
+#[derive(Debug, PartialEq, Copy, Clone, Default)]
 pub(crate) enum RTCSdpType {
     #[default]
     Unspecified = 0,
@@ -29,7 +28,6 @@ pub(crate) enum RTCSdpType {
     /// null if there has not yet been a successful offer-answer negotiation.
     Rollback,
 }
-
 
 const SDP_TYPE_OFFER_STR: &str = "offer";
 const SDP_TYPE_PRANSWER_STR: &str = "pranswer";

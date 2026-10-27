@@ -1,9 +1,9 @@
 use crate::webrtc::sctp::association::RtxTimerId;
-use async_trait::async_trait;
-use std::sync::{Arc, Weak};
 use async_lock::Mutex;
-use smol::channel;
+use async_trait::async_trait;
 use futures_util::{select, FutureExt};
+use smol::channel;
+use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 pub(crate) const RTO_INITIAL: u64 = 3000; // msec

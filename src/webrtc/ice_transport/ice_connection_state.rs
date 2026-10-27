@@ -1,8 +1,7 @@
 use std::fmt;
 
 /// RTCIceConnectionState indicates signaling state of the ICE Connection.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub(crate) enum RTCIceConnectionState {
     #[default]
     Unspecified,
@@ -41,7 +40,6 @@ pub(crate) enum RTCIceConnectionState {
     /// isClosed is true.
     Closed,
 }
-
 
 const ICE_CONNECTION_STATE_NEW_STR: &str = "new";
 const ICE_CONNECTION_STATE_CHECKING_STR: &str = "checking";

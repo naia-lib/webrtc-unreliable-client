@@ -8,12 +8,12 @@ use anyhow::{Error, Result};
 use async_net::TcpStream;
 use bytes::Bytes;
 use futures_channel::oneshot;
-use smol::channel;
 use futures_util::{
     io::{AsyncReadExt, AsyncWriteExt},
     select, FutureExt,
 };
 use log::warn;
+use smol::channel;
 use tinyjson::JsonValue;
 
 use crate::webrtc::{

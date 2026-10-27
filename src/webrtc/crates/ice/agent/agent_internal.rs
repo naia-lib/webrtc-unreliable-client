@@ -251,9 +251,7 @@ impl AgentInternal {
             done_and_force_candidate_contact_rx.take()
         };
 
-        if let Some((done_rx, force_candidate_contact_rx)) =
-            done_and_force_candidate_contact_rx
-        {
+        if let Some((done_rx, force_candidate_contact_rx)) = done_and_force_candidate_contact_rx {
             let ai = Arc::clone(self);
             smol::spawn(async move {
                 loop {

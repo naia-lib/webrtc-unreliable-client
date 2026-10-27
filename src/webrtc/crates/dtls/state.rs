@@ -2,10 +2,10 @@ use super::cipher_suite::*;
 use super::curve::named_curve::*;
 use super::handshake::handshake_random::*;
 
+use async_lock::Mutex;
 use std::marker::{Send, Sync};
 use std::sync::atomic::AtomicU16;
 use std::sync::Arc;
-use async_lock::Mutex;
 
 // State holds the dtls connection state and implements both encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
 pub(crate) struct State {
