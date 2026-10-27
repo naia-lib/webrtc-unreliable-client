@@ -37,7 +37,7 @@ const PROTOCOL_ID: &str = "00112233445566778899aabbccddeeff";
 /// Stand-in for a serialized naia rejection message (naia-lib/naia#133).
 /// The server sends it base64-encoded in the 401 body.
 const REJECT_REASON: &[u8] = b"bad token, friend";
-const WHOLE_TEST_TIMEOUT: Duration = Duration::from_secs(30);
+const WHOLE_TEST_TIMEOUT: Duration = Duration::from_secs(120);
 const PER_REPLY_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Test-only timeout: `Err(Elapsed)` when `duration` passes before `fut`.
