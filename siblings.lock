@@ -1,4 +1,4 @@
 # Sibling pins (Usher 123362): exact `dev` SHAs this webrtc-unreliable-client
 # revision builds against. Path deps only, never git/rev/tag
 # (sibling law, Connor 2026-10-22).
-naia = "5b343a6b6bad2463814881213ccc82ad7ffa7d87"
+naia = "f9a3d59b5cb84fadc4dda9dd4af798a476a67a6c"
